@@ -1,0 +1,9 @@
+
+gitDirectory: /tmp/git
+
+database:
+  url: jdbc:h2:mem:test
+  driverClass: org.h2.Driver
+
+  properties:
+    hibernate.hbm2ddl.auto: create

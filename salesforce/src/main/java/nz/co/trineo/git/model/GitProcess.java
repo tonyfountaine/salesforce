@@ -1,0 +1,53 @@
+package nz.co.trineo.git.model;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
+
+@Entity(name = "process")
+public class GitProcess {
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	private int id;
+	@Column
+	private int totalTasks;
+	@OneToOne
+	private GitTask task;
+	@Column
+	private int completedTasks;
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public int getTotalTasks() {
+		return totalTasks;
+	}
+
+	public void setTotalTasks(int totalTasks) {
+		this.totalTasks = totalTasks;
+	}
+
+	public GitTask getTask() {
+		return task;
+	}
+
+	public void setTask(GitTask task) {
+		this.task = task;
+	}
+
+	public int getCompletedTasks() {
+		return completedTasks;
+	}
+
+	public void setCompletedTasks(int completedTasks) {
+		this.completedTasks = completedTasks;
+	}
+}
