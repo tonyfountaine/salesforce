@@ -1,7 +1,9 @@
 package nz.co.trineo.git;
 
 import java.io.File;
+import java.io.IOException;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ProgressMonitor;
@@ -57,17 +59,21 @@ public class GitService {
 	private final AppConfiguration configuration;
 	private final GitProcessDAO processDAO;
 
-	public GitService(AppConfiguration configuration, final GitProcessDAO processDAO) {
+	public GitService(AppConfiguration configuration,
+			final GitProcessDAO processDAO) throws IOException {
 		super();
 		this.configuration = configuration;
 		this.processDAO = processDAO;
+		FileUtils.forceMkdir(configuration.getGitDirectory());
 	}
 
-	public GitProcess clone(String name, String cloneURL) throws GitServiceException {
+	public GitProcess clone(String name, String cloneURL)
+			throws GitServiceException {
 		final GitProcess process = new GitProcess();
 		processDAO.persist(process);
 		final GitMonitor monitor = new GitMonitor(process, processDAO);
-		try (Git git = Git.cloneRepository().setDirectory(new File(configuration.getGitDirectory(), name))
+		try (Git git = Git.cloneRepository()
+				.setDirectory(new File(configuration.getGitDirectory(), name))
 				.setURI(cloneURL).setProgressMonitor(monitor).call();) {
 			git.getRepository().close();
 		} catch (GitAPIException e) {

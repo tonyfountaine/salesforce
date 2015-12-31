@@ -15,6 +15,8 @@ import nz.co.trineo.git.model.GitProcess;
 import nz.co.trineo.git.model.GitTask;
 import nz.co.trineo.github.GitHubResource;
 import nz.co.trineo.github.GitHubService;
+import nz.co.trineo.salesforce.SalesforceResource;
+import nz.co.trineo.salesforce.SalesforceService;
 
 /**
  * Hello world!
@@ -22,10 +24,11 @@ import nz.co.trineo.github.GitHubService;
  */
 public class App extends Application<AppConfiguration> {
 
-	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(Credentals.class,
-			GitProcess.class, GitTask.class) {
+	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(
+			Credentals.class, GitProcess.class, GitTask.class) {
 		@Override
-		public DataSourceFactory getDataSourceFactory(AppConfiguration configuration) {
+		public DataSourceFactory getDataSourceFactory(
+				AppConfiguration configuration) {
 			return configuration.getDataSourceFactory();
 		}
 	};
@@ -53,15 +56,26 @@ public class App extends Application<AppConfiguration> {
 	}
 
 	@Override
-	public void run(final AppConfiguration configuration, final Environment environment) throws Exception {
-		final CredentalsDAO credentalsDAO = new CredentalsDAO(hibernate.getSessionFactory());
-		final GitProcessDAO processDAO = new GitProcessDAO(hibernate.getSessionFactory());
-		final GitHubService ghService = new GitHubService(credentalsDAO);
+	public void run(final AppConfiguration configuration,
+			final Environment environment) throws Exception {
+		final CredentalsDAO credentalsDAO = new CredentalsDAO(
+				hibernate.getSessionFactory());
+
+		final GitProcessDAO processDAO = new GitProcessDAO(
+				hibernate.getSessionFactory());
 		final GitService gService = new GitService(configuration, processDAO);
-		final GitHubResource ghResource = new GitHubResource(ghService, gService);
 		final GitResource gResource = new GitResource(gService);
+
+		final GitHubService ghService = new GitHubService(credentalsDAO);
+		final GitHubResource ghResource = new GitHubResource(ghService,
+				gService);
+
+		final SalesforceService sfService = new SalesforceService(
+				credentalsDAO, configuration);
+		final SalesforceResource sfResource = new SalesforceResource(sfService);
 
 		environment.jersey().register(ghResource);
 		environment.jersey().register(gResource);
+		environment.jersey().register(sfResource);
 	}
 }

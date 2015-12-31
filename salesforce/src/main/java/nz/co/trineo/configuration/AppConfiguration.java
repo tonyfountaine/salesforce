@@ -18,6 +18,12 @@ public class AppConfiguration extends Configuration {
 	@Valid
 	private File gitDirectory;
 
+	@Valid
+	private File salesforceDirectory;
+
+	@Valid
+	private File backupDirectory;
+
 	@JsonProperty("database")
 	public DataSourceFactory getDataSourceFactory() {
 		return database;
@@ -36,5 +42,25 @@ public class AppConfiguration extends Configuration {
 	@JsonProperty
 	public void setGitDirectory(File gitDirectory) {
 		this.gitDirectory = gitDirectory;
+	}
+
+	@JsonProperty
+	public File getSalesforceDirectory() {
+		return salesforceDirectory;
+	}
+
+	@JsonProperty
+	public void setSalesforceDirectory(File salesforceDirectory) {
+		this.salesforceDirectory = salesforceDirectory;
+	}
+
+	@JsonProperty
+	public File getBackupDirectory() {
+		return backupDirectory;
+	}
+
+	@JsonProperty
+	public void setBackupDirectory(File backupDirectory) {
+		this.backupDirectory = backupDirectory;
 	}
 }

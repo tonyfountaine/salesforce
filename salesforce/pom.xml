@@ -8,17 +8,20 @@
 	<packaging>jar</packaging>
 
 	<name>salesforce</name>
-	<url>http://maven.apache.org</url>
+	<url>http://trineo.co.nz</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<junit.version>4.12</junit.version>
+		<dropwizard.version>0.9.1</dropwizard.version>
+		<force.api.version>36.0.0</force.api.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.12</version>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -29,7 +32,7 @@
 		<dependency>
 			<groupId>io.dropwizard</groupId>
 			<artifactId>dropwizard-core</artifactId>
-			<version>0.9.1</version>
+			<version>${dropwizard.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
@@ -44,12 +47,12 @@
 		<dependency>
 			<groupId>io.dropwizard</groupId>
 			<artifactId>dropwizard-jdbi</artifactId>
-			<version>0.9.1</version>
+			<version>${dropwizard.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.dropwizard</groupId>
 			<artifactId>dropwizard-hibernate</artifactId>
-			<version>0.9.1</version>
+			<version>${dropwizard.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
@@ -59,12 +62,27 @@
 		<dependency>
 			<groupId>io.dropwizard</groupId>
 			<artifactId>dropwizard-migrations</artifactId>
-			<version>0.9.1</version>
+			<version>${dropwizard.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.force.api</groupId>
 			<artifactId>force-partner-api</artifactId>
-			<version>36.0.0</version>
+			<version>${force.api.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.force.api</groupId>
+			<artifactId>force-metadata-api</artifactId>
+			<version>${force.api.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-compress</artifactId>
+			<version>1.10</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>1.3.2</version>
 		</dependency>
 	</dependencies>
 	<dependencyManagement>
