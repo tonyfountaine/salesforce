@@ -42,8 +42,13 @@ import com.sforce.soap.metadata.Package;
 import com.sforce.soap.metadata.PackageTypeMembers;
 import com.sforce.soap.metadata.RetrieveRequest;
 import com.sforce.soap.metadata.RetrieveResult;
+import com.sforce.soap.partner.Connector;
 import com.sforce.soap.partner.LoginResult;
 import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.tooling.RunTestsRequest;
+import com.sforce.soap.tooling.RunTestsResult;
+import com.sforce.soap.tooling.ToolingConnection;
+import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 
 public class SalesforceService {
@@ -54,8 +59,7 @@ public class SalesforceService {
 	private final CredentalsDAO dao;
 	private final AppConfiguration configuration;
 
-	public SalesforceService(final CredentalsDAO dao,
-			final AppConfiguration configuration) throws IOException {
+	public SalesforceService(final CredentalsDAO dao, final AppConfiguration configuration) throws IOException {
 		this.dao = dao;
 		this.configuration = configuration;
 		FileUtils.forceMkdir(configuration.getSalesforceDirectory());
@@ -71,9 +75,8 @@ public class SalesforceService {
 		return currentCredentals();
 	}
 
-	public void downloadAllMetadata(final String endPoint)
-			throws SalesforceException {
-		final Backup backup = createBackup(endPoint);
+	public void downloadAllMetadata(final String orgURL) throws SalesforceException {
+		final Backup backup = createBackup(orgURL);
 		try {
 			extractMetadataZip(downloadBackup(backup.getDate()));
 		} catch (IOException | ArchiveException e) {
@@ -81,32 +84,26 @@ public class SalesforceService {
 		}
 	}
 
-	public Backup createBackup(final String endPoint)
-			throws SalesforceException {
-		final MetadataConnection connection = getMetadataConnection(endPoint);
-
-		final DescribeMetadataObject[] metadata = describeMetadata(connection);
-
-		final RetrieveRequest request = createRequest(metadata);
+	public Backup createBackup(final String orgURL) throws SalesforceException {
 		try {
-			final AsyncResult asyncResult = connection.retrieve(request);
-			final RetrieveResult result = waitForRetrieveCompletion(connection,
-					asyncResult);
+			final MetadataConnection metadataConnection = getMetadataConnection(orgURL);
+
+			final DescribeMetadataObject[] metadata = describeMetadata(metadataConnection);
+
+			final RetrieveRequest request = createRequest(metadata);
+			final AsyncResult asyncResult = metadataConnection.retrieve(request);
+			final RetrieveResult result = waitForRetrieveCompletion(metadataConnection, asyncResult);
 			if (result.getStatus() == Failed) {
-				throw new SalesforceException("code: "
-						+ result.getErrorStatusCode() + ", message: "
-						+ result.getErrorMessage());
+				throw new SalesforceException(
+						"code: " + result.getErrorStatusCode() + ", message: " + result.getErrorMessage());
 			} else if (result.getStatus() == Succeeded) {
-				final DateFormat format = new SimpleDateFormat(
-						"yyyy-MM-dd-HH-mm-ss");
+				final DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 				final Backup backup = new Backup();
 				backup.setDate(format.format(new Date()));
 				final String filename = backup.getDate() + ".zip";
-				final File file = new File(configuration.getBackupDirectory(),
-						filename);
+				final File file = new File(configuration.getBackupDirectory(), filename);
 				FileUtils.forceMkdir(file.getParentFile());
-				try (InputStream in = new ByteArrayInputStream(
-						result.getZipFile());
+				try (InputStream in = new ByteArrayInputStream(result.getZipFile());
 						OutputStream out = new FileOutputStream(file)) {
 					IOUtils.copy(in, out);
 				}
@@ -120,12 +117,10 @@ public class SalesforceService {
 		return null;
 	}
 
-	public InputStream downloadBackup(final String date)
-			throws SalesforceException {
+	public InputStream downloadBackup(final String date) throws SalesforceException {
 		final String filename = date + ".zip";
 		try {
-			final File file = new File(configuration.getBackupDirectory(),
-					filename);
+			final File file = new File(configuration.getBackupDirectory(), filename);
 			log.info(file);
 			log.info(file.exists());
 			return new FileInputStream(file);
@@ -136,12 +131,11 @@ public class SalesforceService {
 
 	private void extractMetadataZip(final InputStream zipIn)
 			throws IOException, FileNotFoundException, ArchiveException {
-		try (ArchiveInputStream in = new ArchiveStreamFactory()
-				.createArchiveInputStream(ArchiveStreamFactory.ZIP, zipIn);) {
+		try (ArchiveInputStream in = new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.ZIP,
+				zipIn);) {
 			ZipArchiveEntry entry;
 			while ((entry = (ZipArchiveEntry) in.getNextEntry()) != null) {
-				final File destFile = new File(
-						configuration.getSalesforceDirectory(), entry.getName());
+				final File destFile = new File(configuration.getSalesforceDirectory(), entry.getName());
 				FileUtils.forceMkdir(destFile.getParentFile());
 				try (OutputStream out = new FileOutputStream(destFile);) {
 					IOUtils.copy(in, out);
@@ -150,11 +144,9 @@ public class SalesforceService {
 		}
 	}
 
-	private DescribeMetadataObject[] describeMetadata(
-			final MetadataConnection connection) throws SalesforceException {
+	private DescribeMetadataObject[] describeMetadata(final MetadataConnection connection) throws SalesforceException {
 		try {
-			final DescribeMetadataResult result = connection
-					.describeMetadata(API_VERSION);
+			final DescribeMetadataResult result = connection.describeMetadata(API_VERSION);
 			return result.getMetadataObjects();
 
 		} catch (Exception e) {
@@ -162,8 +154,7 @@ public class SalesforceService {
 		}
 	}
 
-	private RetrieveResult waitForRetrieveCompletion(
-			final MetadataConnection connection, AsyncResult asyncResult)
+	private RetrieveResult waitForRetrieveCompletion(final MetadataConnection connection, AsyncResult asyncResult)
 			throws Exception {
 		// Wait for the retrieve to complete
 		int poll = 0;
@@ -175,10 +166,9 @@ public class SalesforceService {
 			// Double the wait time for the next iteration
 			waitTimeMilliSecs *= 2;
 			if (poll++ > MAX_NUM_POLL_REQUESTS) {
-				throw new Exception(
-						"Request timed out.  If this is a large set "
-								+ "of metadata components, check that the time allowed "
-								+ "by MAX_NUM_POLL_REQUESTS is sufficient.");
+				throw new Exception("Request timed out.  If this is a large set "
+						+ "of metadata components, check that the time allowed "
+						+ "by MAX_NUM_POLL_REQUESTS is sufficient.");
 			}
 			result = connection.checkRetrieveStatus(asyncResultId, true);
 			System.out.println("Retrieve Status: " + result.getStatus());
@@ -187,62 +177,58 @@ public class SalesforceService {
 		return result;
 	}
 
-	private RetrieveRequest createRequest(
-			final DescribeMetadataObject[] metadata) {
+	private RetrieveRequest createRequest(final DescribeMetadataObject[] metadata) {
 		final RetrieveRequest request = new RetrieveRequest();
 		request.setApiVersion(API_VERSION);
 		request.setUnpackaged(createPackage(metadata));
 		return request;
 	}
 
-	private ConnectorConfig createConfig(final String endpoint)
-			throws FileNotFoundException {
+	private ConnectorConfig createConfig(final String orgURL) throws FileNotFoundException {
 		final ConnectorConfig config = new ConnectorConfig();
+		final String endpoint = orgURL + "/services/Soap/u/35.0";
 		config.setAuthEndpoint(endpoint);
 		config.setServiceEndpoint(endpoint);
 		config.setTraceFile("trace.log");
 		config.setTraceMessage(true);
 		config.setPrettyPrintXml(true);
-		config.setManualLogin(true);
+		// config.setManualLogin(true);
 		return config;
 	}
 
-	private PartnerConnection getPartnerConnection(final ConnectorConfig config)
-			throws SalesforceException {
+	private PartnerConnection getPartnerConnection(final ConnectorConfig config) throws SalesforceException {
 		try {
-			final PartnerConnection connection = new PartnerConnection(config);
+			final PartnerConnection connection = Connector.newConnection(config);
 			return connection;
 		} catch (Exception e) {
 			throw new SalesforceException(e);
 		}
 	}
 
-	private LoginResult login(final PartnerConnection connection)
-			throws SalesforceException {
+	private LoginResult login(final PartnerConnection connection) throws SalesforceException {
 		try {
 			final Credentals credentals = currentCredentals();
-			final LoginResult result = connection.login(
-					credentals.getUsername(), credentals.getPassword());
+			final LoginResult result = connection.login(credentals.getUsername(), credentals.getPassword());
 			return result;
 		} catch (Exception e) {
 			throw new SalesforceException(e);
 		}
 	}
 
-	private MetadataConnection getMetadataConnection(final String endPoint)
-			throws SalesforceException {
+	private MetadataConnection getMetadataConnection(final String orgURL) throws SalesforceException {
 		try {
-			final ConnectorConfig config = createConfig(endPoint);
-			final PartnerConnection connection = getPartnerConnection(config);
 			// QueryResult queryResult =
 			// connection.query("select Id, Name from Orginization");
 			// SObject sObject = queryResult.getRecords()[0];
 			// String name = (String) sObject.getField("Name");
+			final ConnectorConfig config = createConfig(orgURL);
+			config.setManualLogin(true);
+			final PartnerConnection connection = getPartnerConnection(config);
 			final LoginResult result = login(connection);
 
 			config.setServiceEndpoint(result.getMetadataServerUrl());
 			config.setSessionId(result.getSessionId());
-			return new MetadataConnection(config);
+			return com.sforce.soap.metadata.Connector.newConnection(config);
 		} catch (Exception e) {
 			throw new SalesforceException(e);
 		}
@@ -266,9 +252,7 @@ public class SalesforceService {
 	@SuppressWarnings("unchecked")
 	public List<Backup> listBackups() {
 		final List<Backup> backups = new ArrayList<>();
-		final Iterator<File> files = iterateFiles(
-				configuration.getBackupDirectory(), new String[] { "zip" },
-				false);
+		final Iterator<File> files = iterateFiles(configuration.getBackupDirectory(), new String[] { "zip" }, false);
 		for (; files.hasNext();) {
 			final File file = files.next();
 			final Backup backup = new Backup();
@@ -277,5 +261,19 @@ public class SalesforceService {
 			backups.add(backup);
 		}
 		return backups;
+	}
+
+	public RunTestsResult runTests(String orgURL, String[] tests) throws SalesforceException {
+		try {
+			final ConnectorConfig config = createConfig(orgURL.replace("/u/", "/T/"));
+			final ToolingConnection soapConnection = com.sforce.soap.tooling.Connector.newConnection(config);
+			final RunTestsRequest runTestsRequest = new RunTestsRequest();
+			runTestsRequest.setAllTests(tests == null || tests.length == 0);
+			runTestsRequest.setClasses(tests);
+			final RunTestsResult runTestsResult = soapConnection.runTests(runTestsRequest);
+			return runTestsResult;
+		} catch (ConnectionException | FileNotFoundException e) {
+			throw new SalesforceException(e);
+		}
 	}
 }

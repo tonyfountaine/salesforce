@@ -1,11 +1,11 @@
 
-# gitDirectory: /tmp/git
-# salesforceDirectory: /tmp/salesforce
-# backupDirectory: /tmp/backup
+gitDirectory: /tmp/git
+salesforceDirectory: /tmp/salesforce
+backupDirectory: /tmp/backup
 
-gitDirectory: d:\\tmp\\git
-salesforceDirectory: d:\\tmp\\salesforce
-backupDirectory: d:\\tmp\\backup
+# gitDirectory: d:\\tmp\\git
+# salesforceDirectory: d:\\tmp\\salesforce
+# backupDirectory: d:\\tmp\\backup
 
 database:
   url: jdbc:h2:mem:test

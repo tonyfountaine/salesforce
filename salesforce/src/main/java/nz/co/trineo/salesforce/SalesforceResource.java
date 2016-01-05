@@ -1,7 +1,5 @@
 package nz.co.trineo.salesforce;
 
-import io.dropwizard.hibernate.UnitOfWork;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -20,14 +18,16 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
-import nz.co.trineo.common.model.Credentals;
-import nz.co.trineo.salesforce.model.Backup;
-import nz.co.trineo.salesforce.model.Environment;
-
 import org.apache.commons.io.IOUtils;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
+import com.sforce.soap.tooling.RunTestsResult;
+
+import io.dropwizard.hibernate.UnitOfWork;
+import nz.co.trineo.common.model.Credentals;
+import nz.co.trineo.salesforce.model.Backup;
+import nz.co.trineo.salesforce.model.SalesforceRequest;
 
 @Path("/sf")
 @Produces(MediaType.APPLICATION_JSON)
@@ -58,8 +58,7 @@ public class SalesforceResource {
 	@POST
 	@Timed
 	@UnitOfWork
-	public Credentals setCredentals(
-			final @QueryParam("username") Optional<String> username,
+	public Credentals setCredentals(final @QueryParam("username") Optional<String> username,
 			final @QueryParam("password") Optional<String> password,
 			final @QueryParam("sessionId") Optional<String> sessionId,
 			final @QueryParam("authKey") Optional<String> authKey) {
@@ -72,38 +71,39 @@ public class SalesforceResource {
 	}
 
 	@POST
-	@Path("/{env}/metadata")
+	@Path("/metadata")
 	@Timed
 	@UnitOfWork
-	public void getMetadata(final @PathParam("env") Environment env)
-			throws SalesforceException {
-		final String endpoint = getEndpoint(env);
+	public void getMetadata(final SalesforceRequest request) throws SalesforceException {
+		final String endpoint = getOrgurl(request);
 		salesforceService.downloadAllMetadata(endpoint);
 	}
 
 	@POST
-	@Path("/{env}/backup")
+	@Path("/backup")
 	@Timed
 	@UnitOfWork
-	public Backup createBackup(final @PathParam("env") Environment env)
-			throws SalesforceException {
-		final String endpoint = getEndpoint(env);
+	public Backup createBackup(final SalesforceRequest request) throws SalesforceException {
+		final String endpoint = getOrgurl(request);
 		return salesforceService.createBackup(endpoint);
 	}
 
-	private String getEndpoint(final Environment env) {
-		final String endpoint;
-		switch (env) {
+	private String getOrgurl(final SalesforceRequest request) {
+		final String orgURL;
+		switch (request.getEnvironment()) {
 		case SANDBOX:
-			endpoint = "https://test.salesforce.com/services/Soap/u/35.0";
+			orgURL = "https://test.salesforce.com"; // "/services/Soap/u/35.0"
+			break;
+		case OTHER:
+			orgURL = request.getOrgUrl();
 			break;
 		case DEVELOPER:
 		case PRODUCTION:
 		default:
-			endpoint = "https://login.salesforce.com/services/Soap/u/35.0";
+			orgURL = "https://login.salesforce.com"; // "/services/Soap/u/35.0"
 			break;
 		}
-		return endpoint;
+		return orgURL;
 	}
 
 	@GET
@@ -119,12 +119,10 @@ public class SalesforceResource {
 	@Timed
 	@UnitOfWork
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public Response getBackup(final @PathParam("date") String date)
-			throws SalesforceException {
+	public Response getBackup(final @PathParam("date") String date) throws SalesforceException {
 		final InputStream in = salesforceService.downloadBackup(date);
 		final StreamingOutput stream = new StreamingOutput() {
-			public void write(OutputStream output) throws IOException,
-					WebApplicationException {
+			public void write(OutputStream output) throws IOException, WebApplicationException {
 				try {
 					IOUtils.copy(in, output);
 				} catch (Exception e) {
@@ -133,10 +131,16 @@ public class SalesforceResource {
 			}
 		};
 
-		return Response
-				.ok(stream)
-				.header("content-disposition",
-						"attachment; filename = " + date + ".zip").build();
+		return Response.ok(stream).header("content-disposition", "attachment; filename = " + date + ".zip").build();
 	}
 
+	@POST
+	@Path("/tests")
+	@Timed
+	@UnitOfWork
+	public void runTests(final SalesforceRequest request) throws SalesforceException {
+		final String endpoint = getOrgurl(request);
+		RunTestsResult runTests = salesforceService.runTests(endpoint, null);
+		System.out.println(runTests);
+	}
 }
