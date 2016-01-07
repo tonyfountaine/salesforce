@@ -7,6 +7,9 @@ backupDirectory: /tmp/backup
 # salesforceDirectory: d:\\tmp\\salesforce
 # backupDirectory: d:\\tmp\\backup
 
+clientKey: 3MVG9ZL0ppGP5UrC6uYG2F8MedFD2Yiy1y1KUpVsNmHUUqK6dqQSnZ05fwAtUkKX5k4zD.lbR2Tx4O.PuMfsY
+clientSecret: 1533324426739765893
+
 database:
   url: jdbc:h2:mem:test
   driverClass: org.h2.Driver

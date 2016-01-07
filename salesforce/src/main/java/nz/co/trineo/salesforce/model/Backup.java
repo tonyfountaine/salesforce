@@ -1,8 +1,8 @@
 package nz.co.trineo.salesforce.model;
 
-import javax.persistence.Column;
+import java.io.Serializable;
+
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
@@ -10,21 +10,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "backups")
-public class Backup {
+public class Backup implements Serializable {
+	private static final long serialVersionUID = -1530429454138118191L;
+
 	@Id
-	@GeneratedValue
-	private String id;
-	@Column
 	private String date;
-
-	@JsonProperty
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
+	@Id
+	private String organizationId;
 
 	@JsonProperty
 	public String getDate() {
@@ -33,5 +25,14 @@ public class Backup {
 
 	public void setDate(String date) {
 		this.date = date;
+	}
+
+	@JsonProperty
+	public String getOrganizationId() {
+		return organizationId;
+	}
+
+	public void setOrganizationId(String organizationId) {
+		this.organizationId = organizationId;
 	}
 }

@@ -24,6 +24,12 @@ public class AppConfiguration extends Configuration {
 	@Valid
 	private File backupDirectory;
 
+	@Valid
+	private String clientKey;
+
+	@Valid
+	private String clientSecret;
+
 	@JsonProperty("database")
 	public DataSourceFactory getDataSourceFactory() {
 		return database;
@@ -62,5 +68,25 @@ public class AppConfiguration extends Configuration {
 	@JsonProperty
 	public void setBackupDirectory(File backupDirectory) {
 		this.backupDirectory = backupDirectory;
+	}
+
+	@JsonProperty
+	public String getClientKey() {
+		return clientKey;
+	}
+
+	@JsonProperty
+	public void setClientKey(String clientKey) {
+		this.clientKey = clientKey;
+	}
+
+	@JsonProperty
+	public String getClientSecret() {
+		return clientSecret;
+	}
+
+	@JsonProperty
+	public void setClientSecret(String clientSecret) {
+		this.clientSecret = clientSecret;
 	}
 }

@@ -22,11 +22,13 @@ import org.apache.commons.io.IOUtils;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
-import com.sforce.soap.tooling.RunTestsResult;
+import com.sforce.soap.apex.RunTestsResult;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.salesforce.model.Backup;
+import nz.co.trineo.salesforce.model.Environment;
+import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.salesforce.model.SalesforceRequest;
 
 @Path("/sf")
@@ -44,55 +46,81 @@ public class SalesforceResource {
 	@GET
 	@Timed
 	@UnitOfWork
-	public Credentals currentCredentals() {
-		return salesforceService.currentCredentals();
+	@Path("/auth/{id}")
+	public Credentals currentCredentals(final @PathParam("id") String id) {
+		return salesforceService.currentCredentals(id);
 	}
 
 	@PUT
 	@Timed
 	@UnitOfWork
-	public Credentals updateCredentals(final Credentals credentals) {
-		return salesforceService.updateCredentals(credentals);
+	@Path("/auth/{id}")
+	public Credentals updateCredentals(final @PathParam("id") String id, final Credentals credentals) {
+		return salesforceService.updateCredentals(id, credentals);
 	}
 
 	@POST
 	@Timed
 	@UnitOfWork
-	public Credentals setCredentals(final @QueryParam("username") Optional<String> username,
+	@Path("/auth/{id}")
+	public Credentals setCredentals(final @PathParam("id") String id,
+			final @QueryParam("username") Optional<String> username,
 			final @QueryParam("password") Optional<String> password,
 			final @QueryParam("sessionId") Optional<String> sessionId,
 			final @QueryParam("authKey") Optional<String> authKey) {
-		final Credentals credentals = salesforceService.currentCredentals();
+		final Credentals credentals = salesforceService.currentCredentals(id);
 		credentals.setAuthKey(authKey.orNull());
 		credentals.setPassword(password.orNull());
 		credentals.setSessionId(sessionId.orNull());
 		credentals.setUsername(username.orNull());
-		return salesforceService.updateCredentals(credentals);
+		return salesforceService.updateCredentals(id, credentals);
 	}
 
 	@POST
-	@Path("/metadata")
+	@Path("/org")
 	@Timed
 	@UnitOfWork
-	public void getMetadata(final SalesforceRequest request) throws SalesforceException {
+	public Organization getOrg(final @QueryParam("environment") Environment environment, final Credentals credentals)
+			throws SalesforceException {
+		final SalesforceRequest request = new SalesforceRequest();
+		request.setEnvironment(environment);
 		final String endpoint = getOrgurl(request);
-		salesforceService.downloadAllMetadata(endpoint);
+		return salesforceService.getOrg(endpoint, credentals);
+	}
+
+	@GET
+	@Path("/orgs/{id}")
+	@Timed
+	@UnitOfWork
+	public Organization getOrg(final @PathParam("id") String id) throws SalesforceException {
+		return salesforceService.getOrg(id);
 	}
 
 	@POST
-	@Path("/backup")
+	@Path("/orgs/{id}/metadata")
 	@Timed
 	@UnitOfWork
-	public Backup createBackup(final SalesforceRequest request) throws SalesforceException {
+	public void getMetadata(final @PathParam("id") String id, final SalesforceRequest request)
+			throws SalesforceException {
 		final String endpoint = getOrgurl(request);
-		return salesforceService.createBackup(endpoint);
+		salesforceService.downloadAllMetadata(id, endpoint);
+	}
+
+	@POST
+	@Path("/orgs/{id}/backup")
+	@Timed
+	@UnitOfWork
+	public Backup createBackup(final @PathParam("id") String id, final SalesforceRequest request)
+			throws SalesforceException {
+		final String endpoint = getOrgurl(request);
+		return salesforceService.createBackup(id, endpoint);
 	}
 
 	private String getOrgurl(final SalesforceRequest request) {
 		final String orgURL;
 		switch (request.getEnvironment()) {
 		case SANDBOX:
-			orgURL = "https://test.salesforce.com"; // "/services/Soap/u/35.0"
+			orgURL = "https://test.salesforce.com";
 			break;
 		case OTHER:
 			orgURL = request.getOrgUrl();
@@ -100,27 +128,28 @@ public class SalesforceResource {
 		case DEVELOPER:
 		case PRODUCTION:
 		default:
-			orgURL = "https://login.salesforce.com"; // "/services/Soap/u/35.0"
+			orgURL = "https://login.salesforce.com";
 			break;
 		}
 		return orgURL;
 	}
 
 	@GET
-	@Path("/backups")
+	@Path("/orgs/{id}/backups")
 	@Timed
 	@UnitOfWork
-	public List<Backup> listBackups() {
-		return salesforceService.listBackups();
+	public List<Backup> listBackups(final @PathParam("id") String id) {
+		return salesforceService.listBackups(id);
 	}
 
 	@GET
-	@Path("/backups/{date}")
+	@Path("/orgs/{id}/backups/{date}")
 	@Timed
 	@UnitOfWork
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public Response getBackup(final @PathParam("date") String date) throws SalesforceException {
-		final InputStream in = salesforceService.downloadBackup(date);
+	public Response getBackup(final @PathParam("id") String id, final @PathParam("date") String date)
+			throws SalesforceException {
+		final InputStream in = salesforceService.downloadBackup(id, date);
 		final StreamingOutput stream = new StreamingOutput() {
 			public void write(OutputStream output) throws IOException, WebApplicationException {
 				try {
@@ -135,12 +164,13 @@ public class SalesforceResource {
 	}
 
 	@POST
-	@Path("/tests")
+	@Path("/orgs/{id}/tests")
 	@Timed
 	@UnitOfWork
-	public void runTests(final SalesforceRequest request) throws SalesforceException {
+	public RunTestsResult runTests(final @PathParam("id") String id, final SalesforceRequest request)
+			throws SalesforceException {
 		final String endpoint = getOrgurl(request);
-		RunTestsResult runTests = salesforceService.runTests(endpoint, null);
-		System.out.println(runTests);
+		RunTestsResult runTests = salesforceService.runTests(id, endpoint, null);
+		return runTests;
 	}
 }
