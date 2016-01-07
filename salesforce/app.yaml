@@ -11,7 +11,7 @@ clientKey: 3MVG9ZL0ppGP5UrC6uYG2F8MedFD2Yiy1y1KUpVsNmHUUqK6dqQSnZ05fwAtUkKX5k4zD
 clientSecret: 1533324426739765893
 
 database:
-  url: jdbc:h2:mem:test
+  url: jdbc:h2:./target/app
   driverClass: org.h2.Driver
 
   properties:
