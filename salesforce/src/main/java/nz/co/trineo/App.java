@@ -8,6 +8,8 @@ import io.dropwizard.setup.Environment;
 import nz.co.trineo.common.CredentalsDAO;
 import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.configuration.AppConfiguration;
+import nz.co.trineo.diff.DiffResource;
+import nz.co.trineo.diff.DiffService;
 import nz.co.trineo.git.GitProcessDAO;
 import nz.co.trineo.git.GitResource;
 import nz.co.trineo.git.GitService;
@@ -75,8 +77,12 @@ public class App extends Application<AppConfiguration> {
 				configuration);
 		final SalesforceResource sfResource = new SalesforceResource(sfService);
 
+		final DiffService dService = new DiffService();
+		final DiffResource dResource = new DiffResource(dService);
+
 		environment.jersey().register(ghResource);
 		environment.jersey().register(gResource);
 		environment.jersey().register(sfResource);
+		environment.jersey().register(dResource);
 	}
 }
