@@ -45,7 +45,7 @@ import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 
-import nz.co.trineo.common.CredentalsDAO;
+import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.salesforce.model.Backup;
@@ -56,12 +56,12 @@ public class SalesforceService {
 	private static final double API_VERSION = 35.0;
 	private static final long ONE_SECOND = 1000;
 	private static final int MAX_NUM_POLL_REQUESTS = 50;
-	private final CredentalsDAO credDAO;
+	private final AccountDAO credDAO;
 	private final OrganizationDAO orgDAO;
 	private final BackupDAO backupDAO;
 	private final AppConfiguration configuration;
 
-	public SalesforceService(final CredentalsDAO dao, final OrganizationDAO orgDAO, final BackupDAO backupDAO,
+	public SalesforceService(final AccountDAO dao, final OrganizationDAO orgDAO, final BackupDAO backupDAO,
 			final AppConfiguration configuration) throws IOException {
 		this.credDAO = dao;
 		this.orgDAO = orgDAO;
@@ -70,18 +70,9 @@ public class SalesforceService {
 		FileUtils.forceMkdir(configuration.getSalesforceDirectory());
 	}
 
-	public Credentals currentCredentals(final String orgId) {
-		return credDAO.get(orgId);
-	}
-
-	public Credentals updateCredentals(final String orgId, final Credentals credentals) {
-		credentals.setId(orgId);
-		credDAO.persist(credentals);
-		return currentCredentals(orgId);
-	}
-
-	public void downloadAllMetadata(final String orgId, final String orgURL) throws SalesforceException {
-		final Backup backup = createBackup(orgId, orgURL);
+	public void downloadAllMetadata(final String orgId, final String orgURL, final Credentals credentals)
+			throws SalesforceException {
+		final Backup backup = createBackup(orgId, orgURL, credentals);
 		try {
 			final InputStream in = downloadBackup(orgId, backup.getDate());
 			extractMetadataZip(orgId, in);
@@ -90,9 +81,10 @@ public class SalesforceService {
 		}
 	}
 
-	public Backup createBackup(final String orgId, final String orgURL) throws SalesforceException {
+	public Backup createBackup(final String orgId, final String orgURL, final Credentals credentals)
+			throws SalesforceException {
 		try {
-			final MetadataConnection metadataConnection = getMetadataConnection(orgId, orgURL);
+			final MetadataConnection metadataConnection = getMetadataConnection(orgId, orgURL, credentals);
 
 			final DescribeMetadataObject[] metadata = describeMetadata(metadataConnection);
 
@@ -239,7 +231,7 @@ public class SalesforceService {
 						+ "by MAX_NUM_POLL_REQUESTS is sufficient.");
 			}
 			result = connection.checkRetrieveStatus(asyncResultId, true);
-			System.out.println("Retrieve Status: " + result.getStatus());
+			log.info("Retrieve Status: " + result.getStatus());
 		} while (!result.isDone());
 
 		return result;
@@ -287,9 +279,9 @@ public class SalesforceService {
 		}
 	}
 
-	private LoginResult login(final String orgId, final PartnerConnection connection) throws SalesforceException {
+	private LoginResult login(final String orgId, final PartnerConnection connection, final Credentals credentals)
+			throws SalesforceException {
 		try {
-			final Credentals credentals = currentCredentals(orgId);
 			final LoginResult result = connection.login(credentals.getUsername(), credentals.getPassword());
 			return result;
 		} catch (Exception e) {
@@ -297,12 +289,12 @@ public class SalesforceService {
 		}
 	}
 
-	private MetadataConnection getMetadataConnection(final String orgId, final String orgURL)
-			throws SalesforceException {
+	private MetadataConnection getMetadataConnection(final String orgId, final String orgURL,
+			final Credentals credentals) throws SalesforceException {
 		try {
 			final ConnectorConfig config = createConfig(orgURL);
 			final PartnerConnection connection = getPartnerConnection(config);
-			final LoginResult result = login(orgId, connection);
+			final LoginResult result = login(orgId, connection, credentals);
 
 			config.setServiceEndpoint(result.getMetadataServerUrl());
 			config.setSessionId(result.getSessionId());
@@ -312,11 +304,12 @@ public class SalesforceService {
 		}
 	}
 
-	private SoapConnection getSoapConnection(final String orgId, final String orgURL) throws SalesforceException {
+	private SoapConnection getSoapConnection(final String orgId, final String orgURL, final Credentals credentals)
+			throws SalesforceException {
 		try {
 			final ConnectorConfig config = createConfig(orgURL);
 			final PartnerConnection connection = getPartnerConnection(config);
-			final LoginResult result = login(orgId, connection);
+			final LoginResult result = login(orgId, connection, credentals);
 
 			config.setServiceEndpoint(result.getServerUrl().replace("/u/", "/s/"));
 			config.setSessionId(result.getSessionId());
@@ -358,10 +351,10 @@ public class SalesforceService {
 		// return backups;
 	}
 
-	public RunTestsResult runTests(final String orgId, final String orgURL, final String[] tests)
-			throws SalesforceException {
+	public RunTestsResult runTests(final String orgId, final String orgURL, final String[] tests,
+			final Credentals credentals) throws SalesforceException {
 		try {
-			final SoapConnection soapConnection = getSoapConnection(orgId, orgURL);
+			final SoapConnection soapConnection = getSoapConnection(orgId, orgURL, credentals);
 			final RunTestsRequest runTestsRequest = new RunTestsRequest();
 			runTestsRequest.setAllTests(tests == null || tests.length == 0);
 			runTestsRequest.setClasses(tests);
@@ -378,9 +371,10 @@ public class SalesforceService {
 
 			final String organizationId = connection.getUserInfo().getOrganizationId();
 			final QueryResult queryResult = connection
-					.query("SELECT Id, Name FROM Organization WHERE Id = '" + organizationId + "'");
+					.query("SELECT Id, Name, OrganizationType, IsSandbox FROM Organization WHERE Id = '"
+							+ organizationId + "'");
 			while (!queryResult.isDone()) {
-				System.out.println(queryResult);
+				log.info(queryResult);
 				try {
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {
@@ -389,7 +383,7 @@ public class SalesforceService {
 			}
 			final SObject sObject = queryResult.getRecords()[0];
 			final Organization organization = toOrganization(sObject);
-			updateCredentals(organizationId, credentals);
+			// updateCredentals(organizationId, credentals);
 			orgDAO.persist(organization);
 			return organization;
 		} catch (SalesforceException e) {
@@ -404,10 +398,12 @@ public class SalesforceService {
 	}
 
 	private Organization toOrganization(SObject sObject) {
-		System.out.println(sObject);
+		log.info(sObject);
 		final Organization organization = new Organization();
 		organization.setId(sObject.getId());
 		organization.setName((String) sObject.getField("Name"));
+		organization.setOrganizationType((String) sObject.getField("OrganizationType"));
+		organization.setSandbox((Boolean) sObject.getField("IsSandbox"));
 		return organization;
 	}
 }

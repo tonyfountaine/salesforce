@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ProgressMonitor;
@@ -13,6 +15,7 @@ import nz.co.trineo.git.model.GitProcess;
 import nz.co.trineo.git.model.GitTask;
 
 public class GitService {
+	private static final Log log = LogFactory.getLog(GitService.class);
 
 	public static final class GitMonitor implements ProgressMonitor {
 

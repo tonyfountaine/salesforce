@@ -8,43 +8,35 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 
-import nz.co.trineo.common.CredentalsDAO;
+import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.github.model.Repository;
 import nz.co.trineo.github.model.User;
 
 public class GitHubService {
-	private final CredentalsDAO dao;
+	private static final Log log = LogFactory.getLog(GitHubService.class);
 
-	public GitHubService(final CredentalsDAO dao) {
+	private final AccountDAO dao;
+
+	public GitHubService(final AccountDAO dao) {
 		this.dao = dao;
 	}
 
-	public Credentals currentCredentals() {
-		return dao.get("github");
-	}
-
-	public Credentals updateCredentals(final Credentals credentals) {
-		credentals.setId("github");
-		dao.persist(credentals);
-		return currentCredentals();
-	}
-
-	public List<String> getRepos() throws Exception {
+	public List<String> getRepos(final Credentals credentals) throws Exception {
 		final List<String> repos = new ArrayList<>();
-		final Credentals credentals = currentCredentals();
 		final GitHub git = GitHub.connectUsingPassword(credentals.getUsername(), credentals.getPassword());
 		final Map<String, GHRepository> repoMap = git.getMyself().getAllRepositories();
 		repos.addAll(repoMap.keySet());
 		return repos;
 	}
 
-	public Repository getRepo(final String name) throws Exception {
-		Credentals credentals = currentCredentals();
+	public Repository getRepo(final String name, final Credentals credentals) throws Exception {
 		final GitHub git = GitHub.connectUsingPassword(credentals.getUsername(), credentals.getPassword());
 		final GHRepository repo = git.getMyself().getRepository(name);
 		return toRepository(repo);

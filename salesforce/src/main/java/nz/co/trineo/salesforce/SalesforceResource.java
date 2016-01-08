@@ -43,39 +43,6 @@ public class SalesforceResource {
 		this.salesforceService = salesforceService;
 	}
 
-	@GET
-	@Timed
-	@UnitOfWork
-	@Path("/auth/{id}")
-	public Credentals currentCredentals(final @PathParam("id") String id) {
-		return salesforceService.currentCredentals(id);
-	}
-
-	@PUT
-	@Timed
-	@UnitOfWork
-	@Path("/auth/{id}")
-	public Credentals updateCredentals(final @PathParam("id") String id, final Credentals credentals) {
-		return salesforceService.updateCredentals(id, credentals);
-	}
-
-	@POST
-	@Timed
-	@UnitOfWork
-	@Path("/auth/{id}")
-	public Credentals setCredentals(final @PathParam("id") String id,
-			final @QueryParam("username") Optional<String> username,
-			final @QueryParam("password") Optional<String> password,
-			final @QueryParam("sessionId") Optional<String> sessionId,
-			final @QueryParam("authKey") Optional<String> authKey) {
-		final Credentals credentals = salesforceService.currentCredentals(id);
-		credentals.setAuthKey(authKey.orNull());
-		credentals.setPassword(password.orNull());
-		credentals.setSessionId(sessionId.orNull());
-		credentals.setUsername(username.orNull());
-		return salesforceService.updateCredentals(id, credentals);
-	}
-
 	@POST
 	@Path("/org")
 	@Timed
@@ -103,7 +70,8 @@ public class SalesforceResource {
 	public void getMetadata(final @PathParam("id") String id, final SalesforceRequest request)
 			throws SalesforceException {
 		final String endpoint = getOrgurl(request);
-		salesforceService.downloadAllMetadata(id, endpoint);
+		salesforceService.downloadAllMetadata(id, endpoint, null);// TODO get
+																	// credentals
 	}
 
 	@POST
@@ -112,8 +80,10 @@ public class SalesforceResource {
 	@UnitOfWork
 	public Backup createBackup(final @PathParam("id") String id, final SalesforceRequest request)
 			throws SalesforceException {
+		final Organization organization = salesforceService.getOrg(id);
 		final String endpoint = getOrgurl(request);
-		return salesforceService.createBackup(id, endpoint);
+		return salesforceService.createBackup(id, endpoint, null);// TODO get
+																	// credentals
 	}
 
 	private String getOrgurl(final SalesforceRequest request) {
@@ -170,7 +140,9 @@ public class SalesforceResource {
 	public RunTestsResult runTests(final @PathParam("id") String id, final SalesforceRequest request)
 			throws SalesforceException {
 		final String endpoint = getOrgurl(request);
-		RunTestsResult runTests = salesforceService.runTests(id, endpoint, null);
+		RunTestsResult runTests = salesforceService.runTests(id, endpoint, null, null);// TODO
+																						// get
+																						// credentals
 		return runTests;
 	}
 }

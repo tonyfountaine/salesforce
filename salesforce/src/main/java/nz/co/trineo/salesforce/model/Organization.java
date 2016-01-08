@@ -14,7 +14,11 @@ public class Organization {
 	private String id;
 	@Column
 	private String name;
-
+	@Column
+	private String organizationType;
+	@Column
+	private boolean sandbox;
+	
 	@JsonProperty
 	public String getId() {
 		return id;
@@ -31,5 +35,23 @@ public class Organization {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	@JsonProperty
+	public String getOrganizationType() {
+		return organizationType;
+	}
+
+	public void setOrganizationType(String organizationType) {
+		this.organizationType = organizationType;
+	}
+
+	@JsonProperty
+	public boolean isSandbox() {
+		return sandbox;
+	}
+
+	public void setSandbox(boolean sandbox) {
+		this.sandbox = sandbox;
 	}
 }

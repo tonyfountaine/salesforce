@@ -2,6 +2,7 @@ package nz.co.trineo.common.model;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
@@ -11,7 +12,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Table(name = "credentals")
 public class Credentals {
 	@Id
-	private String id;
+	@GeneratedValue
+	private int id;
 	@Column(name = "username")
 	private String username;
 	@Column(name = "password")
@@ -22,11 +24,11 @@ public class Credentals {
 	private String authKey;
 
 	@JsonProperty
-	public String getId() {
+	public int getId() {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(int id) {
 		this.id = id;
 	}
 

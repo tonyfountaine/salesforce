@@ -1,11 +1,17 @@
 package nz.co.trineo;
 
+import org.hibernate.SessionFactory;
+
 import io.dropwizard.Application;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import nz.co.trineo.common.AccountDAO;
+import nz.co.trineo.common.AccountResource;
+import nz.co.trineo.common.AccountService;
 import nz.co.trineo.common.CredentalsDAO;
+import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.diff.DiffResource;
@@ -31,7 +37,7 @@ import nz.co.trineo.salesforce.model.Organization;
 public class App extends Application<AppConfiguration> {
 
 	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(Credentals.class,
-			GitProcess.class, GitTask.class, Organization.class, Backup.class) {
+			GitProcess.class, GitTask.class, Organization.class, Backup.class, ConnectedAccount.class) {
 		@Override
 		public DataSourceFactory getDataSourceFactory(AppConfiguration configuration) {
 			return configuration.getDataSourceFactory();
@@ -62,27 +68,33 @@ public class App extends Application<AppConfiguration> {
 
 	@Override
 	public void run(final AppConfiguration configuration, final Environment environment) throws Exception {
-		final CredentalsDAO credentalsDAO = new CredentalsDAO(hibernate.getSessionFactory());
-		final GitProcessDAO processDAO = new GitProcessDAO(hibernate.getSessionFactory());
-		final OrganizationDAO organizationDAO = new OrganizationDAO(hibernate.getSessionFactory());
-		final BackupDAO backupDAO = new BackupDAO(hibernate.getSessionFactory());
+		final SessionFactory sessionFactory = hibernate.getSessionFactory();
+		final CredentalsDAO credentalsDAO = new CredentalsDAO(sessionFactory);
+		final GitProcessDAO processDAO = new GitProcessDAO(sessionFactory);
+		final OrganizationDAO organizationDAO = new OrganizationDAO(sessionFactory);
+		final BackupDAO backupDAO = new BackupDAO(sessionFactory);
+		final AccountDAO accountDAO = new AccountDAO(sessionFactory);
 
 		final GitService gService = new GitService(configuration, processDAO);
 		final GitResource gResource = new GitResource(gService);
 
-		final GitHubService ghService = new GitHubService(credentalsDAO);
+		final GitHubService ghService = new GitHubService(accountDAO);
 		final GitHubResource ghResource = new GitHubResource(ghService, gService);
 
-		final SalesforceService sfService = new SalesforceService(credentalsDAO, organizationDAO, backupDAO,
+		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, backupDAO,
 				configuration);
 		final SalesforceResource sfResource = new SalesforceResource(sfService);
 
 		final DiffService dService = new DiffService();
 		final DiffResource dResource = new DiffResource(dService);
 
+		final AccountService aService = new AccountService(accountDAO);
+		final AccountResource aResource = new AccountResource(aService);
+
 		environment.jersey().register(ghResource);
 		environment.jersey().register(gResource);
 		environment.jersey().register(sfResource);
 		environment.jersey().register(dResource);
+		environment.jersey().register(aResource);
 	}
 }
