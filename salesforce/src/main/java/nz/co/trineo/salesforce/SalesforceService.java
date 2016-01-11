@@ -2,6 +2,8 @@ package nz.co.trineo.salesforce;
 
 import static com.sforce.soap.metadata.RetrieveStatus.Failed;
 import static com.sforce.soap.metadata.RetrieveStatus.Succeeded;
+import static org.apache.commons.io.FileUtils.forceMkdir;
+import static org.apache.commons.io.FilenameUtils.getBaseName;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -15,7 +17,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -46,7 +50,7 @@ import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 
 import nz.co.trineo.common.AccountDAO;
-import nz.co.trineo.common.model.Credentals;
+import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.Organization;
@@ -67,12 +71,35 @@ public class SalesforceService {
 		this.orgDAO = orgDAO;
 		this.backupDAO = backupDAO;
 		this.configuration = configuration;
-		FileUtils.forceMkdir(configuration.getSalesforceDirectory());
+		forceMkdir(configuration.getSalesforceDirectory());
+		forceMkdir(configuration.getBackupDirectory());
 	}
 
-	public void downloadAllMetadata(final String orgId, final String orgURL, final Credentals credentals)
-			throws SalesforceException {
-		final Backup backup = createBackup(orgId, orgURL, credentals);
+	@SuppressWarnings("unchecked")
+	public void updateBackupsFromFilesystem() {
+		final File dir = configuration.getBackupDirectory();
+		final Iterator<File> files = FileUtils.iterateFiles(dir, new String[] { "zip" }, true);
+		for (; files.hasNext();) {
+			final File file = files.next();
+			final String date = getBaseName(file.getName());
+			final String ordId = getBaseName(file.getParent());
+			final Organization organization = getOrg(ordId);
+			if (organization == null) {
+				continue;
+			}
+			if (backupDAO.get(organization, date) == null) {
+				final Backup backup = new Backup();
+				backup.setDate(date);
+				backup.setOrganization(organization);
+				organization.getBackups().add(backup);
+				backupDAO.persist(backup);
+				orgDAO.persist(organization);
+			}
+		}
+	}
+
+	public void downloadAllMetadata(final String orgId, final int accId) throws SalesforceException {
+		final Backup backup = createBackup(orgId, accId);
 		try {
 			final InputStream in = downloadBackup(orgId, backup.getDate());
 			extractMetadataZip(orgId, in);
@@ -81,10 +108,10 @@ public class SalesforceService {
 		}
 	}
 
-	public Backup createBackup(final String orgId, final String orgURL, final Credentals credentals)
-			throws SalesforceException {
+	public Backup createBackup(final String orgId, final int accId) throws SalesforceException {
 		try {
-			final MetadataConnection metadataConnection = getMetadataConnection(orgId, orgURL, credentals);
+			final Organization org = getOrg(orgId);
+			final MetadataConnection metadataConnection = getMetadataConnection(org, accId);
 
 			final DescribeMetadataObject[] metadata = describeMetadata(metadataConnection);
 
@@ -98,9 +125,10 @@ public class SalesforceService {
 				final DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 				final Backup backup = new Backup();
 				backup.setDate(format.format(new Date()));
-				backup.setOrganizationId(orgId);
+				backup.setOrganization(org);
+				org.getBackups().add(backup);
 				final String filename = backup.getDate() + ".zip";
-				final File idDir = new File(configuration.getBackupDirectory(), orgId);
+				final File idDir = new File(configuration.getBackupDirectory(), org.getId());
 				final File file = new File(idDir, filename);
 				FileUtils.forceMkdir(file.getParentFile());
 				try (InputStream in = new ByteArrayInputStream(result.getZipFile());
@@ -108,6 +136,7 @@ public class SalesforceService {
 					IOUtils.copy(in, out);
 				}
 				backupDAO.persist(backup);
+				orgDAO.persist(org);
 				return backup;
 			}
 		} catch (SalesforceException e) {
@@ -175,10 +204,11 @@ public class SalesforceService {
 	// }
 
 	public InputStream downloadBackup(final String id, final String date) throws SalesforceException {
-		final Backup backup = backupDAO.get(id, date);
+		final Organization organization = getOrg(id);
+		final Backup backup = backupDAO.get(organization, date);
 		final String filename = backup.getDate() + ".zip";
 		try {
-			final File idDir = new File(configuration.getBackupDirectory(), id);
+			final File idDir = new File(configuration.getBackupDirectory(), organization.getId());
 			final File file = new File(idDir, filename);
 			log.info(file);
 			log.info(file.exists());
@@ -265,13 +295,13 @@ public class SalesforceService {
 		}
 	}
 
-	private PartnerConnection getPartnerConnection(final String orgURL, final Credentals credentals)
+	private PartnerConnection getPartnerConnection(final String orgURL, final ConnectedAccount account)
 			throws SalesforceException {
 		try {
 			final ConnectorConfig config = createConfig(orgURL);
 			config.setManualLogin(false);
-			config.setUsername(credentals.getUsername());
-			config.setPassword(credentals.getPassword());
+			config.setUsername(account.getCredentals().getUsername());
+			config.setPassword(account.getCredentals().getPassword());
 			final PartnerConnection connection = Connector.newConnection(config);
 			return connection;
 		} catch (Exception e) {
@@ -279,22 +309,23 @@ public class SalesforceService {
 		}
 	}
 
-	private LoginResult login(final String orgId, final PartnerConnection connection, final Credentals credentals)
-			throws SalesforceException {
+	private LoginResult login(final PartnerConnection connection, final int accId) throws SalesforceException {
 		try {
-			final LoginResult result = connection.login(credentals.getUsername(), credentals.getPassword());
+			final ConnectedAccount account = credDAO.get(accId);
+			final LoginResult result = connection.login(account.getCredentals().getUsername(),
+					account.getCredentals().getPassword());
 			return result;
 		} catch (Exception e) {
 			throw new SalesforceException(e);
 		}
 	}
 
-	private MetadataConnection getMetadataConnection(final String orgId, final String orgURL,
-			final Credentals credentals) throws SalesforceException {
+	private MetadataConnection getMetadataConnection(final Organization organization, final int accId)
+			throws SalesforceException {
 		try {
-			final ConnectorConfig config = createConfig(orgURL);
+			final ConnectorConfig config = createConfig(organization.getAuthUrl());
 			final PartnerConnection connection = getPartnerConnection(config);
-			final LoginResult result = login(orgId, connection, credentals);
+			final LoginResult result = login(connection, accId);
 
 			config.setServiceEndpoint(result.getMetadataServerUrl());
 			config.setSessionId(result.getSessionId());
@@ -304,12 +335,12 @@ public class SalesforceService {
 		}
 	}
 
-	private SoapConnection getSoapConnection(final String orgId, final String orgURL, final Credentals credentals)
+	private SoapConnection getSoapConnection(final Organization organization, final int accId)
 			throws SalesforceException {
 		try {
-			final ConnectorConfig config = createConfig(orgURL);
+			final ConnectorConfig config = createConfig(organization.getAuthUrl());
 			final PartnerConnection connection = getPartnerConnection(config);
-			final LoginResult result = login(orgId, connection, credentals);
+			final LoginResult result = login(connection, accId);
 
 			config.setServiceEndpoint(result.getServerUrl().replace("/u/", "/s/"));
 			config.setSessionId(result.getSessionId());
@@ -334,27 +365,15 @@ public class SalesforceService {
 		return pkg;
 	}
 
-	// @SuppressWarnings("unchecked")
-	public List<Backup> listBackups(final String id) {
-		return backupDAO.listBackupsByOrg(id);
-		// final List<Backup> backups = new ArrayList<>();
-		// final File idDir = new File(configuration.getBackupDirectory(), id);
-		// final Iterator<File> files = iterateFiles(idDir, new String[] { "zip"
-		// }, false);
-		// for (; files.hasNext();) {
-		// final File file = files.next();
-		// final Backup backup = new Backup();
-		// final String baseName = getBaseName(file.getName());
-		// backup.setDate(baseName);
-		// backups.add(backup);
-		// }
-		// return backups;
+	public Set<Backup> listBackups(final String id) {
+		return getOrg(id).getBackups();
 	}
 
-	public RunTestsResult runTests(final String orgId, final String orgURL, final String[] tests,
-			final Credentals credentals) throws SalesforceException {
+	public RunTestsResult runTests(final String orgId, final int accId, final String[] tests)
+			throws SalesforceException {
 		try {
-			final SoapConnection soapConnection = getSoapConnection(orgId, orgURL, credentals);
+			final Organization organization = getOrg(orgId);
+			final SoapConnection soapConnection = getSoapConnection(organization, accId);
 			final RunTestsRequest runTestsRequest = new RunTestsRequest();
 			runTestsRequest.setAllTests(tests == null || tests.length == 0);
 			runTestsRequest.setClasses(tests);
@@ -365,9 +384,10 @@ public class SalesforceService {
 		}
 	}
 
-	public Organization getOrg(final String endpoint, final Credentals credentals) throws SalesforceException {
+	public Organization addOrg(final String endpoint, final int accId) throws SalesforceException {
 		try {
-			final PartnerConnection connection = getPartnerConnection(endpoint, credentals);
+			final ConnectedAccount account = credDAO.get(accId);
+			final PartnerConnection connection = getPartnerConnection(endpoint, account);
 
 			final String organizationId = connection.getUserInfo().getOrganizationId();
 			final QueryResult queryResult = connection
@@ -383,7 +403,7 @@ public class SalesforceService {
 			}
 			final SObject sObject = queryResult.getRecords()[0];
 			final Organization organization = toOrganization(sObject);
-			// updateCredentals(organizationId, credentals);
+			organization.setAuthUrl(endpoint);
 			orgDAO.persist(organization);
 			return organization;
 		} catch (SalesforceException e) {
@@ -403,7 +423,23 @@ public class SalesforceService {
 		organization.setId(sObject.getId());
 		organization.setName((String) sObject.getField("Name"));
 		organization.setOrganizationType((String) sObject.getField("OrganizationType"));
-		organization.setSandbox((Boolean) sObject.getField("IsSandbox"));
+		organization.setSandbox(Boolean.valueOf((String) sObject.getField("IsSandbox")));
 		return organization;
+	}
+
+	public Backup deleteBackup(String id, String date) throws SalesforceException {
+		final Organization organization = getOrg(id);
+		final Backup backup = backupDAO.get(organization, date);
+		final String filename = backup.getDate() + ".zip";
+		try {
+			final File idDir = new File(configuration.getBackupDirectory(), organization.getId());
+			final File file = new File(idDir, filename);
+			FileUtils.forceDelete(file);
+			organization.getBackups().remove(backup);
+			backupDAO.delete(backup);
+			return backup;
+		} catch (IOException e) {
+			throw new SalesforceException(e);
+		}
 	}
 }

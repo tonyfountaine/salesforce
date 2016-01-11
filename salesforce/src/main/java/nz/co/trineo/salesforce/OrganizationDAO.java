@@ -15,11 +15,18 @@ public class OrganizationDAO extends AbstractDAO<Organization> {
 
 	@Override
 	public Organization get(Serializable id) {
-		return super.get(id);
+		final Organization organization = super.get(id);
+		initialize(organization.getBackups());
+		return organization;
 	}
 
 	@Override
 	public Organization persist(Organization entity) throws HibernateException {
 		return super.persist(entity);
+	}
+
+	public void delete(final String id) {
+		final Organization org = get(id);
+		currentSession().delete(org);
 	}
 }

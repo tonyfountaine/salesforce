@@ -3,33 +3,33 @@ package nz.co.trineo.salesforce;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
+import java.util.Set;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriBuilder;
 
 import org.apache.commons.io.IOUtils;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.base.Optional;
 import com.sforce.soap.apex.RunTestsResult;
 
 import io.dropwizard.hibernate.UnitOfWork;
-import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.Environment;
 import nz.co.trineo.salesforce.model.Organization;
-import nz.co.trineo.salesforce.model.SalesforceRequest;
 
 @Path("/sf")
 @Produces(MediaType.APPLICATION_JSON)
@@ -38,62 +38,69 @@ public class SalesforceResource {
 
 	private final SalesforceService salesforceService;
 
+	@Context
+	private Request request;
+
 	public SalesforceResource(SalesforceService salesforceService) {
 		super();
 		this.salesforceService = salesforceService;
 	}
 
 	@POST
-	@Path("/org")
+	@Path("/refresh")
 	@Timed
 	@UnitOfWork
-	public Organization getOrg(final @QueryParam("environment") Environment environment, final Credentals credentals)
+	public Response refresh() {
+		salesforceService.updateBackupsFromFilesystem();
+		return Response.noContent().build();
+	}
+
+	@POST
+	@Path("/orgs")
+	@Timed
+	@UnitOfWork
+	public Response addOrg(final @QueryParam("environment") Environment environment, final @QueryParam("acc") int accId)
 			throws SalesforceException {
-		final SalesforceRequest request = new SalesforceRequest();
-		request.setEnvironment(environment);
-		final String endpoint = getOrgurl(request);
-		return salesforceService.getOrg(endpoint, credentals);
+		final String endpoint = getOrgurl(environment);
+		final Organization org = salesforceService.addOrg(endpoint, accId);
+		return Response.created(UriBuilder.fromMethod(getClass(), "getOrg").build(org.getId())).entity(org).build();
 	}
 
 	@GET
 	@Path("/orgs/{id}")
 	@Timed
 	@UnitOfWork
-	public Organization getOrg(final @PathParam("id") String id) throws SalesforceException {
-		return salesforceService.getOrg(id);
+	public Response getOrg(final @PathParam("id") String id) throws SalesforceException {
+		final Organization org = salesforceService.getOrg(id);
+		return Response.ok(org).build();
 	}
 
 	@POST
 	@Path("/orgs/{id}/metadata")
 	@Timed
 	@UnitOfWork
-	public void getMetadata(final @PathParam("id") String id, final SalesforceRequest request)
+	public Response getMetadata(final @PathParam("id") String id, final @QueryParam("acc") int accId)
 			throws SalesforceException {
-		final String endpoint = getOrgurl(request);
-		salesforceService.downloadAllMetadata(id, endpoint, null);// TODO get
-																	// credentals
+		salesforceService.downloadAllMetadata(id, accId);
+		return Response.ok().build();
 	}
 
 	@POST
-	@Path("/orgs/{id}/backup")
+	@Path("/orgs/{id}/backups")
 	@Timed
 	@UnitOfWork
-	public Backup createBackup(final @PathParam("id") String id, final SalesforceRequest request)
+	public Response createBackup(final @PathParam("id") String id, final @QueryParam("acc") int accId)
 			throws SalesforceException {
-		final Organization organization = salesforceService.getOrg(id);
-		final String endpoint = getOrgurl(request);
-		return salesforceService.createBackup(id, endpoint, null);// TODO get
-																	// credentals
+		final Backup backup = salesforceService.createBackup(id, accId);
+		return Response.created(UriBuilder.fromMethod(getClass(), "getBackup").build(id, backup.getDate()))
+				.entity(backup).build();
 	}
 
-	private String getOrgurl(final SalesforceRequest request) {
+	private String getOrgurl(final Environment request) {
 		final String orgURL;
-		switch (request.getEnvironment()) {
+		switch (request) {
 		case SANDBOX:
 			orgURL = "https://test.salesforce.com";
-			break;
-		case OTHER:
-			orgURL = request.getOrgUrl();
 			break;
 		case DEVELOPER:
 		case PRODUCTION:
@@ -108,8 +115,10 @@ public class SalesforceResource {
 	@Path("/orgs/{id}/backups")
 	@Timed
 	@UnitOfWork
-	public List<Backup> listBackups(final @PathParam("id") String id) {
-		return salesforceService.listBackups(id);
+	public Response listBackups(final @PathParam("id") String id) {
+		final Set<Backup> backups = salesforceService.listBackups(id);
+		backups.size();
+		return Response.ok(backups).build();
 	}
 
 	@GET
@@ -133,16 +142,37 @@ public class SalesforceResource {
 		return Response.ok(stream).header("content-disposition", "attachment; filename = " + date + ".zip").build();
 	}
 
+	@DELETE
+	@Path("/orgs/{id}/backups/{date}")
+	@Timed
+	@UnitOfWork
+	public Response deleteBackup(final @PathParam("id") String id, final @PathParam("date") String date)
+			throws SalesforceException {
+		salesforceService.deleteBackup(id, date);
+		return Response.noContent().build();
+	}
+
 	@POST
 	@Path("/orgs/{id}/tests")
 	@Timed
 	@UnitOfWork
-	public RunTestsResult runTests(final @PathParam("id") String id, final SalesforceRequest request)
+	public Response runTests(final @PathParam("id") String id, final @QueryParam("acc") int accId)
 			throws SalesforceException {
-		final String endpoint = getOrgurl(request);
-		RunTestsResult runTests = salesforceService.runTests(id, endpoint, null, null);// TODO
-																						// get
-																						// credentals
-		return runTests;
+		final RunTestsResult runTests = salesforceService.runTests(id, accId, null);
+		return Response.created(UriBuilder.fromMethod(getClass(), "showTests").build(id, 1)).entity(runTests).build(); // TODO
+																														// get
+																														// actual
+																														// result
+																														// id
+	}
+
+	@GET
+	@Path("/orgs/{id}/tests/{runId}")
+	@Timed
+	@UnitOfWork
+	public Response showTests(final @PathParam("id") String id, final @PathParam("runId") String runId,
+			final @QueryParam("acc") int accId) throws SalesforceException {
+		final RunTestsResult runTests = salesforceService.runTests(id, accId, null);
+		return Response.ok(runTests).build();
 	}
 }
