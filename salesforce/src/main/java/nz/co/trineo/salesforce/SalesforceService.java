@@ -50,12 +50,13 @@ import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 
 import nz.co.trineo.common.AccountDAO;
+import nz.co.trineo.common.ConnectedService;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.Organization;
 
-public class SalesforceService {
+public class SalesforceService implements ConnectedService {
 	private static final Log log = LogFactory.getLog(SalesforceService.class);
 	private static final double API_VERSION = 35.0;
 	private static final long ONE_SECOND = 1000;
@@ -73,6 +74,11 @@ public class SalesforceService {
 		this.configuration = configuration;
 		forceMkdir(configuration.getSalesforceDirectory());
 		forceMkdir(configuration.getBackupDirectory());
+	}
+	
+	@Override
+	public String getName() {
+		return "Salesforce";
 	}
 
 	@SuppressWarnings("unchecked")

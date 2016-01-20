@@ -89,6 +89,21 @@
 			<artifactId>force-apex-api</artifactId>
 			<version>${force.api.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.julienvey.trello</groupId>
+			<artifactId>trello-java-wrapper</artifactId>
+			<version>0.3.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-web</artifactId>
+			<version>4.2.4.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>io.dropwizard</groupId>
+			<artifactId>dropwizard-views-freemarker</artifactId>
+			<version>${dropwizard.version}</version>
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
@@ -97,31 +112,55 @@
 				<artifactId>jackson-databind</artifactId>
 				<version>2.6.3</version>
 			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-core</artifactId>
+				<version>2.6.3</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-annotations</artifactId>
+				<version>2.6.3</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>2.4.2</version>
 				<executions>
 					<execution>
-						<id>shade</id>
-						<phase>package</phase>
 						<goals>
 							<goal>shade</goal>
 						</goals>
-						<inherited>false</inherited>
 						<configuration>
 							<transformers>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<mainClass>nz.co.trineo.App</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>eu.somatik.serviceloader-maven-plugin</groupId>
+				<artifactId>serviceloader-maven-plugin</artifactId>
+				<version>1.0.6</version>
+				<configuration>
+					<services>
+						<service>nz.co.trineo.common.ConnectedService</service>
+					</services>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
@@ -133,6 +172,35 @@
 					<configuration>
 						<source>1.8</source>
 						<target>1.8</target>
+					</configuration>
+				</plugin>
+				<plugin>
+					<artifactId>maven-shade-plugin</artifactId>
+					<version>2.4.2</version>
+					<configuration>
+						<createDependencyReducedPom>true</createDependencyReducedPom>
+						<filters>
+							<filter>
+								<artifact>*:*</artifact>
+								<excludes>
+									<exclude>META-INF/*.SF</exclude>
+									<exclude>META-INF/*.DSA</exclude>
+									<exclude>META-INF/*.RSA</exclude>
+								</excludes>
+							</filter>
+						</filters>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>2.6</version>
+					<configuration>
+						<archive>
+							<manifest>
+								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+							</manifest>
+						</archive>
 					</configuration>
 				</plugin>
 			</plugins>

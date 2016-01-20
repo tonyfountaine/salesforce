@@ -8,9 +8,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToOne;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @Entity(name = "accounts")
+@JsonInclude(Include.NON_DEFAULT)
 public class ConnectedAccount {
 	@Id
 	@GeneratedValue

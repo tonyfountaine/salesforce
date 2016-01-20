@@ -30,6 +30,15 @@ public class AppConfiguration extends Configuration {
 	@Valid
 	private String clientSecret;
 
+	@Valid
+	private String trelloKey;
+
+	@Valid
+	private String trelloSecret;
+	
+	@Valid
+	private String trelloToken;
+
 	@JsonProperty("database")
 	public DataSourceFactory getDataSourceFactory() {
 		return database;
@@ -88,5 +97,35 @@ public class AppConfiguration extends Configuration {
 	@JsonProperty
 	public void setClientSecret(String clientSecret) {
 		this.clientSecret = clientSecret;
+	}
+
+	@JsonProperty
+	public String getTrelloKey() {
+		return trelloKey;
+	}
+
+	@JsonProperty
+	public void setTrelloKey(String trelloKey) {
+		this.trelloKey = trelloKey;
+	}
+
+	@JsonProperty
+	public String getTrelloSecret() {
+		return trelloSecret;
+	}
+
+	@JsonProperty
+	public void setTrelloSecret(String trelloSecret) {
+		this.trelloSecret = trelloSecret;
+	}
+
+	@JsonProperty
+	public String getTrelloToken() {
+		return trelloToken;
+	}
+
+	@JsonProperty
+	public void setTrelloToken(String trelloToken) {
+		this.trelloToken = trelloToken;
 	}
 }

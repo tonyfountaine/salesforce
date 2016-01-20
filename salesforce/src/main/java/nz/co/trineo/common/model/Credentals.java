@@ -6,10 +6,14 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @Entity
 @Table(name = "credentals")
+@JsonInclude(Include.NON_DEFAULT)
 public class Credentals {
 	@Id
 	@GeneratedValue
@@ -41,11 +45,12 @@ public class Credentals {
 		this.username = username;
 	}
 
-	@JsonProperty
+	@JsonIgnore
 	public String getPassword() {
 		return password;
 	}
 
+	@JsonProperty
 	public void setPassword(String password) {
 		this.password = password;
 	}

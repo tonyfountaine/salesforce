@@ -4,3 +4,4 @@
 /.settings/*
 /bin/
 /trace.log
+/dependency-reduced-pom.xml

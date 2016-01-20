@@ -1,5 +1,8 @@
 package nz.co.trineo.diff;
 
+import static org.apache.commons.io.FilenameUtils.getName;
+import static org.eclipse.jgit.diff.RawTextComparator.WS_IGNORE_ALL;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -10,30 +13,39 @@ import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.EditList;
 import org.eclipse.jgit.diff.HistogramDiff;
 import org.eclipse.jgit.diff.RawText;
-import org.eclipse.jgit.diff.RawTextComparator;
+
+import nz.co.trineo.diff.model.Diff;
 
 public class DiffService {
 	private static final Log log = LogFactory.getLog(DiffService.class);
 
-	public String doDiff() throws DiffException {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		try (DiffFormatter diffFormatter = new DiffFormatter(out);) {
-			HistogramDiff histogramDiff = new HistogramDiff();
-			RawText a = new RawText(
-					new File(
-							"D:\\tmp\\backup\\2015-12-31-23-11-42\\unpackaged\\classes\\testClass.cls"));
+	private final DiffDAO dao;
+
+	public DiffService(DiffDAO dao) {
+		super();
+		this.dao = dao;
+	}
+
+	public Diff doDiff() throws DiffException {
+		try (final ByteArrayOutputStream out = new ByteArrayOutputStream();
+				final DiffFormatter diffFormatter = new DiffFormatter(out);) {
+			final HistogramDiff histogramDiff = new HistogramDiff();
+			final File filea = new File("/tmp/git/ccl/src/pages/CPOrderExtras.page");
+			final RawText a = new RawText(filea);
 			log.info(a.getString(0));
-			RawText b = new RawText(new File(
-					"D:\\tmp\\salesforce\\unpackaged\\classes\\testClass.cls"));
+			final File fileb = new File("/tmp/salesforce/00DO00000004HhWMAU/unpackaged/pages/CPOrderExtras.page");
+			final RawText b = new RawText(fileb);
 			log.info(b.getString(0));
-			EditList editList = histogramDiff.diff(RawTextComparator.DEFAULT,
-					a, b);
+			final EditList editList = histogramDiff.diff(WS_IGNORE_ALL, a, b);
 			log.info(editList.size());
 			log.info(editList.get(0).toString());
 			diffFormatter.format(editList, a, b);
-			String string = out.toString();
+			final String string = out.toString();
 			log.info(string);
-			return string;
+			final Diff diff = new Diff();
+			diff.getModified().put(getName(filea.getName()), string);
+			dao.persist(diff);
+			return diff;
 		} catch (IOException e) {
 			throw new DiffException(e);
 		}

@@ -10,10 +10,13 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "sforg")
+@JsonInclude(Include.NON_DEFAULT)
 public class Organization {
 	@Id
 	private String id;

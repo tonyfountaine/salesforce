@@ -6,6 +6,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import io.dropwizard.hibernate.UnitOfWork;
+import nz.co.trineo.diff.model.Diff;
+
 @Path("/diff")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -18,8 +21,8 @@ public class DiffResource {
 	}
 
 	@GET
-	@Produces(MediaType.TEXT_PLAIN)
-	public String doDiff() throws DiffException {
+	@UnitOfWork
+	public Diff doDiff() throws DiffException {
 		return service.doDiff();
 	}
 }

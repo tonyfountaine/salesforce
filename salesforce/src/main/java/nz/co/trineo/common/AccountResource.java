@@ -16,9 +16,10 @@ import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.common.views.AccountsView;
 
 @Path("/accounts")
-@Produces(MediaType.APPLICATION_JSON)
+@Produces({MediaType.APPLICATION_JSON,MediaType.TEXT_HTML})
 @Consumes(MediaType.APPLICATION_JSON)
 public class AccountResource {
 	private final AccountService accountService;
@@ -27,11 +28,19 @@ public class AccountResource {
 		this.accountService = accountService;
 	}
 
+//	@GET
+//	@Timed
+//	@UnitOfWork
+//	public List<ConnectedAccount> listAccounts() {
+//		return accountService.list();
+//	}
+	
 	@GET
 	@Timed
 	@UnitOfWork
-	public List<ConnectedAccount> listAccounts() {
-		return accountService.list();
+	public AccountsView listHTML() {
+		final List<ConnectedAccount> accounts = accountService.list();
+		return new AccountsView(accounts);
 	}
 
 	@POST

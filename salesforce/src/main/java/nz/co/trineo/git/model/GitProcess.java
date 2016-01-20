@@ -7,7 +7,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToOne;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 @Entity(name = "process")
+@JsonInclude(Include.NON_DEFAULT)
 public class GitProcess {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)

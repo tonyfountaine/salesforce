@@ -3,8 +3,11 @@ package nz.co.trineo.github.model;
 import java.net.URI;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+@JsonInclude(Include.NON_DEFAULT)
 public class Repository {
 	private URI url;
 	private int id;

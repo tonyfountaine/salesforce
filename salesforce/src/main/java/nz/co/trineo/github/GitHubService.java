@@ -15,11 +15,12 @@ import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 
 import nz.co.trineo.common.AccountDAO;
-import nz.co.trineo.common.model.Credentals;
+import nz.co.trineo.common.ConnectedService;
+import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.github.model.Repository;
 import nz.co.trineo.github.model.User;
 
-public class GitHubService {
+public class GitHubService implements ConnectedService {
 	private static final Log log = LogFactory.getLog(GitHubService.class);
 
 	private final AccountDAO dao;
@@ -28,17 +29,29 @@ public class GitHubService {
 		this.dao = dao;
 	}
 
-	public List<String> getRepos(final Credentals credentals) throws Exception {
-		final List<String> repos = new ArrayList<>();
-		final GitHub git = GitHub.connectUsingPassword(credentals.getUsername(), credentals.getPassword());
+	@Override
+	public String getName() {
+		return "GitHub";
+	}
+
+	public List<Repository> getRepos(final int accID) throws Exception {
+		final List<Repository> repos = new ArrayList<>();
+		final ConnectedAccount account = dao.get(accID);
+		final GitHub git = GitHub.connectUsingPassword(account.getCredentals().getUsername(),
+				account.getCredentals().getPassword());
 		final Map<String, GHRepository> repoMap = git.getMyself().getAllRepositories();
-		repos.addAll(repoMap.keySet());
+		for (GHRepository repository : repoMap.values()) {
+			final Repository repo = toRepository(repository);
+			repos.add(repo);
+		}
 		return repos;
 	}
 
-	public Repository getRepo(final String name, final Credentals credentals) throws Exception {
-		final GitHub git = GitHub.connectUsingPassword(credentals.getUsername(), credentals.getPassword());
-		final GHRepository repo = git.getMyself().getRepository(name);
+	public Repository getRepo(final String user, final String name, final int accId) throws Exception {
+		final ConnectedAccount account = dao.get(accId);
+		final GitHub git = GitHub.connectUsingPassword(account.getCredentals().getUsername(),
+				account.getCredentals().getPassword());
+		final GHRepository repo = git.getRepository(user + "/" + name);
 		return toRepository(repo);
 	}
 

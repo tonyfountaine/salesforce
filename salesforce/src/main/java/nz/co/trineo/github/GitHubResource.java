@@ -8,7 +8,9 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
 
@@ -34,25 +36,30 @@ public class GitHubResource {
 	@Timed
 	@Path("/repos")
 	@UnitOfWork
-	public List<String> getRepos() throws Exception {
-		return ghService.getRepos(null); //TODO get credentals
+	public Response getRepos(final @QueryParam("acc") int accId) throws Exception {
+		final List<Repository> list = ghService.getRepos(accId);
+		return Response.ok(list).build();
 	}
 
 	@GET
 	@Timed
-	@Path("/repos/{name}")
+	@Path("/repos/{user}/{name}")
 	@UnitOfWork
-	public Repository getRepo(final @PathParam("name") String name) throws Exception {
-		return ghService.getRepo(name,null); //TODO get credentals
+	public Response getRepo(final @PathParam("user") String user, final @PathParam("name") String name,
+			final @QueryParam("acc") int accId) throws Exception {
+		final Repository repo = ghService.getRepo(user, name, accId);
+		return Response.ok(repo).build();
 	}
 
 	@POST
 	@Timed
-	@Path("/repos/{name}")
+	@Path("/repos/{user}/{name}")
 	@UnitOfWork
-	public GitProcess cloneRepo(final @PathParam("name") String name) throws Exception {
-		final Repository repository=ghService.getRepo(name,null); //TODO get credentals
+	public Response cloneRepo(final @PathParam("user") String user, final @PathParam("name") String name,
+			final @QueryParam("acc") int accId) throws Exception {
+		final Repository repository = ghService.getRepo(user, name, accId);
 		final String cloneURL = repository.getCloneUrl();
-		return gService.clone(name, cloneURL);
+		final GitProcess process = gService.clone(name, cloneURL, accId);
+		return Response.ok(process).build();
 	}
 }
