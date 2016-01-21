@@ -35,9 +35,12 @@ public class AppConfiguration extends Configuration {
 
 	@Valid
 	private String trelloSecret;
-	
+
 	@Valid
 	private String trelloToken;
+
+	private String githubClientId;
+	private String githubClientSecret;
 
 	@JsonProperty("database")
 	public DataSourceFactory getDataSourceFactory() {
@@ -127,5 +130,25 @@ public class AppConfiguration extends Configuration {
 	@JsonProperty
 	public void setTrelloToken(String trelloToken) {
 		this.trelloToken = trelloToken;
+	}
+
+	@JsonProperty
+	public String getGithubClientId() {
+		return githubClientId;
+	}
+
+	@JsonProperty
+	public void setGithubClientId(String githubClientId) {
+		this.githubClientId = githubClientId;
+	}
+
+	@JsonProperty
+	public String getGithubClientSecret() {
+		return githubClientSecret;
+	}
+
+	@JsonProperty
+	public void setGithubClientSecret(String githubClientSecret) {
+		this.githubClientSecret = githubClientSecret;
 	}
 }
