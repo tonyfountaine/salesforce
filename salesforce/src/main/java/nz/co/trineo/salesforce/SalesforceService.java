@@ -448,4 +448,19 @@ public class SalesforceService implements ConnectedService {
 			throw new SalesforceException(e);
 		}
 	}
+
+	@Override
+	public boolean usesOAuth() {
+		return true;
+	}
+
+	@Override
+	public String getClientId() {
+		return configuration.getClientKey();
+	}
+
+	@Override
+	public String getClientSecret() {
+		return configuration.getClientSecret();
+	}
 }

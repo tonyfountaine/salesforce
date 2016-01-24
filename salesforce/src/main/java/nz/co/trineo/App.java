@@ -86,7 +86,7 @@ public class App extends Application<AppConfiguration> {
 		final GitService gService = new GitService(configuration, processDAO, accountDAO);
 		final GitResource gResource = new GitResource(gService);
 
-		final GitHubService ghService = new GitHubService(accountDAO);
+		final GitHubService ghService = new GitHubService(accountDAO, configuration);
 		final GitHubResource ghResource = new GitHubResource(ghService, gService);
 
 		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, backupDAO,
@@ -99,7 +99,7 @@ public class App extends Application<AppConfiguration> {
 		final AccountService aService = new AccountService(accountDAO);
 		final AccountResource aResource = new AccountResource(aService);
 
-		final TrelloService tService = new TrelloService(configuration);
+		final TrelloService tService = new TrelloService(configuration, accountDAO);
 		final TrelloResource tResource = new TrelloResource(tService);
 
 		final StaticResource staticResource = new StaticResource();

@@ -17,6 +17,7 @@ import org.kohsuke.github.GitHub;
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.ConnectedService;
 import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.github.model.Repository;
 import nz.co.trineo.github.model.User;
 
@@ -24,9 +25,11 @@ public class GitHubService implements ConnectedService {
 	private static final Log log = LogFactory.getLog(GitHubService.class);
 
 	private final AccountDAO dao;
+	private final AppConfiguration configuration;
 
-	public GitHubService(final AccountDAO dao) {
+	public GitHubService(final AccountDAO dao, final AppConfiguration configuration) {
 		this.dao = dao;
+		this.configuration = configuration;
 	}
 
 	@Override
@@ -108,5 +111,20 @@ public class GitHubService implements ConnectedService {
 			user.setUrl(ghUser.getUrl().toURI());
 		}
 		return user;
+	}
+
+	@Override
+	public boolean usesOAuth() {
+		return true;
+	}
+
+	@Override
+	public String getClientId() {
+		return configuration.getGithubClientId();
+	}
+
+	@Override
+	public String getClientSecret() {
+		return configuration.getGithubClientSecret();
 	}
 }

@@ -36,8 +36,8 @@ public class AppConfiguration extends Configuration {
 	@Valid
 	private String trelloSecret;
 
-	@Valid
-	private String trelloToken;
+	// @Valid
+	// private String trelloToken;
 
 	private String githubClientId;
 	private String githubClientSecret;
@@ -122,15 +122,15 @@ public class AppConfiguration extends Configuration {
 		this.trelloSecret = trelloSecret;
 	}
 
-	@JsonProperty
-	public String getTrelloToken() {
-		return trelloToken;
-	}
-
-	@JsonProperty
-	public void setTrelloToken(String trelloToken) {
-		this.trelloToken = trelloToken;
-	}
+	// @JsonProperty
+	// public String getTrelloToken() {
+	// return trelloToken;
+	// }
+	//
+	// @JsonProperty
+	// public void setTrelloToken(String trelloToken) {
+	// this.trelloToken = trelloToken;
+	// }
 
 	@JsonProperty
 	public String getGithubClientId() {

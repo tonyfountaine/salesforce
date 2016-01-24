@@ -14,7 +14,7 @@ clientSecret: 1533324426739765893
 
 trelloKey: e804eb8fa9abab718b98bfac0fd43492
 trelloSecret: c3ccd4db76ef92ce847915903979ef4090ba4c6ed0e4b6375a23797b17c2df68
-trelloToken: 69b3b1ded256c6febbbc465b377467765fb2b1ab35f003dd5632c14bbda869ba
+# trelloToken: 69b3b1ded256c6febbbc465b377467765fb2b1ab35f003dd5632c14bbda869ba
 
 githubClientId: 440e12333e54c8a2caf7
 githubClientSecret: 615b3620ebbbfff58cb874f8dca8fd6742159504
