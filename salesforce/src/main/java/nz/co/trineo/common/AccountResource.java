@@ -1,46 +1,56 @@
 package nz.co.trineo.common;
 
+import static javax.ws.rs.core.UriBuilder.fromResource;
+
+import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.common.views.AccountsView;
+import nz.co.trineo.common.views.SuccessView;
 
 @Path("/accounts")
-@Produces({MediaType.APPLICATION_JSON,MediaType.TEXT_HTML})
+@Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_HTML })
 @Consumes(MediaType.APPLICATION_JSON)
 public class AccountResource {
+
+	private static final Log log = LogFactory.getLog(AccountResource.class);
+
 	private final AccountService accountService;
+
+	@Context
+	UriInfo uriInfo;
 
 	public AccountResource(AccountService accountService) {
 		this.accountService = accountService;
 	}
 
-//	@GET
-//	@Timed
-//	@UnitOfWork
-//	public List<ConnectedAccount> listAccounts() {
-//		return accountService.list();
-//	}
-	
+	// @GET
+	// @Timed
+	// @UnitOfWork
+	// public List<ConnectedAccount> listAccounts() {
+	// return accountService.list();
+	// }
+
 	@GET
 	@Timed
 	@UnitOfWork
 	public AccountsView listHTML() {
 		final List<ConnectedAccount> accounts = accountService.list();
-		return new AccountsView(accounts);
+		return new AccountsView(accounts, ServiceRegistry.listRegistedServices());
 	}
 
 	@POST
@@ -71,5 +81,52 @@ public class AccountResource {
 	@Path("/{id}")
 	public void delete(final @PathParam("id") int id) {
 		accountService.delete(id);
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/oauth")
+	public Response startConnect(final @QueryParam("service") String serviceName, final @QueryParam("name") String name) {
+		final URI uri = getRedirectUri(serviceName);
+		final ConnectedAccount account = new ConnectedAccount();
+		account.setName(name);
+		account.setService(serviceName);
+		accountService.create(account);
+		final URI url = accountService.getAuthorizeURIForService(account, uri);
+		log.info(url);
+		return Response.temporaryRedirect(url).build();
+	}
+
+	private URI getRedirectUri(final String serviceName) {
+		return uriInfo.resolve(fromResource(getClass()).path(getClass(), "finishConnect").build(serviceName));
+	}
+
+	@POST
+	@Timed
+	@UnitOfWork
+	@Path("/oauth/{service}/callback")
+	public SuccessView finishConnect(final @PathParam("service") String serviceName,
+			final @QueryParam("code") String code, final @QueryParam("state") String state) throws IOException {
+		log.info("processing post");
+		return extracted(serviceName, code, state);
+	}
+
+	private SuccessView extracted(final String serviceName, final String code, final String state) throws IOException {
+		final URI uri = getRedirectUri(serviceName);
+
+		accountService.getAccessToken(code, state, uri);
+
+		return new SuccessView();
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/oauth/{service}/callback")
+	public SuccessView getFinishConnect(final @PathParam("service") String serviceName,
+			final @QueryParam("code") String code, final @QueryParam("state") String state) throws IOException {
+		log.info("processing get");
+		return extracted(serviceName, code, state);
 	}
 }

@@ -16,17 +16,10 @@ import com.codahale.metrics.annotation.Timed;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ServiceResource {
 
-	private final ServiceRegistry registry;
-	
-	public ServiceResource(ServiceRegistry registry) {
-		super();
-		this.registry = registry;
-	}
-
 	@GET
 	@Timed
 	public Response listServices() {
-		final Set<String> services = registry.listRegistedServices();
+		final Set<String> services = ServiceRegistry.listRegistedServices();
 		return Response.ok(services).build();
 	}
 }

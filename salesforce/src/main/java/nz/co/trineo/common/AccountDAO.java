@@ -21,7 +21,9 @@ public class AccountDAO extends AbstractDAO<ConnectedAccount> {
 
 	@Override
 	public ConnectedAccount persist(ConnectedAccount entity) throws HibernateException {
-		currentSession().saveOrUpdate(entity.getCredentals());
+		if (entity.getCredentals() != null) {
+			currentSession().saveOrUpdate(entity.getCredentals());
+		}
 		return super.persist(entity);
 	}
 

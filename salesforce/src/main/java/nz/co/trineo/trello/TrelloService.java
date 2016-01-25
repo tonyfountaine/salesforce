@@ -74,4 +74,16 @@ public class TrelloService implements ConnectedService {
 	public String getClientSecret() {
 		return configuration.getTrelloSecret();
 	}
+
+	@Override
+	public String tokenURL() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String authorizeURL() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

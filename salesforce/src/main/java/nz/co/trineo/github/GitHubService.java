@@ -127,4 +127,14 @@ public class GitHubService implements ConnectedService {
 	public String getClientSecret() {
 		return configuration.getGithubClientSecret();
 	}
+
+	@Override
+	public String tokenURL() {
+		return "https://github.com/login/oauth/access_token";
+	}
+
+	@Override
+	public String authorizeURL() {
+		return "https://github.com/login/oauth/authorize";
+	}
 }

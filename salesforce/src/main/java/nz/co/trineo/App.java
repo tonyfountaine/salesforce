@@ -104,12 +104,11 @@ public class App extends Application<AppConfiguration> {
 
 		final StaticResource staticResource = new StaticResource();
 
-		final ServiceRegistry registry = new ServiceRegistry();
-		final ServiceResource serviceResource = new ServiceResource(registry);
+		final ServiceResource serviceResource = new ServiceResource();
 
-		registry.registerService(tService);
-		registry.registerService(sfService);
-		registry.registerService(ghService);
+		ServiceRegistry.registerService(tService);
+		ServiceRegistry.registerService(sfService);
+		ServiceRegistry.registerService(ghService);
 
 		environment.jersey().register(ghResource);
 		environment.jersey().register(gResource);

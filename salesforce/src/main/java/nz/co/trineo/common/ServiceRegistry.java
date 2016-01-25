@@ -5,20 +5,24 @@ import java.util.Map;
 import java.util.Set;
 
 public class ServiceRegistry {
-	private final Map<String, ConnectedService> registry = new HashMap<>();
+	private static final Map<String, ConnectedService> registry = new HashMap<>();
 
-	public ServiceRegistry() {
+	private ServiceRegistry() {
 //		final ServiceLoader<ConnectedService> loader = ServiceLoader.load(ConnectedService.class);
 //		loader.forEach(t -> {
 //			registerService(t);
 //		});
 	}
 
-	public void registerService(final ConnectedService service) {
-		registry.put(service.getName(), service);
+	public static void registerService(final ConnectedService service) {
+		registry.put(service.getName().toLowerCase(), service);
 	}
 
-	public Set<String> listRegistedServices() {
+	public static Set<String> listRegistedServices() {
 		return registry.keySet();
+	}
+	
+	public static ConnectedService getService(final String name){
+		return registry.get(name.toLowerCase());
 	}
 }

@@ -463,4 +463,16 @@ public class SalesforceService implements ConnectedService {
 	public String getClientSecret() {
 		return configuration.getClientSecret();
 	}
+
+	@Override
+	public String tokenURL() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String authorizeURL() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

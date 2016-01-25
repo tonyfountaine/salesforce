@@ -8,4 +8,8 @@ public interface ConnectedService {
 	String getClientId();
 
 	String getClientSecret();
+
+	String tokenURL();
+
+	String authorizeURL();
 }
