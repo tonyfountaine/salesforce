@@ -1,11 +1,14 @@
 <#-- @ftlvariable name="" type="nz.co.trineo.common.views.SuccessView" -->
+<html lang="en">
 <#assign title="OAuth Success" />
-<#include "/header.ftl">
+<#include "/head.ftl">
+	<body>
 		<div class="container">
 		</div>
-<#include "/footer.ftl">
+<#include "/scripts.ftl">
 		<script>
 $(document).ready(function () {
+		window.opener.location.reload(true);
     	window.close();
     });
 		</script>

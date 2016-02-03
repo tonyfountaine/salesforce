@@ -1,6 +1,15 @@
 package nz.co.trineo.trello;
 
+import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.scribe.builder.ServiceBuilder;
+import org.scribe.builder.api.TrelloApi;
+import org.scribe.model.Token;
+import org.scribe.model.Verifier;
+import org.scribe.oauth.OAuthService;
 
 import com.julienvey.trello.Trello;
 import com.julienvey.trello.domain.Argument;
@@ -11,6 +20,7 @@ import com.julienvey.trello.impl.TrelloImpl;
 
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.ConnectedService;
+import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
 
@@ -60,30 +70,48 @@ public class TrelloService implements ConnectedService {
 		return trello.getCard(id);
 	}
 
-	@Override
-	public boolean usesOAuth() {
-		return true;
-	}
-
-	@Override
 	public String getClientId() {
 		return configuration.getTrelloKey();
 	}
 
-	@Override
 	public String getClientSecret() {
 		return configuration.getTrelloSecret();
 	}
 
-	@Override
+	public String authorizeURL() {
+		return "https://trello.com/1/OAuthAuthorizeToken";
+	}
+
 	public String tokenURL() {
-		// TODO Auto-generated method stub
-		return null;
+		return "https://trello.com/1/OAuthGetAccessToken";
+	}
+
+	private Map<String, Token> tokenMap = new HashMap<>();
+
+	@Override
+	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state) {
+		final OAuthService service = new ServiceBuilder().provider(TrelloApi.class).apiKey(configuration.getTrelloKey())
+				.apiSecret(configuration.getTrelloSecret()).debug().callback(redirectUri.toString() + "/" + state)
+				.build();
+		final Token requestToken = service.getRequestToken();
+		tokenMap.put(state, requestToken);
+		final String authorizationUrl = service.getAuthorizationUrl(requestToken);
+		return URI.create(authorizationUrl);
 	}
 
 	@Override
-	public String authorizeURL() {
-		// TODO Auto-generated method stub
-		return null;
+	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri) {
+		final OAuthService service = new ServiceBuilder().provider(TrelloApi.class).apiKey(configuration.getTrelloKey())
+				.apiSecret(configuration.getTrelloSecret()).debug().callback(redirectUri.toString() + "/" + state)
+				.build();
+
+		// getting access token
+		final Token requestToken = tokenMap.get(state);
+		final Verifier verifier = new Verifier(code);
+		final Token accessToken = service.getAccessToken(requestToken, verifier);
+
+		final AccountToken tokenResponse = new AccountToken();
+		tokenResponse.setAccessToken(accessToken.getToken());
+		return tokenResponse;
 	}
 }

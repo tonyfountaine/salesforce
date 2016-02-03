@@ -25,6 +25,8 @@ githubClientSecret: 615b3620ebbbfff58cb874f8dca8fd6742159504
 database:
   url: jdbc:h2:./target/app
   driverClass: org.h2.Driver
+  user: sa
+  password: sa
 
   properties:
     hibernate.hbm2ddl.auto: update #create #

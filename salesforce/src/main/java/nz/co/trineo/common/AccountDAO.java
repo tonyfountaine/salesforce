@@ -33,7 +33,9 @@ public class AccountDAO extends AbstractDAO<ConnectedAccount> {
 
 	public void delete(int id) {
 		final ConnectedAccount account = get(id);
-		currentSession().delete(account.getCredentals());
+		if (account.getCredentals() != null) {
+			currentSession().delete(account.getCredentals());
+		}
 		currentSession().delete(account);
 	}
 }

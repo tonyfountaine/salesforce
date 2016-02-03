@@ -1,15 +1,14 @@
 package nz.co.trineo.common;
 
+import java.net.URI;
+
+import nz.co.trineo.common.model.AccountToken;
+import nz.co.trineo.common.model.ConnectedAccount;
+
 public interface ConnectedService {
 	String getName();
 
-	boolean usesOAuth();
+	URI getAuthorizeURIForService(ConnectedAccount account, URI redirectUri, String state);
 
-	String getClientId();
-
-	String getClientSecret();
-
-	String tokenURL();
-
-	String authorizeURL();
+	AccountToken getAccessToken(String code, String state, URI redirectUri);
 }

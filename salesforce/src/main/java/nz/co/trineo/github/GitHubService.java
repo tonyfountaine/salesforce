@@ -7,15 +7,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriBuilder;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.ConnectedService;
+import nz.co.trineo.common.TokenRequest;
+import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.github.model.Repository;
@@ -40,8 +48,7 @@ public class GitHubService implements ConnectedService {
 	public List<Repository> getRepos(final int accID) throws Exception {
 		final List<Repository> repos = new ArrayList<>();
 		final ConnectedAccount account = dao.get(accID);
-		final GitHub git = GitHub.connectUsingPassword(account.getCredentals().getUsername(),
-				account.getCredentals().getPassword());
+		final GitHub git = GitHub.connectUsingOAuth(account.getToken().getAccessToken());
 		final Map<String, GHRepository> repoMap = git.getMyself().getAllRepositories();
 		for (GHRepository repository : repoMap.values()) {
 			final Repository repo = toRepository(repository);
@@ -52,8 +59,7 @@ public class GitHubService implements ConnectedService {
 
 	public Repository getRepo(final String user, final String name, final int accId) throws Exception {
 		final ConnectedAccount account = dao.get(accId);
-		final GitHub git = GitHub.connectUsingPassword(account.getCredentals().getUsername(),
-				account.getCredentals().getPassword());
+		final GitHub git = GitHub.connectUsingOAuth(account.getToken().getAccessToken());
 		final GHRepository repo = git.getRepository(user + "/" + name);
 		return toRepository(repo);
 	}
@@ -113,28 +119,40 @@ public class GitHubService implements ConnectedService {
 		return user;
 	}
 
-	@Override
-	public boolean usesOAuth() {
-		return true;
-	}
-
-	@Override
 	public String getClientId() {
 		return configuration.getGithubClientId();
 	}
 
-	@Override
 	public String getClientSecret() {
 		return configuration.getGithubClientSecret();
 	}
 
-	@Override
 	public String tokenURL() {
 		return "https://github.com/login/oauth/access_token";
 	}
 
-	@Override
 	public String authorizeURL() {
 		return "https://github.com/login/oauth/authorize";
+	}
+
+	@Override
+	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state) {
+		final String uriTemplate = authorizeURL() + "?client_id={clientId}&redirect_uri={redirect_uri}&state={state}";
+		final URI url = UriBuilder.fromUri(uriTemplate).build(getClientId(), redirectUri, state);
+		return url;
+	}
+
+	@Override
+	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri) {
+		final JerseyClient client = JerseyClientBuilder.createClient();
+		final TokenRequest entity = new TokenRequest();
+		entity.client_id = getClientId();
+		entity.client_secret = getClientSecret();
+		entity.code = code;
+		entity.redirect_uri = redirectUri.toString();
+		entity.state = state;
+		final AccountToken tokenResponse = client.target(tokenURL()).request().accept(MediaType.APPLICATION_JSON_TYPE)
+				.post(Entity.entity(entity, MediaType.APPLICATION_JSON_TYPE), AccountToken.class);
+		return tokenResponse;
 	}
 }

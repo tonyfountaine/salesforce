@@ -87,7 +87,8 @@ public class AccountResource {
 	@Timed
 	@UnitOfWork
 	@Path("/oauth")
-	public Response startConnect(final @QueryParam("service") String serviceName, final @QueryParam("name") String name) {
+	public Response startConnect(final @QueryParam("service") String serviceName,
+			final @QueryParam("name") String name) {
 		final URI uri = getRedirectUri(serviceName);
 		final ConnectedAccount account = new ConnectedAccount();
 		account.setName(name);
@@ -107,15 +108,28 @@ public class AccountResource {
 	@UnitOfWork
 	@Path("/oauth/{service}/callback")
 	public SuccessView finishConnect(final @PathParam("service") String serviceName,
-			final @QueryParam("code") String code, final @QueryParam("state") String state) throws IOException {
+			final @QueryParam("code") String code, final @QueryParam("state") String state,
+			final @QueryParam("oauth_verifier") String verifier) throws IOException {
 		log.info("processing post");
-		return extracted(serviceName, code, state);
+		return extracted(serviceName, code, state, verifier);
 	}
 
-	private SuccessView extracted(final String serviceName, final String code, final String state) throws IOException {
+	@POST
+	@Timed
+	@UnitOfWork
+	@Path("/oauth/{service}/callback/{state}")
+	public SuccessView finishConnectState(final @PathParam("service") String serviceName,
+			final @QueryParam("code") String code, final @PathParam("state") String state,
+			final @QueryParam("oauth_verifier") String verifier) throws IOException {
+		log.info("processing state post");
+		return extracted(serviceName, code, state, verifier);
+	}
+
+	private SuccessView extracted(final String serviceName, final String code, final String state,
+			final String verifier) throws IOException {
 		final URI uri = getRedirectUri(serviceName);
 
-		accountService.getAccessToken(code, state, uri);
+		accountService.getAccessToken(code == null ? verifier : code, state, uri);
 
 		return new SuccessView();
 	}
@@ -125,8 +139,22 @@ public class AccountResource {
 	@UnitOfWork
 	@Path("/oauth/{service}/callback")
 	public SuccessView getFinishConnect(final @PathParam("service") String serviceName,
-			final @QueryParam("code") String code, final @QueryParam("state") String state) throws IOException {
+			final @QueryParam("code") String code, final @QueryParam("state") String state,
+			final @QueryParam("oauth_verifier") String verifier) throws IOException {
 		log.info("processing get");
-		return extracted(serviceName, code, state);
+		log.info(uriInfo.getAbsolutePath() + ", " + uriInfo.getQueryParameters());
+		return extracted(serviceName, code, state, verifier);
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/oauth/{service}/callback/{state}")
+	public SuccessView getFinishConnectState(final @PathParam("service") String serviceName,
+			final @QueryParam("code") String code, final @PathParam("state") String state,
+			final @QueryParam("oauth_verifier") String verifier) throws IOException {
+		log.info("processing state get");
+		log.info(uriInfo.getAbsolutePath() + ", " + uriInfo.getQueryParameters());
+		return extracted(serviceName, code, state, verifier);
 	}
 }

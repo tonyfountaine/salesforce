@@ -2,6 +2,7 @@ package nz.co.trineo.common.model;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -26,20 +27,8 @@ public class ConnectedAccount {
 	@Column
 	private String name;
 
-	/** Access token issued by the authorization server. */
-	@Column
-	private String accessToken;
-	/**
-	 * Refresh token which can be used to obtain new access tokens using the same authorization grant or {@code null}
-	 * for none.
-	 */
-	@Column
-	private String refreshToken;
-	/**
-	 * Expected expiration time in milliseconds based on {@link #setExpiresInSeconds} or {@code null} for none.
-	 */
-	@Column
-	private Long expirationTimeMilliseconds;
+	@Embedded
+	private AccountToken token;
 
 	@JsonProperty
 	public int getId() {
@@ -69,40 +58,12 @@ public class ConnectedAccount {
 	}
 
 	@JsonProperty
-	public String getAccessToken() {
-		return accessToken;
+	public AccountToken getToken() {
+		return token;
 	}
 
-	public void setAccessToken(String accessToken) {
-		this.accessToken = accessToken;
-	}
-
-	@JsonProperty
-	public String getRefreshToken() {
-		return refreshToken;
-	}
-
-	public void setRefreshToken(String refreshToken) {
-		this.refreshToken = refreshToken;
-	}
-
-	@JsonProperty
-	public Long getExpirationTimeMilliseconds() {
-		return expirationTimeMilliseconds;
-	}
-
-	public void setExpirationTimeMilliseconds(Long expirationTimeMilliseconds) {
-		this.expirationTimeMilliseconds = expirationTimeMilliseconds;
-	}
-
-	@JsonIgnore
-	public Long getExpiresInSeconds() {
-		return expirationTimeMilliseconds == null ? null
-				: (expirationTimeMilliseconds - System.currentTimeMillis()) / 1000;
-	}
-
-	public void setExpiresInSeconds(final Long expiresIn) {
-		setExpirationTimeMilliseconds(expiresIn == null ? null : System.currentTimeMillis() + expiresIn * 1000);
+	public void setToken(AccountToken accessToken) {
+		this.token = accessToken;
 	}
 
 	@JsonProperty

@@ -59,10 +59,8 @@ public class SalesforceResource {
 	@Path("/orgs")
 	@Timed
 	@UnitOfWork
-	public Response addOrg(final @QueryParam("environment") Environment environment, final @QueryParam("acc") int accId)
-			throws SalesforceException {
-		final String endpoint = getOrgurl(environment);
-		final Organization org = salesforceService.addOrg(endpoint, accId);
+	public Response addOrg(final @QueryParam("acc") int accId) throws SalesforceException {
+		final Organization org = salesforceService.addOrg(accId);
 		return Response.created(UriBuilder.fromMethod(getClass(), "getOrg").build(org.getId())).entity(org).build();
 	}
 
@@ -158,12 +156,8 @@ public class SalesforceResource {
 	@UnitOfWork
 	public Response runTests(final @PathParam("id") String id, final @QueryParam("acc") int accId)
 			throws SalesforceException {
-		final RunTestsResult runTests = salesforceService.runTests(id, accId, null);
-		return Response.created(UriBuilder.fromMethod(getClass(), "showTests").build(id, 1)).entity(runTests).build(); // TODO
-																														// get
-																														// actual
-																														// result
-																														// id
+		final RunTestsResult runTests = salesforceService.runTests(accId, null);
+		return Response.created(UriBuilder.fromMethod(getClass(), "showTests").build(id, 1)).entity(runTests).build();
 	}
 
 	@GET
@@ -172,7 +166,7 @@ public class SalesforceResource {
 	@UnitOfWork
 	public Response showTests(final @PathParam("id") String id, final @PathParam("runId") String runId,
 			final @QueryParam("acc") int accId) throws SalesforceException {
-		final RunTestsResult runTests = salesforceService.runTests(id, accId, null);
+		final RunTestsResult runTests = salesforceService.runTests(accId, null);
 		return Response.ok(runTests).build();
 	}
 }

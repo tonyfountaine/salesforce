@@ -1,6 +1,9 @@
 <#-- @ftlvariable name="" type="nz.co.trineo.common.views.AccountView" -->
+<html lang="en">
 <#assign title="Connected Accounts" />
-<#include "/header.ftl">
+<#include "/head.ftl">
+	<body>
+<#include "/nav.ftl">
 		<div class="container">
 			<div class="row">
 				<div class="col-xs-11 col-xs-offset-1">
@@ -31,7 +34,7 @@
 									<button type="button" class="btn btn-default">Rename</button>
 									<button type="button" class="btn btn-default">Reconnect</button>
 									<button type="button" class="btn btn-default">Disconnect</button>
-									<button type="button" class="btn btn-warning">Delete</button>
+									<button type="button" class="btn btn-warning delete" data-id="${account.id}">Delete</button>
 								</td>
 							</tr>
 						</#list>
@@ -71,13 +74,30 @@
 			  </div>
 			</div>
 		</div>
-<#include "/footer.ftl">
+<#include "/scripts.ftl">
 		<script>
 $(function () {
     $('body').on('click', '#submit', function (e) {
-        $('#NewAccountForm').submit();
-        //$('#NewAccount').modal('hide');
+        var values = $('#NewAccountForm').serialize();
+        e.preventDefault();
+    	window.open("accounts/oauth?" + values, "oauth", "width=600,height=600,scrollbars=yes");
     });
-});		</script>
+});
+$(function () {
+    $('body').on('click', '.delete', function (e) {
+        var value = $(this).data("id");
+        $.ajax({
+            type: "DELETE",
+            url: "accounts/" + value,
+            success: function() {
+                location.reload(true);  
+            },
+            error: function() {
+                alert("failure");
+            }
+        });
+    });
+});
+		</script>
 	</body>
 </html>
