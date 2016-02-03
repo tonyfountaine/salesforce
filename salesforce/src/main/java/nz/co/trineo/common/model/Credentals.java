@@ -22,10 +22,6 @@ public class Credentals {
 	private String username;
 	@Column(name = "password")
 	private String password;
-	@Column(name = "sessionId")
-	private String sessionId;
-	@Column(name = "authKey")
-	private String authKey;
 
 	@JsonProperty
 	public int getId() {
@@ -53,23 +49,5 @@ public class Credentals {
 	@JsonProperty
 	public void setPassword(String password) {
 		this.password = password;
-	}
-
-	@JsonProperty
-	public String getSessionId() {
-		return sessionId;
-	}
-
-	public void setSessionId(String sessionId) {
-		this.sessionId = sessionId;
-	}
-
-	@JsonProperty
-	public String getAuthKey() {
-		return authKey;
-	}
-
-	public void setAuthKey(String authKey) {
-		this.authKey = authKey;
 	}
 }

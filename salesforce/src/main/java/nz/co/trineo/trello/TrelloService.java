@@ -56,7 +56,7 @@ public class TrelloService implements ConnectedService {
 
 	private Trello getTrello(final int accId) {
 		final ConnectedAccount account = credDAO.get(accId);
-		final Trello trello = new TrelloImpl(configuration.getTrelloKey(), account.getCredentals().getAuthKey());
+		final Trello trello = new TrelloImpl(configuration.getTrelloKey(), account.getToken().getAccessToken());
 		return trello;
 	}
 
@@ -90,20 +90,22 @@ public class TrelloService implements ConnectedService {
 
 	@Override
 	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state) {
-		final OAuthService service = new ServiceBuilder().provider(TrelloApi.class).apiKey(configuration.getTrelloKey())
-				.apiSecret(configuration.getTrelloSecret()).debug().callback(redirectUri.toString() + "/" + state)
-				.build();
+		final OAuthService service = getOAuthService(redirectUri, state);
 		final Token requestToken = service.getRequestToken();
 		tokenMap.put(state, requestToken);
 		final String authorizationUrl = service.getAuthorizationUrl(requestToken);
 		return URI.create(authorizationUrl);
 	}
 
-	@Override
-	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri) {
-		final OAuthService service = new ServiceBuilder().provider(TrelloApi.class).apiKey(configuration.getTrelloKey())
+	private OAuthService getOAuthService(final URI redirectUri, final String state) {
+		return new ServiceBuilder().provider(TrelloApi.class).apiKey(configuration.getTrelloKey())
 				.apiSecret(configuration.getTrelloSecret()).debug().callback(redirectUri.toString() + "/" + state)
 				.build();
+	}
+
+	@Override
+	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri) {
+		final OAuthService service = getOAuthService(redirectUri, state);
 
 		// getting access token
 		final Token requestToken = tokenMap.get(state);

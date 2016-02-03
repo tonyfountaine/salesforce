@@ -23,7 +23,7 @@ import nz.co.trineo.common.views.AccountsView;
 import nz.co.trineo.common.views.SuccessView;
 
 @Path("/accounts")
-@Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_HTML })
+@Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class AccountResource {
 
@@ -38,16 +38,17 @@ public class AccountResource {
 		this.accountService = accountService;
 	}
 
-	// @GET
-	// @Timed
-	// @UnitOfWork
-	// public List<ConnectedAccount> listAccounts() {
-	// return accountService.list();
-	// }
+	 @GET
+	 @Timed
+	 @UnitOfWork
+	 public List<ConnectedAccount> listAccounts() {
+	 return accountService.list();
+	 }
 
 	@GET
 	@Timed
 	@UnitOfWork
+	@Produces(MediaType.TEXT_HTML)
 	public AccountsView listHTML() {
 		final List<ConnectedAccount> accounts = accountService.list();
 		return new AccountsView(accounts, ServiceRegistry.listRegistedServices());
@@ -87,6 +88,7 @@ public class AccountResource {
 	@Timed
 	@UnitOfWork
 	@Path("/oauth")
+	@Produces(MediaType.TEXT_HTML)
 	public Response startConnect(final @QueryParam("service") String serviceName,
 			final @QueryParam("name") String name) {
 		final URI uri = getRedirectUri(serviceName);
@@ -107,29 +109,29 @@ public class AccountResource {
 	@Timed
 	@UnitOfWork
 	@Path("/oauth/{service}/callback")
+	@Produces(MediaType.TEXT_HTML)
 	public SuccessView finishConnect(final @PathParam("service") String serviceName,
-			final @QueryParam("code") String code, final @QueryParam("state") String state,
-			final @QueryParam("oauth_verifier") String verifier) throws IOException {
+			final @QueryParam("code") String code, final @QueryParam("state") String state) throws IOException {
 		log.info("processing post");
-		return extracted(serviceName, code, state, verifier);
+		return extracted(serviceName, code, state);
 	}
 
 	@POST
 	@Timed
 	@UnitOfWork
 	@Path("/oauth/{service}/callback/{state}")
+	@Produces(MediaType.TEXT_HTML)
 	public SuccessView finishConnectState(final @PathParam("service") String serviceName,
-			final @QueryParam("code") String code, final @PathParam("state") String state,
-			final @QueryParam("oauth_verifier") String verifier) throws IOException {
+			final @PathParam("state") String state, final @QueryParam("oauth_verifier") String verifier)
+					throws IOException {
 		log.info("processing state post");
-		return extracted(serviceName, code, state, verifier);
+		return extracted(serviceName, verifier, state);
 	}
 
-	private SuccessView extracted(final String serviceName, final String code, final String state,
-			final String verifier) throws IOException {
+	private SuccessView extracted(final String serviceName, final String code, final String state) throws IOException {
 		final URI uri = getRedirectUri(serviceName);
 
-		accountService.getAccessToken(code == null ? verifier : code, state, uri);
+		accountService.getAccessToken(code, state, uri);
 
 		return new SuccessView();
 	}
@@ -138,23 +140,24 @@ public class AccountResource {
 	@Timed
 	@UnitOfWork
 	@Path("/oauth/{service}/callback")
+	@Produces(MediaType.TEXT_HTML)
 	public SuccessView getFinishConnect(final @PathParam("service") String serviceName,
-			final @QueryParam("code") String code, final @QueryParam("state") String state,
-			final @QueryParam("oauth_verifier") String verifier) throws IOException {
+			final @QueryParam("code") String code, final @QueryParam("state") String state) throws IOException {
 		log.info("processing get");
 		log.info(uriInfo.getAbsolutePath() + ", " + uriInfo.getQueryParameters());
-		return extracted(serviceName, code, state, verifier);
+		return extracted(serviceName, code, state);
 	}
 
 	@GET
 	@Timed
 	@UnitOfWork
 	@Path("/oauth/{service}/callback/{state}")
+	@Produces(MediaType.TEXT_HTML)
 	public SuccessView getFinishConnectState(final @PathParam("service") String serviceName,
-			final @QueryParam("code") String code, final @PathParam("state") String state,
-			final @QueryParam("oauth_verifier") String verifier) throws IOException {
+			final @PathParam("state") String state, final @QueryParam("oauth_verifier") String verifier)
+					throws IOException {
 		log.info("processing state get");
 		log.info(uriInfo.getAbsolutePath() + ", " + uriInfo.getQueryParameters());
-		return extracted(serviceName, code, state, verifier);
+		return extracted(serviceName, verifier, state);
 	}
 }

@@ -4,6 +4,7 @@ import static com.sforce.soap.metadata.RetrieveStatus.Failed;
 import static com.sforce.soap.metadata.RetrieveStatus.Succeeded;
 import static org.apache.commons.io.FileUtils.forceMkdir;
 import static org.apache.commons.io.FilenameUtils.getBaseName;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 
@@ -32,7 +34,6 @@ import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.glassfish.jersey.client.JerseyClient;
@@ -58,7 +59,6 @@ import com.sforce.ws.ConnectorConfig;
 
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.ConnectedService;
-import nz.co.trineo.common.TokenRequest;
 import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
@@ -311,11 +311,10 @@ public class SalesforceService implements ConnectedService {
 		}
 	}
 
-	private PartnerConnection getPartnerConnection(final ConnectedAccount account)
-			throws SalesforceException {
+	private PartnerConnection getPartnerConnection(final ConnectedAccount account) throws SalesforceException {
 		try {
 			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
-			if (account.getToken() != null && StringUtils.isNotBlank(account.getToken().getAccessToken())) {
+			if (account.getToken() != null && isNotBlank(account.getToken().getAccessToken())) {
 				config.setSessionId(account.getToken().getAccessToken());
 				config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/u/35.0");
 			}
@@ -326,11 +325,10 @@ public class SalesforceService implements ConnectedService {
 		}
 	}
 
-	private MetadataConnection getMetadataConnection(final ConnectedAccount account)
-			throws SalesforceException {
+	private MetadataConnection getMetadataConnection(final ConnectedAccount account) throws SalesforceException {
 		try {
 			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
-			if (account.getToken() != null && StringUtils.isNotBlank(account.getToken().getAccessToken())) {
+			if (account.getToken() != null && isNotBlank(account.getToken().getAccessToken())) {
 				config.setSessionId(account.getToken().getAccessToken());
 				config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/m/35.0");
 			}
@@ -340,11 +338,10 @@ public class SalesforceService implements ConnectedService {
 		}
 	}
 
-	private SoapConnection getSoapConnection(final ConnectedAccount account)
-			throws SalesforceException {
+	private SoapConnection getSoapConnection(final ConnectedAccount account) throws SalesforceException {
 		try {
 			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
-			if (account.getToken() != null && StringUtils.isNotBlank(account.getToken().getAccessToken())) {
+			if (account.getToken() != null && isNotBlank(account.getToken().getAccessToken())) {
 				config.setSessionId(account.getToken().getAccessToken());
 				config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/s/35.0");
 			}
@@ -373,8 +370,7 @@ public class SalesforceService implements ConnectedService {
 		return getOrg(id).getBackups();
 	}
 
-	public RunTestsResult runTests(final int accId, final String[] tests)
-			throws SalesforceException {
+	public RunTestsResult runTests(final int accId, final String[] tests) throws SalesforceException {
 		try {
 			final ConnectedAccount account = credDAO.get(accId);
 			final SoapConnection soapConnection = getSoapConnection(account);
@@ -465,22 +461,22 @@ public class SalesforceService implements ConnectedService {
 	@Override
 	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state) {
 		final String uriTemplate = authorizeURL()
-				+ "?response_type=code&client_id={clientId}&redirect_uri={redirect_uri}&state={state}&display=popup";
-		final URI url = UriBuilder.fromUri(uriTemplate).build(getClientId(), redirectUri, state);
+				+ "?response_type=code&client_id={clientId}&redirect_uri={redirect_uri}&state={state}&scope={scope}";
+		final URI url = UriBuilder.fromUri(uriTemplate).build(getClientId(), redirectUri, state, "full refresh_token");
 		return url;
 	}
 
 	@Override
 	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri) {
 		final JerseyClient client = JerseyClientBuilder.createClient();
-		final TokenRequest entity = new TokenRequest();
-		entity.code = code;
-		entity.grant_type = "authorization_code";
-		entity.client_id = getClientId();
-		entity.client_secret = getClientSecret();
-		entity.redirect_uri = redirectUri.toString();
-		final AccountToken tokenResponse = client.target(tokenURL()).request().accept(MediaType.APPLICATION_JSON_TYPE)
-				.post(Entity.entity(entity, MediaType.APPLICATION_JSON_TYPE), AccountToken.class);
+		final Form entity = new Form();
+		entity.param("code", code);
+		entity.param("grant_type", "authorization_code");
+		entity.param("client_id", getClientId());
+		entity.param("client_secret", getClientSecret());
+		entity.param("redirect_uri", redirectUri.toString());
+		final AccountToken tokenResponse = client.target(tokenURL()).request(MediaType.APPLICATION_JSON_TYPE)
+				.post(Entity.entity(entity, MediaType.APPLICATION_FORM_URLENCODED_TYPE), AccountToken.class);
 		return tokenResponse;
 	}
 }

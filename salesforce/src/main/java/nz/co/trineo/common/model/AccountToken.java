@@ -9,8 +9,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Embeddable
-@JsonInclude(Include.NON_DEFAULT)
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonInclude(Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AccountToken {
 	@Column
 	private String accessToken;
@@ -23,12 +23,12 @@ public class AccountToken {
 	@Column
 	private String instanceUrl;
 
-//	{
-//		"id":"https://login.salesforce.com/id/00D50000000IZ3ZEAW/00550000001fg5OAAQ",
-//		"issued_at":"1296458209517",
-//		"id_token": "eyJhb...h97hc",
-//		"signature":"0/1Ldval/TIPf2tTgTKUAxRy44VwEJ7ffsFLMWFcNoA=",
-//	}
+	// {
+	// "id":"https://login.salesforce.com/id/00D50000000IZ3ZEAW/00550000001fg5OAAQ",
+	// "issued_at":"1296458209517",
+	// "id_token": "eyJhb...h97hc",
+	// "signature":"0/1Ldval/TIPf2tTgTKUAxRy44VwEJ7ffsFLMWFcNoA=",
+	// }
 
 	@JsonProperty("access_token")
 	public String getAccessToken() {

@@ -12,12 +12,13 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.eclipse.egit.github.core.Repository;
+
 import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.model.GitProcess;
-import nz.co.trineo.github.model.Repository;
 
 @Path("/github")
 @Produces(MediaType.APPLICATION_JSON)
@@ -36,8 +37,17 @@ public class GitHubResource {
 	@Timed
 	@Path("/repos")
 	@UnitOfWork
-	public Response getRepos(final @QueryParam("acc") int accId) throws Exception {
+	public Response getUserRepos(final @QueryParam("acc") int accId) throws Exception {
 		final List<Repository> list = ghService.getRepos(accId);
+		return Response.ok(list).build();
+	}
+
+	@GET
+	@Timed
+	@Path("/repos/{user}")
+	@UnitOfWork
+	public Response getUserRepos(final @PathParam("user") String user,final @QueryParam("acc") int accId) throws Exception {
+		final List<Repository> list = ghService.getRepos(user, accId);
 		return Response.ok(list).build();
 	}
 
@@ -45,7 +55,7 @@ public class GitHubResource {
 	@Timed
 	@Path("/repos/{user}/{name}")
 	@UnitOfWork
-	public Response getRepo(final @PathParam("user") String user, final @PathParam("name") String name,
+	public Response getUserRepo(final @PathParam("user") String user, final @PathParam("name") String name,
 			final @QueryParam("acc") int accId) throws Exception {
 		final Repository repo = ghService.getRepo(user, name, accId);
 		return Response.ok(repo).build();
@@ -55,7 +65,7 @@ public class GitHubResource {
 	@Timed
 	@Path("/repos/{user}/{name}")
 	@UnitOfWork
-	public Response cloneRepo(final @PathParam("user") String user, final @PathParam("name") String name,
+	public Response cloneUserRepo(final @PathParam("user") String user, final @PathParam("name") String name,
 			final @QueryParam("acc") int accId) throws Exception {
 		final Repository repository = ghService.getRepo(user, name, accId);
 		final String cloneURL = repository.getCloneUrl();
