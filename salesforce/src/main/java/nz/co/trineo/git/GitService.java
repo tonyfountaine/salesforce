@@ -4,12 +4,18 @@ import static org.apache.commons.io.FileUtils.forceMkdir;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ProgressMonitor;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 import nz.co.trineo.common.AccountDAO;
@@ -94,5 +100,62 @@ public class GitService {
 
 	public GitProcess getProcess(final int id) {
 		return processDAO.get(id);
+	}
+
+	public void createRepo(final File repoDir) throws GitServiceException {
+		repoDir.mkdirs();
+		final File gitDir = new File(repoDir, ".git");
+		try (Git git = Git.init().setDirectory(repoDir).call();
+				Repository repository = FileRepositoryBuilder.create(gitDir)) {
+		} catch (IllegalStateException | GitAPIException | IOException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	public Set<String> getTags(final File repoDir) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir)) {
+			final Map<String, Ref> tags = repository.getTags();
+			return tags.keySet();
+		} catch (IOException e) {
+			throw new GitServiceException(e);
+		}
+	}
+	
+	public List<String> removeTag(final File repoDir, final String tag) throws GitServiceException{
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			return git.tagDelete().setTags(tag).call();
+		} catch (IOException | GitAPIException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	public void checkout(final File repoDir, final String name) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			git.checkout().setName(name).call();
+		} catch (IOException | GitAPIException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	public void commit(final File repoDir, final String message) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			git.add().addFilepattern(".").call();
+			git.commit().setMessage(message).call();
+		} catch (IOException | GitAPIException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	public void tag(final File repoDir, final String date) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			git.tag().setName(date).call();
+		} catch (IOException | GitAPIException e) {
+			throw new GitServiceException(e);
+		}
 	}
 }

@@ -3,7 +3,6 @@ package nz.co.trineo.salesforce;
 import static com.sforce.soap.metadata.RetrieveStatus.Failed;
 import static com.sforce.soap.metadata.RetrieveStatus.Succeeded;
 import static org.apache.commons.io.FileUtils.forceMkdir;
-import static org.apache.commons.io.FilenameUtils.getBaseName;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.io.ByteArrayInputStream;
@@ -15,13 +14,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
@@ -62,7 +65,8 @@ import nz.co.trineo.common.ConnectedService;
 import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
-import nz.co.trineo.salesforce.model.Backup;
+import nz.co.trineo.git.GitService;
+import nz.co.trineo.git.GitServiceException;
 import nz.co.trineo.salesforce.model.Organization;
 
 public class SalesforceService implements ConnectedService {
@@ -72,15 +76,15 @@ public class SalesforceService implements ConnectedService {
 	private static final int MAX_NUM_POLL_REQUESTS = 50;
 	private final AccountDAO credDAO;
 	private final OrganizationDAO orgDAO;
-	private final BackupDAO backupDAO;
 	private final AppConfiguration configuration;
+	private final GitService gitService;
 
-	public SalesforceService(final AccountDAO dao, final OrganizationDAO orgDAO, final BackupDAO backupDAO,
-			final AppConfiguration configuration) throws IOException {
+	public SalesforceService(final AccountDAO dao, final OrganizationDAO orgDAO, final AppConfiguration configuration,
+			final GitService gitService) throws IOException {
 		this.credDAO = dao;
 		this.orgDAO = orgDAO;
-		this.backupDAO = backupDAO;
 		this.configuration = configuration;
+		this.gitService = gitService;
 		forceMkdir(configuration.getSalesforceDirectory());
 		forceMkdir(configuration.getBackupDirectory());
 	}
@@ -90,43 +94,10 @@ public class SalesforceService implements ConnectedService {
 		return "Salesforce";
 	}
 
-	@SuppressWarnings("unchecked")
-	public void updateBackupsFromFilesystem() {
-		final File dir = configuration.getBackupDirectory();
-		final Iterator<File> files = FileUtils.iterateFiles(dir, new String[] { "zip" }, true);
-		for (; files.hasNext();) {
-			final File file = files.next();
-			final String date = getBaseName(file.getName());
-			final String ordId = getBaseName(file.getParent());
-			final Organization organization = getOrg(ordId);
-			if (organization == null) {
-				continue;
-			}
-			if (backupDAO.get(organization, date) == null) {
-				final Backup backup = new Backup();
-				backup.setDate(date);
-				backup.setOrganization(organization);
-				organization.getBackups().add(backup);
-				backupDAO.persist(backup);
-				orgDAO.persist(organization);
-			}
-		}
-	}
-
-	public void downloadAllMetadata(final String orgId, final int accId) throws SalesforceException {
-		final Backup backup = createBackup(orgId, accId);
+	public String createBackup(final String orgId, final int accId) throws SalesforceException {
 		try {
-			final InputStream in = downloadBackup(orgId, backup.getDate());
-			extractMetadataZip(orgId, in);
-		} catch (IOException | ArchiveException e) {
-			throw new SalesforceException(e);
-		}
-	}
-
-	public Backup createBackup(final String orgId, final int accId) throws SalesforceException {
-		try {
-			final Organization org = getOrg(orgId);
 			final ConnectedAccount account = credDAO.get(accId);
+			final Organization org = orgDAO.get(orgId);
 			final MetadataConnection metadataConnection = getMetadataConnection(account);
 
 			final DescribeMetadataObject[] metadata = describeMetadata(metadataConnection);
@@ -139,21 +110,18 @@ public class SalesforceService implements ConnectedService {
 						"code: " + result.getErrorStatusCode() + ", message: " + result.getErrorMessage());
 			} else if (result.getStatus() == Succeeded) {
 				final DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-				final Backup backup = new Backup();
-				backup.setDate(format.format(new Date()));
-				backup.setOrganization(org);
-				org.getBackups().add(backup);
-				final String filename = backup.getDate() + ".zip";
-				final File idDir = new File(configuration.getBackupDirectory(), org.getId());
+				final String date = format.format(new Date());
+				final String filename = date + ".zip";
+				final File idDir = new File(configuration.getBackupDirectory(), orgId);
 				final File file = new File(idDir, filename);
 				FileUtils.forceMkdir(file.getParentFile());
-				try (InputStream in = new ByteArrayInputStream(result.getZipFile());
-						OutputStream out = new FileOutputStream(file)) {
-					IOUtils.copy(in, out);
+				final File repoDir = new File(configuration.getSalesforceDirectory(), orgId);
+				try (InputStream in = new ByteArrayInputStream(result.getZipFile())) {
+					extractMetadataZip(repoDir, in);
 				}
-				backupDAO.persist(backup);
-				orgDAO.persist(org);
-				return backup;
+				gitService.commit(repoDir, "Backup of all metadata for " + org.getName() + ". timestamp: " + date);
+				gitService.tag(repoDir, date);
+				return date;
 			}
 		} catch (SalesforceException e) {
 			throw e;
@@ -163,85 +131,49 @@ public class SalesforceService implements ConnectedService {
 		return null;
 	}
 
-	// private AccessToken getAccessToken(final String orgURL) {
-	// final Credentals credentals = currentCredentals();
-	// final Client newClient = JerseyClientBuilder.newClient();
-	// final AccessTokenRequest accessTokenRequest = new AccessTokenRequest();
-	// accessTokenRequest.client_id = configuration.getClientKey();
-	// accessTokenRequest.client_secret = configuration.getClientSecret();
-	// accessTokenRequest.grant_type = "password";
-	// accessTokenRequest.password = credentals.getPassword();
-	// accessTokenRequest.username = credentals.getUsername();
-	// return newClient.target(orgURL).path("services/oauth2/token").request()
-	// .buildPost(Entity.entity(accessTokenRequest,
-	// MediaType.APPLICATION_FORM_URLENCODED_TYPE)).invoke()
-	// .readEntity(AccessToken.class);
-	// }
-	//
-	// private Builder getBuilder(final String fullURL, final String
-	// accessToken) {
-	// final Client newClient = JerseyClientBuilder.newClient();
-	// return newClient.target(fullURL).request().header("Authorization",
-	// "Bearer " + accessToken);
-	// }
-	//
-	// private Builder getBuilder(final String instanceURL, final String
-	// accessToken, final String path) {
-	// final Client newClient = JerseyClientBuilder.newClient();
-	// return
-	// newClient.target(instanceURL).path("services/data/v35.0").path(path).request().header("Authorization",
-	// "Bearer " + accessToken);
-	// }
-	//
-	// private UserInfo getUserInfo(final String orgURL) {
-	// final AccessToken accessToken = getAccessToken(orgURL);
-	// return getUserInfo(accessToken.id, accessToken.access_token);
-	// }
-	//
-	// private UserInfo getUserInfo(final String idURL, final String
-	// accessToken) {
-	// final Builder builder = getBuilder(idURL, accessToken);
-	// return builder.buildGet().invoke(UserInfo.class);
-	// }
-	//
-	// private Organization getOrg(final String orgURL) {
-	// final AccessToken accessToken = getAccessToken(orgURL);
-	// final UserInfo userInfo = getUserInfo(accessToken.id,
-	// accessToken.access_token);
-	// return getOrg(accessToken.instance_url, accessToken.access_token,
-	// userInfo.organization_id);
-	// }
-	//
-	// private Organization getOrg(final String instanceURL, final String
-	// accessToken, final String id) {
-	// final Builder builder = getBuilder(instanceURL, accessToken,
-	// "sobjects/Organization/" + id + "?fields=Name");
-	// return builder.buildGet().invoke(Organization.class);
-	// }
-
 	public InputStream downloadBackup(final String id, final String date) throws SalesforceException {
-		final Organization organization = getOrg(id);
-		final Backup backup = backupDAO.get(organization, date);
-		final String filename = backup.getDate() + ".zip";
+		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
 		try {
-			final File idDir = new File(configuration.getBackupDirectory(), organization.getId());
-			final File file = new File(idDir, filename);
-			log.info(file);
-			log.info(file.exists());
-			return new FileInputStream(file);
-		} catch (FileNotFoundException e) {
+			gitService.checkout(repoDir, date);
+			final File zipFile = new File(configuration.getBackupDirectory(), date + ".zip");
+			pack(repoDir, zipFile);
+			gitService.checkout(repoDir, "master");
+			return new FileInputStream(zipFile);
+		} catch (GitServiceException | IOException e) {
 			throw new SalesforceException(e);
 		}
 	}
 
-	private void extractMetadataZip(final String orgId, final InputStream zipIn)
+	private void pack(final File folder, final File zipFile) throws SalesforceException {
+		try {
+			final Path p = Files.createFile(zipFile.toPath());
+			try(ZipOutputStream zs = new ZipOutputStream(Files.newOutputStream(p));) {
+				final Path pp = folder.toPath();
+				Files.walk(pp).filter(path -> !Files.isDirectory(path)).forEach(path -> {
+					final String sp = path.toAbsolutePath().toString().replace(pp.toAbsolutePath().toString(), "unpackaged")
+							.replace(path.getFileName().toString(), "");
+					final ZipEntry zipEntry = new ZipEntry(sp + "/" + path.getFileName().toString());
+					try {
+						zs.putNextEntry(zipEntry);
+						zs.write(Files.readAllBytes(path));
+						zs.closeEntry();
+					} catch (Exception e) {
+						log.error("An error ocurred packing the zip file", e);
+					}
+				});
+			}
+		} catch (IOException e) {
+			throw new SalesforceException(e);
+		}
+	}
+
+	private void extractMetadataZip(final File dir, final InputStream zipIn)
 			throws IOException, FileNotFoundException, ArchiveException {
 		try (ArchiveInputStream in = new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.ZIP,
 				zipIn);) {
 			ZipArchiveEntry entry;
 			while ((entry = (ZipArchiveEntry) in.getNextEntry()) != null) {
-				final File idDir = new File(configuration.getSalesforceDirectory(), orgId);
-				final File destFile = new File(idDir, entry.getName());
+				final File destFile = new File(dir, entry.getName().replaceAll("unpackaged[/\\]", ""));
 				FileUtils.forceMkdir(destFile.getParentFile());
 				try (OutputStream out = new FileOutputStream(destFile);) {
 					IOUtils.copy(in, out);
@@ -366,8 +298,13 @@ public class SalesforceService implements ConnectedService {
 		return pkg;
 	}
 
-	public Set<Backup> listBackups(final String id) {
-		return getOrg(id).getBackups();
+	public Set<String> listBackups(final String id) throws SalesforceException {
+		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
+		try {
+			return gitService.getTags(repoDir);
+		} catch (GitServiceException e) {
+			throw new SalesforceException(e);
+		}
 	}
 
 	public RunTestsResult runTests(final int accId, final String[] tests) throws SalesforceException {
@@ -403,11 +340,13 @@ public class SalesforceService implements ConnectedService {
 			}
 			final SObject sObject = queryResult.getRecords()[0];
 			final Organization organization = toOrganization(sObject);
+			final File repoDir = new File(configuration.getSalesforceDirectory(), organizationId);
+			gitService.createRepo(repoDir);
 			orgDAO.persist(organization);
 			return organization;
 		} catch (SalesforceException e) {
 			throw e;
-		} catch (ConnectionException e) {
+		} catch (ConnectionException | GitServiceException e) {
 			throw new SalesforceException(e);
 		}
 	}
@@ -416,7 +355,7 @@ public class SalesforceService implements ConnectedService {
 		return orgDAO.get(orgId);
 	}
 
-	private Organization toOrganization(SObject sObject) {
+	private Organization toOrganization(final SObject sObject) {
 		log.info(sObject);
 		final Organization organization = new Organization();
 		organization.setId(sObject.getId());
@@ -426,18 +365,11 @@ public class SalesforceService implements ConnectedService {
 		return organization;
 	}
 
-	public Backup deleteBackup(String id, String date) throws SalesforceException {
-		final Organization organization = getOrg(id);
-		final Backup backup = backupDAO.get(organization, date);
-		final String filename = backup.getDate() + ".zip";
+	public List<String> deleteBackup(String id, String date) throws SalesforceException {
+		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
 		try {
-			final File idDir = new File(configuration.getBackupDirectory(), organization.getId());
-			final File file = new File(idDir, filename);
-			FileUtils.forceDelete(file);
-			organization.getBackups().remove(backup);
-			backupDAO.delete(backup);
-			return backup;
-		} catch (IOException e) {
+			return gitService.removeTag(repoDir, date);
+		} catch (GitServiceException e) {
 			throw new SalesforceException(e);
 		}
 	}
@@ -461,8 +393,9 @@ public class SalesforceService implements ConnectedService {
 	@Override
 	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state) {
 		final String uriTemplate = authorizeURL()
-				+ "?response_type=code&client_id={clientId}&redirect_uri={redirect_uri}&state={state}&scope={scope}";
-		final URI url = UriBuilder.fromUri(uriTemplate).build(getClientId(), redirectUri, state, "full refresh_token");
+				+ "?response_type=code&client_id={clientId}&redirect_uri={redirect_uri}&state={state}&scope={scope}&display={display}&prompt={prompt}";
+		final URI url = UriBuilder.fromUri(uriTemplate).build(getClientId(), redirectUri, state, "full refresh_token",
+				"popup", "login consent");
 		return url;
 	}
 

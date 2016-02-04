@@ -28,11 +28,9 @@ import nz.co.trineo.git.model.GitProcess;
 import nz.co.trineo.git.model.GitTask;
 import nz.co.trineo.github.GitHubResource;
 import nz.co.trineo.github.GitHubService;
-import nz.co.trineo.salesforce.BackupDAO;
 import nz.co.trineo.salesforce.OrganizationDAO;
 import nz.co.trineo.salesforce.SalesforceResource;
 import nz.co.trineo.salesforce.SalesforceService;
-import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.trello.TrelloResource;
 import nz.co.trineo.trello.TrelloService;
@@ -44,7 +42,7 @@ import nz.co.trineo.trello.TrelloService;
 public class App extends Application<AppConfiguration> {
 
 	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(Credentals.class,
-			GitProcess.class, GitTask.class, Organization.class, Backup.class, ConnectedAccount.class, Diff.class) {
+			GitProcess.class, GitTask.class, Organization.class, ConnectedAccount.class, Diff.class) {
 		@Override
 		public DataSourceFactory getDataSourceFactory(AppConfiguration configuration) {
 			return configuration.getDataSourceFactory();
@@ -79,7 +77,6 @@ public class App extends Application<AppConfiguration> {
 		final SessionFactory sessionFactory = hibernate.getSessionFactory();
 		final GitProcessDAO processDAO = new GitProcessDAO(sessionFactory);
 		final OrganizationDAO organizationDAO = new OrganizationDAO(sessionFactory);
-		final BackupDAO backupDAO = new BackupDAO(sessionFactory);
 		final AccountDAO accountDAO = new AccountDAO(sessionFactory);
 		final DiffDAO diffDAO = new DiffDAO(sessionFactory);
 
@@ -89,8 +86,7 @@ public class App extends Application<AppConfiguration> {
 		final GitHubService ghService = new GitHubService(accountDAO, configuration);
 		final GitHubResource ghResource = new GitHubResource(ghService, gService);
 
-		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, backupDAO,
-				configuration);
+		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService);
 		final SalesforceResource sfResource = new SalesforceResource(sfService);
 
 		final DiffService dService = new DiffService(diffDAO);

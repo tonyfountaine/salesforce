@@ -27,7 +27,6 @@ import com.codahale.metrics.annotation.Timed;
 import com.sforce.soap.apex.RunTestsResult;
 
 import io.dropwizard.hibernate.UnitOfWork;
-import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.Environment;
 import nz.co.trineo.salesforce.model.Organization;
 
@@ -44,15 +43,6 @@ public class SalesforceResource {
 	public SalesforceResource(SalesforceService salesforceService) {
 		super();
 		this.salesforceService = salesforceService;
-	}
-
-	@POST
-	@Path("/refresh")
-	@Timed
-	@UnitOfWork
-	public Response refresh() {
-		salesforceService.updateBackupsFromFilesystem();
-		return Response.noContent().build();
 	}
 
 	@POST
@@ -79,7 +69,8 @@ public class SalesforceResource {
 	@UnitOfWork
 	public Response getMetadata(final @PathParam("id") String id, final @QueryParam("acc") int accId)
 			throws SalesforceException {
-		salesforceService.downloadAllMetadata(id, accId);
+		//salesforceService.downloadAllMetadata(id, accId);
+		//TODO add showing the metadata
 		return Response.ok().build();
 	}
 
@@ -89,8 +80,8 @@ public class SalesforceResource {
 	@UnitOfWork
 	public Response createBackup(final @PathParam("id") String id, final @QueryParam("acc") int accId)
 			throws SalesforceException {
-		final Backup backup = salesforceService.createBackup(id, accId);
-		return Response.created(UriBuilder.fromMethod(getClass(), "getBackup").build(id, backup.getDate()))
+		final String backup = salesforceService.createBackup(id, accId);
+		return Response.created(UriBuilder.fromMethod(getClass(), "getBackup").build(id, backup))
 				.entity(backup).build();
 	}
 
@@ -113,8 +104,8 @@ public class SalesforceResource {
 	@Path("/orgs/{id}/backups")
 	@Timed
 	@UnitOfWork
-	public Response listBackups(final @PathParam("id") String id) {
-		final Set<Backup> backups = salesforceService.listBackups(id);
+	public Response listBackups(final @PathParam("id") String id) throws SalesforceException {
+		final Set<String> backups = salesforceService.listBackups(id);
 		backups.size();
 		return Response.ok(backups).build();
 	}
