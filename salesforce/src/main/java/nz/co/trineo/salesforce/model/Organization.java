@@ -3,11 +3,14 @@ package nz.co.trineo.salesforce.model;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import nz.co.trineo.common.model.ConnectedAccount;
 
 @Entity
 @Table(name = "sforg")
@@ -21,8 +24,8 @@ public class Organization {
 	private String organizationType;
 	@Column
 	private boolean sandbox;
-	@Column
-	private String authUrl;
+	@OneToOne
+	private ConnectedAccount account;
 
 	@JsonProperty
 	public String getId() {
@@ -60,20 +63,11 @@ public class Organization {
 		this.sandbox = sandbox;
 	}
 
-	@JsonProperty
-	public String getAuthUrl() {
-		return authUrl;
-	}
-
-	public void setAuthUrl(String authUrl) {
-		this.authUrl = authUrl;
-	}
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((authUrl == null) ? 0 : authUrl.hashCode());
+		result = prime * result + ((account == null) ? 0 : account.hashCode());
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result + ((organizationType == null) ? 0 : organizationType.hashCode());
@@ -90,10 +84,10 @@ public class Organization {
 		if (getClass() != obj.getClass())
 			return false;
 		Organization other = (Organization) obj;
-		if (authUrl == null) {
-			if (other.authUrl != null)
+		if (account == null) {
+			if (other.account != null)
 				return false;
-		} else if (!authUrl.equals(other.authUrl))
+		} else if (!account.equals(other.account))
 			return false;
 		if (id == null) {
 			if (other.id != null)
@@ -113,5 +107,13 @@ public class Organization {
 		if (sandbox != other.sandbox)
 			return false;
 		return true;
+	}
+
+	public ConnectedAccount getAccount() {
+		return account;
+	}
+
+	public void setAccount(ConnectedAccount account) {
+		this.account = account;
 	}
 }

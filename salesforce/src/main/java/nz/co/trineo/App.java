@@ -81,25 +81,19 @@ public class App extends Application<AppConfiguration> {
 		final DiffDAO diffDAO = new DiffDAO(sessionFactory);
 
 		final GitService gService = new GitService(configuration, processDAO, accountDAO);
-		final GitResource gResource = new GitResource(gService);
-
 		final GitHubService ghService = new GitHubService(accountDAO, configuration);
-		final GitHubResource ghResource = new GitHubResource(ghService, gService);
-
 		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService);
-		final SalesforceResource sfResource = new SalesforceResource(sfService);
-
 		final DiffService dService = new DiffService(diffDAO);
-		final DiffResource dResource = new DiffResource(dService);
-
 		final AccountService aService = new AccountService(accountDAO);
-		final AccountResource aResource = new AccountResource(aService);
-
 		final TrelloService tService = new TrelloService(configuration, accountDAO);
+
+		final GitResource gResource = new GitResource(gService);
+		final GitHubResource ghResource = new GitHubResource(ghService, gService);
+		final SalesforceResource sfResource = new SalesforceResource(sfService, aService);
+		final DiffResource dResource = new DiffResource(dService);
+		final AccountResource aResource = new AccountResource(aService);
 		final TrelloResource tResource = new TrelloResource(tService);
-
 		final StaticResource staticResource = new StaticResource();
-
 		final ServiceResource serviceResource = new ServiceResource();
 
 		ServiceRegistry.registerService(tService);

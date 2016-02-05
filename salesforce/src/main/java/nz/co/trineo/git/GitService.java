@@ -112,6 +112,16 @@ public class GitService {
 		}
 	}
 
+	public boolean isRepo(final File repoDir) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir)) {
+			return true;
+		} catch (IOException e) {
+			log.error("Not a valid Git Repo", e);
+		}
+		return false;
+	}
+
 	public Set<String> getTags(final File repoDir) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir)) {
@@ -121,8 +131,8 @@ public class GitService {
 			throw new GitServiceException(e);
 		}
 	}
-	
-	public List<String> removeTag(final File repoDir, final String tag) throws GitServiceException{
+
+	public List<String> removeTag(final File repoDir, final String tag) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
 			return git.tagDelete().setTags(tag).call();

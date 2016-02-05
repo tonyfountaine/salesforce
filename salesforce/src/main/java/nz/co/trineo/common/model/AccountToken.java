@@ -78,4 +78,53 @@ public class AccountToken {
 	public void setInstanceUrl(String instanceUrl) {
 		this.instanceUrl = instanceUrl;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((accessToken == null) ? 0 : accessToken.hashCode());
+		result = prime * result + ((instanceUrl == null) ? 0 : instanceUrl.hashCode());
+		result = prime * result + ((refreshToken == null) ? 0 : refreshToken.hashCode());
+		result = prime * result + ((scpoe == null) ? 0 : scpoe.hashCode());
+		result = prime * result + ((tokenType == null) ? 0 : tokenType.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AccountToken other = (AccountToken) obj;
+		if (accessToken == null) {
+			if (other.accessToken != null)
+				return false;
+		} else if (!accessToken.equals(other.accessToken))
+			return false;
+		if (instanceUrl == null) {
+			if (other.instanceUrl != null)
+				return false;
+		} else if (!instanceUrl.equals(other.instanceUrl))
+			return false;
+		if (refreshToken == null) {
+			if (other.refreshToken != null)
+				return false;
+		} else if (!refreshToken.equals(other.refreshToken))
+			return false;
+		if (scpoe == null) {
+			if (other.scpoe != null)
+				return false;
+		} else if (!scpoe.equals(other.scpoe))
+			return false;
+		if (tokenType == null) {
+			if (other.tokenType != null)
+				return false;
+		} else if (!tokenType.equals(other.tokenType))
+			return false;
+		return true;
+	}
 }

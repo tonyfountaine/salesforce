@@ -12,7 +12,7 @@
 			</div>
 			<div class="row">
 				<div class="col-xs-1 col-xs-offset-1">
-					<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#NewAccount"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> New</button>
+					<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#NewAccount"><span class="fa fa-plus" aria-hidden="true"></span> New</button>
 				</div>
 			</div>
 			<div class="row">
@@ -20,21 +20,17 @@
 					<thead>
 						<tr>
 							<th>Name</th>
-							<th>Service</th>
-							<th></th>
+							<th>&nbsp;</th>
 						</tr>
 					</thead>
 					<tbody>
 						<#list accounts as account>
 							<tr>
-								<td>${account.name!""}</td>
-								<td>${account.service}</td>
+								<td><i class="fa fa-${account.service} fa-2x"></i> ${account.name!""}</td>
 								<td>
-									<button type="button" class="btn btn-default">Verify</button>
-									<button type="button" class="btn btn-default">Rename</button>
-									<button type="button" class="btn btn-default">Reconnect</button>
-									<button type="button" class="btn btn-default">Disconnect</button>
-									<button type="button" class="btn btn-warning delete" data-id="${account.id}">Delete</button>
+									<button type="button" class="btn btn-default"><i class="fa fa-check" aria-hidden="true"></i> Verify</button>
+									<button type="button" class="btn btn-default"><i class="fa fa-edit" aria-hidden="true"></i> Rename</button>
+									<button type="button" class="btn btn-warning delete" data-id="${account.id}"><i class="fa fa-remove" aria-hidden="true"></i> Delete</button>
 								</td>
 							</tr>
 						</#list>

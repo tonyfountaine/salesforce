@@ -1,6 +1,7 @@
 package nz.co.trineo.salesforce;
 
 import java.io.Serializable;
+import java.util.List;
 
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
@@ -27,5 +28,9 @@ public class OrganizationDAO extends AbstractDAO<Organization> {
 	public void delete(final String id) {
 		final Organization org = get(id);
 		currentSession().delete(org);
+	}
+
+	public List<Organization> listAll() {
+		return list(currentSession().createCriteria(getEntityClass()));
 	}
 }

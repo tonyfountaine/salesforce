@@ -17,15 +17,11 @@
 		        <li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
 		        <li><a href="#">Link</a></li>
 		        <li class="dropdown">
-		          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dropdown <span class="caret"></span></a>
+		          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Services <span class="caret"></span></a>
 		          <ul class="dropdown-menu">
-		            <li><a href="#">Action</a></li>
-		            <li><a href="#">Another action</a></li>
-		            <li><a href="#">Something else here</a></li>
-		            <li role="separator" class="divider"></li>
-		            <li><a href="#">Separated link</a></li>
-		            <li role="separator" class="divider"></li>
-		            <li><a href="#">One more separated link</a></li>
+		            <li><a href="/sf/orgs"><i class="fa fa-salesforce" aria-hidden="true"></i> Salesforce</a></li>
+		            <li><a href="/github"><i class="fa fa-github" aria-hidden="true"></i> GitHub</a></li>
+		            <li><a href="/trello"><i class="fa fa-trello" aria-hidden="true"></i> Trello</a></li>
 		          </ul>
 		        </li>
 		      </ul>
@@ -38,14 +34,14 @@
 		      <ul class="nav navbar-nav navbar-right">
 		        <li><a href="#">Link</a></li>
 		        <li class="dropdown">
-		          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-user" aria-hidden="true"></span> <span class="caret"></span></a>
+		          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="fa fa-user" aria-hidden="true"></span> <span class="caret"></span></a>
 		          <ul class="dropdown-menu">
 		            <li><span><strong>User Name</strong></span></li>
 		            <li class="disabled"><span><small>email@address.com</small></span></li>
 		            <li role="separator" class="divider"></li>
-		            <li><a href="#"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> Settings</a></li>
-		            <li><a href="/accounts"><span class="glyphicon glyphicon-flash" aria-hidden="true"></span> Connected Accounts</a></li>
-		            <li><a href="#"><span class="glyphicon glyphicon-off" aria-hidden="true"></span> Log Out</a></li>
+		            <li><a href="#"><span class="fa fa-cog" aria-hidden="true"></span> Settings</a></li>
+		            <li><a href="/accounts"><span class="fa fa-flash" aria-hidden="true"></span> Connected Accounts</a></li>
+		            <li><a href="#"><span class="fa fa-power-off" aria-hidden="true"></span> Log Out</a></li>
 		          </ul>
 		        </li>
 		      </ul>
