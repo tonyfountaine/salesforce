@@ -19,7 +19,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -67,6 +69,7 @@ import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
+import nz.co.trineo.salesforce.model.MetadataNode;
 import nz.co.trineo.salesforce.model.Organization;
 
 public class SalesforceService implements ConnectedService {
@@ -177,7 +180,7 @@ public class SalesforceService implements ConnectedService {
 				zipIn);) {
 			ZipArchiveEntry entry;
 			while ((entry = (ZipArchiveEntry) in.getNextEntry()) != null) {
-				final File destFile = new File(dir, entry.getName().replaceAll("unpackaged[/\\]", ""));
+				final File destFile = new File(dir, entry.getName().replaceAll("unpackaged[/\\\\]", ""));
 				FileUtils.forceMkdir(destFile.getParentFile());
 				try (OutputStream out = new FileOutputStream(destFile);) {
 					IOUtils.copy(in, out);
@@ -322,7 +325,7 @@ public class SalesforceService implements ConnectedService {
 			throw new SalesforceException(e);
 		}
 	}
-	
+
 	public List<Organization> listOrgs() {
 		return orgDAO.listAll();
 	}
@@ -382,6 +385,52 @@ public class SalesforceService implements ConnectedService {
 		try {
 			return gitService.removeTag(repoDir, date);
 		} catch (GitServiceException e) {
+			throw new SalesforceException(e);
+		}
+	}
+
+	public MetadataNode getMetadataTree(final String orgId) throws SalesforceException {
+		final File repoDir = new File(configuration.getSalesforceDirectory(), orgId);
+		final Map<String, MetadataNode> nodeMap = new HashMap<>();
+
+		Path path = repoDir.toPath();
+		try {
+			Files.walk(path).filter(p -> {
+				return Files.isDirectory(path) && !p.toString().contains(".git") && !p.toString().endsWith("-meta.xml")
+						&& !p.toString().contains("package.xml");
+			}).forEach(p -> {
+				final MetadataNode node = new MetadataNode();
+				node.setText(p.getFileName().toString());
+				nodeMap.put(p.toAbsolutePath().toString(), node);
+
+				final String pp = p.getParent().toAbsolutePath().toString();
+				final MetadataNode parentNode = nodeMap.get(pp);
+				if (parentNode != null) {
+					parentNode.getNodes().add(node);
+				}
+			});
+		} catch (IOException e) {
+			throw new SalesforceException(e);
+		}
+
+		final MetadataNode rootNode = nodeMap.get(path.toAbsolutePath().toString());
+		rootNode.setText("/");
+		rootNode.getState().setExpanded(true);
+		return rootNode;
+	}
+
+	public String diffBackups(final String id, final String first, final String second)
+			throws GitServiceException {
+		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
+		return gitService.diff(repoDir, first, second);
+	}
+
+	public InputStream getMetadataContent(final String id, final String path) throws SalesforceException {
+		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
+		final File file = new File(repoDir, path);
+		try {
+			return new FileInputStream(file);
+		} catch (FileNotFoundException e) {
 			throw new SalesforceException(e);
 		}
 	}

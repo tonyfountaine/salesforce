@@ -6,3 +6,13 @@ body {
 	padding: 3px 20px;
 	display: block;
 }
+
+#code {
+	margin: 0 0;
+	padding: 0 0;
+	border: none;
+}
+
+#tree > .list-group {
+	margin: 0 0;
+}

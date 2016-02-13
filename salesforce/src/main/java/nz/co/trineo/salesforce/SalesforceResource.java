@@ -30,7 +30,9 @@ import com.sforce.soap.apex.RunTestsResult;
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.AccountService;
 import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.git.GitServiceException;
 import nz.co.trineo.salesforce.model.Environment;
+import nz.co.trineo.salesforce.model.MetadataNode;
 import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.salesforce.views.SfOrgView;
 import nz.co.trineo.salesforce.views.SfOrgsView;
@@ -94,6 +96,16 @@ public class SalesforceResource {
 		return Response.ok(view).build();
 	}
 
+	@GET
+	@Path("/orgs/{id}/diff/{first}/{second}")
+	@Timed
+	@UnitOfWork
+	public Response diffBackups(final @PathParam("id") String id, final @PathParam("first") String first,
+			final @PathParam("second") String second) throws GitServiceException {
+		final String list = salesforceService.diffBackups(id, first, second);
+		return Response.ok(list).build();
+	}
+
 	@POST
 	@Path("/orgs/{id}/metadata")
 	@Timed
@@ -103,6 +115,37 @@ public class SalesforceResource {
 		// salesforceService.downloadAllMetadata(id, accId);
 		// TODO add showing the metadata
 		return Response.ok().build();
+	}
+
+	@GET
+	@Path("/orgs/{id}/metadata")
+	@Timed
+	@UnitOfWork
+	public Response getMetadataTree(final @PathParam("id") String id) throws SalesforceException {
+		final MetadataNode metadataNode = salesforceService.getMetadataTree(id);
+		return Response.ok(metadataNode).build();
+	}
+
+	@GET
+	@Path("/orgs/{id}/metadata/{folder}/{file}")
+	@Timed
+	@UnitOfWork
+	@Produces(MediaType.TEXT_PLAIN)
+	public Response getMetadataContent(final @PathParam("id") String id, final @PathParam("folder") String folder,
+			final @PathParam("file") String file) throws SalesforceException {
+		final InputStream in = salesforceService.getMetadataContent(id, folder + "/" + file);
+		final StreamingOutput stream = new StreamingOutput() {
+			public void write(OutputStream output) throws IOException, WebApplicationException {
+				try {
+					IOUtils.copy(in, output);
+				} catch (Exception e) {
+					throw new WebApplicationException(e);
+				}
+			}
+		};
+
+		return Response.ok(stream).header("content-disposition", "attachment; filename = " + folder + "/" + file)
+				.build();
 	}
 
 	@POST

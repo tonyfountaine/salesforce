@@ -53,7 +53,7 @@
 					<form class="form" name="NewOrgForm" id="NewOrgForm" action="oauth" method="get" target="_blank">
 						<div class="form-group">
 							<label class="control-label">Account</label>
-							<select class="form-control" id="account" name="account">
+							<select class="form-control" id="acc" name="acc">
 								<#list accounts as account>
 									<option value="${account.id}">${account.name}</option>
 								</#list>
@@ -76,8 +76,16 @@
 $(function () {
     $('body').on('click', '#submit', function (e) {
         var values = $('#NewOrgForm').serialize();
-        e.preventDefault();
-    	window.open("accounts/oauth?" + values, "oauth", "width=600,height=600,scrollbars=yes");
+        $.ajax({
+            type: "POST",
+            url: "/sf/orgs/?" + values,
+            success: function() {
+                location.reload(true);  
+            },
+            error: function() {
+                alert("failure");
+            }
+        });
     });
 });
 $(function () {
