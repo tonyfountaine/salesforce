@@ -1,4 +1,4 @@
-<#-- @ftlvariable name="" type="nz.co.trineo.common.views.AccountView" -->
+<#-- @ftlvariable name="" type="nz.co.trineo.salesforce.views.SfOrgsView" -->
 <html lang="en">
 <#assign title="Salesforce Orgs" />
 <#include "/head.ftl">

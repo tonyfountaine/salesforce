@@ -22,7 +22,7 @@ public class GitTask {
 	@Column
 	private int currentWork;
 
-	public GitTask(String title, int totalWork) {
+	public GitTask(final String title, final int totalWork) {
 		this.title = title;
 		this.totalWork = totalWork;
 	}
@@ -31,7 +31,7 @@ public class GitTask {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(final int id) {
 		this.id = id;
 	}
 
@@ -39,7 +39,7 @@ public class GitTask {
 		return title;
 	}
 
-	public void setTitle(String title) {
+	public void setTitle(final String title) {
 		this.title = title;
 	}
 
@@ -47,7 +47,7 @@ public class GitTask {
 		return totalWork;
 	}
 
-	public void setTotalWork(int totalWork) {
+	public void setTotalWork(final int totalWork) {
 		this.totalWork = totalWork;
 	}
 
@@ -55,7 +55,7 @@ public class GitTask {
 		return currentWork;
 	}
 
-	public void setCurrentWork(int currentWork) {
+	public void setCurrentWork(final int currentWork) {
 		this.currentWork = currentWork;
 	}
 }

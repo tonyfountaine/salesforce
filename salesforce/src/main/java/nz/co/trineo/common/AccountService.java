@@ -15,7 +15,7 @@ public class AccountService {
 
 	private final Map<String, ConnectedAccount> states = new HashMap<>();
 
-	public AccountService(AccountDAO accountDAO) {
+	public AccountService(final AccountDAO accountDAO) {
 		super();
 		this.accountDAO = accountDAO;
 	}
@@ -24,19 +24,19 @@ public class AccountService {
 		return accountDAO.listAll();
 	}
 
-	public ConnectedAccount create(ConnectedAccount account) {
+	public ConnectedAccount create(final ConnectedAccount account) {
 		return accountDAO.persist(account);
 	}
 
-	public ConnectedAccount read(int id) {
+	public ConnectedAccount read(final int id) {
 		return accountDAO.get(id);
 	}
 
-	public ConnectedAccount update(ConnectedAccount account) {
+	public ConnectedAccount update(final ConnectedAccount account) {
 		return accountDAO.persist(account);
 	}
 
-	public void delete(int id) {
+	public void delete(final int id) {
 		accountDAO.delete(id);
 	}
 

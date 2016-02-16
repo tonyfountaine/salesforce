@@ -8,20 +8,19 @@ public class SalesforceException extends Exception {
 		super();
 	}
 
-	public SalesforceException(String arg0, Throwable arg1, boolean arg2,
-			boolean arg3) {
+	public SalesforceException(final String arg0, final Throwable arg1, final boolean arg2, final boolean arg3) {
 		super(arg0, arg1, arg2, arg3);
 	}
 
-	public SalesforceException(String arg0, Throwable arg1) {
+	public SalesforceException(final String arg0, final Throwable arg1) {
 		super(arg0, arg1);
 	}
 
-	public SalesforceException(String arg0) {
+	public SalesforceException(final String arg0) {
 		super(arg0);
 	}
 
-	public SalesforceException(Throwable arg0) {
+	public SalesforceException(final Throwable arg0) {
 		super(arg0);
 	}
 }

@@ -44,7 +44,7 @@ public class App extends Application<AppConfiguration> {
 	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(Credentals.class,
 			GitProcess.class, GitTask.class, Organization.class, ConnectedAccount.class, Diff.class) {
 		@Override
-		public DataSourceFactory getDataSourceFactory(AppConfiguration configuration) {
+		public DataSourceFactory getDataSourceFactory(final AppConfiguration configuration) {
 			return configuration.getDataSourceFactory();
 		}
 	};

@@ -48,8 +48,8 @@ public class AppConfiguration extends Configuration {
 	}
 
 	@JsonProperty("database")
-	public void setDataSourceFactory(DataSourceFactory factory) {
-		this.database = factory;
+	public void setDataSourceFactory(final DataSourceFactory factory) {
+		database = factory;
 	}
 
 	@JsonProperty
@@ -58,7 +58,7 @@ public class AppConfiguration extends Configuration {
 	}
 
 	@JsonProperty
-	public void setGitDirectory(File gitDirectory) {
+	public void setGitDirectory(final File gitDirectory) {
 		this.gitDirectory = gitDirectory;
 	}
 
@@ -68,7 +68,7 @@ public class AppConfiguration extends Configuration {
 	}
 
 	@JsonProperty
-	public void setSalesforceDirectory(File salesforceDirectory) {
+	public void setSalesforceDirectory(final File salesforceDirectory) {
 		this.salesforceDirectory = salesforceDirectory;
 	}
 
@@ -78,7 +78,7 @@ public class AppConfiguration extends Configuration {
 	}
 
 	@JsonProperty
-	public void setBackupDirectory(File backupDirectory) {
+	public void setBackupDirectory(final File backupDirectory) {
 		this.backupDirectory = backupDirectory;
 	}
 
@@ -88,7 +88,7 @@ public class AppConfiguration extends Configuration {
 	}
 
 	@JsonProperty
-	public void setClientKey(String clientKey) {
+	public void setClientKey(final String clientKey) {
 		this.clientKey = clientKey;
 	}
 
@@ -98,7 +98,7 @@ public class AppConfiguration extends Configuration {
 	}
 
 	@JsonProperty
-	public void setClientSecret(String clientSecret) {
+	public void setClientSecret(final String clientSecret) {
 		this.clientSecret = clientSecret;
 	}
 
@@ -108,7 +108,7 @@ public class AppConfiguration extends Configuration {
 	}
 
 	@JsonProperty
-	public void setTrelloKey(String trelloKey) {
+	public void setTrelloKey(final String trelloKey) {
 		this.trelloKey = trelloKey;
 	}
 
@@ -118,7 +118,7 @@ public class AppConfiguration extends Configuration {
 	}
 
 	@JsonProperty
-	public void setTrelloSecret(String trelloSecret) {
+	public void setTrelloSecret(final String trelloSecret) {
 		this.trelloSecret = trelloSecret;
 	}
 
@@ -138,7 +138,7 @@ public class AppConfiguration extends Configuration {
 	}
 
 	@JsonProperty
-	public void setGithubClientId(String githubClientId) {
+	public void setGithubClientId(final String githubClientId) {
 		this.githubClientId = githubClientId;
 	}
 
@@ -148,7 +148,7 @@ public class AppConfiguration extends Configuration {
 	}
 
 	@JsonProperty
-	public void setGithubClientSecret(String githubClientSecret) {
+	public void setGithubClientSecret(final String githubClientSecret) {
 		this.githubClientSecret = githubClientSecret;
 	}
 }

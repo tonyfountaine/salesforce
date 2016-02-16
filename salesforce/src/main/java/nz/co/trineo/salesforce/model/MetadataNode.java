@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(Include.NON_DEFAULT)
 public class MetadataNode {
@@ -23,7 +23,7 @@ public class MetadataNode {
 			return checked;
 		}
 
-		public void setChecked(boolean checked) {
+		public void setChecked(final boolean checked) {
 			this.checked = checked;
 		}
 
@@ -32,7 +32,7 @@ public class MetadataNode {
 			return disabled;
 		}
 
-		public void setDisabled(boolean disabled) {
+		public void setDisabled(final boolean disabled) {
 			this.disabled = disabled;
 		}
 
@@ -41,7 +41,7 @@ public class MetadataNode {
 			return expanded;
 		}
 
-		public void setExpanded(boolean expanded) {
+		public void setExpanded(final boolean expanded) {
 			this.expanded = expanded;
 		}
 
@@ -50,7 +50,7 @@ public class MetadataNode {
 			return selected;
 		}
 
-		public void setSelected(boolean selected) {
+		public void setSelected(final boolean selected) {
 			this.selected = selected;
 		}
 	}
@@ -71,7 +71,7 @@ public class MetadataNode {
 		return text;
 	}
 
-	public void setText(String text) {
+	public void setText(final String text) {
 		this.text = text;
 	}
 
@@ -80,7 +80,7 @@ public class MetadataNode {
 		return icon;
 	}
 
-	public void setIcon(String icon) {
+	public void setIcon(final String icon) {
 		this.icon = icon;
 	}
 
@@ -89,7 +89,7 @@ public class MetadataNode {
 		return selectedIcon;
 	}
 
-	public void setSelectedIcon(String selectedIcon) {
+	public void setSelectedIcon(final String selectedIcon) {
 		this.selectedIcon = selectedIcon;
 	}
 
@@ -98,7 +98,7 @@ public class MetadataNode {
 		return color;
 	}
 
-	public void setColor(String color) {
+	public void setColor(final String color) {
 		this.color = color;
 	}
 
@@ -107,7 +107,7 @@ public class MetadataNode {
 		return backColor;
 	}
 
-	public void setBackColor(String backColor) {
+	public void setBackColor(final String backColor) {
 		this.backColor = backColor;
 	}
 
@@ -116,7 +116,7 @@ public class MetadataNode {
 		return href;
 	}
 
-	public void setHref(String href) {
+	public void setHref(final String href) {
 		this.href = href;
 	}
 
@@ -125,7 +125,7 @@ public class MetadataNode {
 		return selectable;
 	}
 
-	public void setSelectable(boolean selectable) {
+	public void setSelectable(final boolean selectable) {
 		this.selectable = selectable;
 	}
 
@@ -134,7 +134,7 @@ public class MetadataNode {
 		return state;
 	}
 
-	public void setState(NodeState state) {
+	public void setState(final NodeState state) {
 		this.state = state;
 	}
 
@@ -143,7 +143,7 @@ public class MetadataNode {
 		return tags;
 	}
 
-	public void setTags(Set<String> tags) {
+	public void setTags(final Set<String> tags) {
 		this.tags = tags;
 	}
 
@@ -151,7 +151,7 @@ public class MetadataNode {
 		return nodes;
 	}
 
-	public void setNodes(List<MetadataNode> nodes) {
+	public void setNodes(final List<MetadataNode> nodes) {
 		this.nodes = nodes;
 	}
 }

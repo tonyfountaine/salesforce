@@ -1,8 +1,6 @@
 package nz.co.trineo.salesforce;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.List;
 import java.util.Set;
 
@@ -34,6 +32,7 @@ import nz.co.trineo.git.GitServiceException;
 import nz.co.trineo.salesforce.model.Environment;
 import nz.co.trineo.salesforce.model.MetadataNode;
 import nz.co.trineo.salesforce.model.Organization;
+import nz.co.trineo.salesforce.views.ContentView;
 import nz.co.trineo.salesforce.views.SfOrgView;
 import nz.co.trineo.salesforce.views.SfOrgsView;
 
@@ -48,7 +47,7 @@ public class SalesforceResource {
 	@Context
 	private Request request;
 
-	public SalesforceResource(SalesforceService salesforceService, final AccountService accountService) {
+	public SalesforceResource(final SalesforceService salesforceService, final AccountService accountService) {
 		super();
 		this.salesforceService = salesforceService;
 		this.accountService = accountService;
@@ -134,18 +133,28 @@ public class SalesforceResource {
 	public Response getMetadataContent(final @PathParam("id") String id, final @PathParam("folder") String folder,
 			final @PathParam("file") String file) throws SalesforceException {
 		final InputStream in = salesforceService.getMetadataContent(id, folder + "/" + file);
-		final StreamingOutput stream = new StreamingOutput() {
-			public void write(OutputStream output) throws IOException, WebApplicationException {
-				try {
-					IOUtils.copy(in, output);
-				} catch (Exception e) {
-					throw new WebApplicationException(e);
-				}
+		final StreamingOutput stream = output -> {
+			try {
+				IOUtils.copy(in, output);
+			} catch (final Exception e) {
+				throw new WebApplicationException(e);
 			}
 		};
 
 		return Response.ok(stream).header("content-disposition", "attachment; filename = " + folder + "/" + file)
 				.build();
+	}
+
+	@GET
+	@Path("/orgs/{id}/metadata/{folder}/{file}")
+	@Timed
+	@UnitOfWork
+	@Produces(MediaType.TEXT_HTML)
+	public Response getMetadataContentLines(final @PathParam("id") String id, final @PathParam("folder") String folder,
+			final @PathParam("file") String file) throws SalesforceException {
+		final List<String> lines = salesforceService.getMetadataContentLines(id, folder + "/" + file);
+		final ContentView view = new ContentView(lines);
+		return Response.ok(view).build();
 	}
 
 	@POST
@@ -190,13 +199,11 @@ public class SalesforceResource {
 	public Response getBackup(final @PathParam("id") String id, final @PathParam("date") String date)
 			throws SalesforceException {
 		final InputStream in = salesforceService.downloadBackup(id, date);
-		final StreamingOutput stream = new StreamingOutput() {
-			public void write(OutputStream output) throws IOException, WebApplicationException {
-				try {
-					IOUtils.copy(in, output);
-				} catch (Exception e) {
-					throw new WebApplicationException(e);
-				}
+		final StreamingOutput stream = output -> {
+			try {
+				IOUtils.copy(in, output);
+			} catch (final Exception e) {
+				throw new WebApplicationException(e);
 			}
 		};
 

@@ -12,8 +12,8 @@ import javax.persistence.Id;
 import javax.persistence.MapKeyColumn;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity(name = "diff")
 @JsonInclude(Include.NON_DEFAULT)
@@ -44,7 +44,7 @@ public class Diff {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(final int id) {
 		this.id = id;
 	}
 
@@ -53,7 +53,7 @@ public class Diff {
 		return added;
 	}
 
-	public void setAdded(Map<String, String> added) {
+	public void setAdded(final Map<String, String> added) {
 		this.added = added;
 	}
 
@@ -62,7 +62,7 @@ public class Diff {
 		return removed;
 	}
 
-	public void setRemoved(Map<String, String> removed) {
+	public void setRemoved(final Map<String, String> removed) {
 		this.removed = removed;
 	}
 
@@ -71,7 +71,7 @@ public class Diff {
 		return modified;
 	}
 
-	public void setModified(Map<String, String> modified) {
+	public void setModified(final Map<String, String> modified) {
 		this.modified = modified;
 	}
 }

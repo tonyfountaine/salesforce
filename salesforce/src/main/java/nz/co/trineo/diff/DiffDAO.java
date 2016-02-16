@@ -10,17 +10,17 @@ import nz.co.trineo.diff.model.Diff;
 
 public class DiffDAO extends AbstractDAO<Diff> {
 
-	public DiffDAO(SessionFactory sessionFactory) {
+	public DiffDAO(final SessionFactory sessionFactory) {
 		super(sessionFactory);
 	}
 
 	@Override
-	public Diff get(Serializable id) {
+	public Diff get(final Serializable id) {
 		return super.get(id);
 	}
 
 	@Override
-	public Diff persist(Diff entity) throws HibernateException {
+	public Diff persist(final Diff entity) throws HibernateException {
 		return super.persist(entity);
 	}
 }

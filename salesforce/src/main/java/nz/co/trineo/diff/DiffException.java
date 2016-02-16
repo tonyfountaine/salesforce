@@ -8,20 +8,20 @@ public class DiffException extends Exception {
 		super();
 	}
 
-	public DiffException(String message, Throwable cause,
-			boolean enableSuppression, boolean writableStackTrace) {
+	public DiffException(final String message, final Throwable cause, final boolean enableSuppression,
+			final boolean writableStackTrace) {
 		super(message, cause, enableSuppression, writableStackTrace);
 	}
 
-	public DiffException(String message, Throwable cause) {
+	public DiffException(final String message, final Throwable cause) {
 		super(message, cause);
 	}
 
-	public DiffException(String message) {
+	public DiffException(final String message) {
 		super(message);
 	}
 
-	public DiffException(Throwable cause) {
+	public DiffException(final Throwable cause) {
 		super(cause);
 	}
 }

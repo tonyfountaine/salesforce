@@ -12,7 +12,7 @@ public class AccountsView extends View {
 	private final List<ConnectedAccount> accounts;
 	private final List<String> services;
 
-	public AccountsView(List<ConnectedAccount> accounts, final Collection<String> services) {
+	public AccountsView(final List<ConnectedAccount> accounts, final Collection<String> services) {
 		super("/accounts.ftl");
 		this.accounts = accounts;
 		this.services = new ArrayList<>(services);

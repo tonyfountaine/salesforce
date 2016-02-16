@@ -4,14 +4,7 @@ import static com.sforce.soap.metadata.RetrieveStatus.Failed;
 import static com.sforce.soap.metadata.RetrieveStatus.Succeeded;
 import static org.apache.commons.io.FileUtils.forceMkdir;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -61,6 +55,9 @@ import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 import com.sforce.ws.SoapFaultException;
+import com.uwyn.jhighlight.renderer.JavaXhtmlRenderer;
+import com.uwyn.jhighlight.renderer.XhtmlRenderer;
+import com.uwyn.jhighlight.renderer.XmlXhtmlRenderer;
 
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.ConnectedService;
@@ -84,7 +81,7 @@ public class SalesforceService implements ConnectedService {
 
 	public SalesforceService(final AccountDAO dao, final OrganizationDAO orgDAO, final AppConfiguration configuration,
 			final GitService gitService) throws IOException {
-		this.credDAO = dao;
+		credDAO = dao;
 		this.orgDAO = orgDAO;
 		this.configuration = configuration;
 		this.gitService = gitService;
@@ -126,9 +123,9 @@ public class SalesforceService implements ConnectedService {
 				gitService.tag(repoDir, date);
 				return date;
 			}
-		} catch (SalesforceException e) {
+		} catch (final SalesforceException e) {
 			throw e;
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new SalesforceException(e);
 		}
 		return null;
@@ -164,12 +161,12 @@ public class SalesforceService implements ConnectedService {
 						zs.putNextEntry(zipEntry);
 						zs.write(Files.readAllBytes(path));
 						zs.closeEntry();
-					} catch (Exception e) {
+					} catch (final Exception e) {
 						log.error("An error ocurred packing the zip file", e);
 					}
 				});
 			}
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new SalesforceException(e);
 		}
 	}
@@ -194,17 +191,17 @@ public class SalesforceService implements ConnectedService {
 			final DescribeMetadataResult result = connection.describeMetadata(API_VERSION);
 			return result.getMetadataObjects();
 
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new SalesforceException(e);
 		}
 	}
 
-	private RetrieveResult waitForRetrieveCompletion(final MetadataConnection connection, AsyncResult asyncResult)
+	private RetrieveResult waitForRetrieveCompletion(final MetadataConnection connection, final AsyncResult asyncResult)
 			throws Exception {
 		// Wait for the retrieve to complete
 		int poll = 0;
 		long waitTimeMilliSecs = ONE_SECOND;
-		String asyncResultId = asyncResult.getId();
+		final String asyncResultId = asyncResult.getId();
 		RetrieveResult result = null;
 		do {
 			Thread.sleep(waitTimeMilliSecs);
@@ -293,7 +290,7 @@ public class SalesforceService implements ConnectedService {
 		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
 		try {
 			return gitService.getTags(repoDir);
-		} catch (GitServiceException e) {
+		} catch (final GitServiceException e) {
 			throw new SalesforceException(e);
 		}
 	}
@@ -308,7 +305,7 @@ public class SalesforceService implements ConnectedService {
 		try {
 			final RunTestsResult runTestsResult = soapConnection.runTests(runTestsRequest);
 			return runTestsResult;
-		} catch (ConnectionException e) {
+		} catch (final ConnectionException e) {
 			if (e instanceof SoapFaultException) {
 				if (((SoapFaultException) e).getFaultCode().getLocalPart()
 						.equals(ExceptionCode.INVALID_SESSION_ID.toString())) {
@@ -317,7 +314,7 @@ public class SalesforceService implements ConnectedService {
 					try {
 						final RunTestsResult runTestsResult = soapConnection.runTests(runTestsRequest);
 						return runTestsResult;
-					} catch (ConnectionException e1) {
+					} catch (final ConnectionException e1) {
 						throw new SalesforceException(e1);
 					}
 				}
@@ -345,7 +342,7 @@ public class SalesforceService implements ConnectedService {
 					log.info(queryResult);
 					try {
 						Thread.sleep(1000);
-					} catch (InterruptedException e) {
+					} catch (final InterruptedException e) {
 						e.printStackTrace();
 					}
 				}
@@ -359,7 +356,7 @@ public class SalesforceService implements ConnectedService {
 			}
 			orgDAO.persist(organization);
 			return organization;
-		} catch (SalesforceException e) {
+		} catch (final SalesforceException e) {
 			throw e;
 		} catch (ConnectionException | GitServiceException e) {
 			throw new SalesforceException(e);
@@ -380,11 +377,11 @@ public class SalesforceService implements ConnectedService {
 		return organization;
 	}
 
-	public List<String> deleteBackup(String id, String date) throws SalesforceException {
+	public List<String> deleteBackup(final String id, final String date) throws SalesforceException {
 		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
 		try {
 			return gitService.removeTag(repoDir, date);
-		} catch (GitServiceException e) {
+		} catch (final GitServiceException e) {
 			throw new SalesforceException(e);
 		}
 	}
@@ -393,7 +390,7 @@ public class SalesforceService implements ConnectedService {
 		final File repoDir = new File(configuration.getSalesforceDirectory(), orgId);
 		final Map<String, MetadataNode> nodeMap = new HashMap<>();
 
-		Path path = repoDir.toPath();
+		final Path path = repoDir.toPath();
 		try {
 			Files.walk(path).filter(p -> {
 				return Files.isDirectory(path) && !p.toString().contains(".git") && !p.toString().endsWith("-meta.xml")
@@ -409,7 +406,7 @@ public class SalesforceService implements ConnectedService {
 					parentNode.getNodes().add(node);
 				}
 			});
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new SalesforceException(e);
 		}
 
@@ -419,8 +416,7 @@ public class SalesforceService implements ConnectedService {
 		return rootNode;
 	}
 
-	public String diffBackups(final String id, final String first, final String second)
-			throws GitServiceException {
+	public String diffBackups(final String id, final String first, final String second) throws GitServiceException {
 		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
 		return gitService.diff(repoDir, first, second);
 	}
@@ -430,7 +426,40 @@ public class SalesforceService implements ConnectedService {
 		final File file = new File(repoDir, path);
 		try {
 			return new FileInputStream(file);
-		} catch (FileNotFoundException e) {
+		} catch (final FileNotFoundException e) {
+			throw new SalesforceException(e);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<String> getMetadataContentLines(final String id, final String path) throws SalesforceException {
+		try {
+			final InputStream input = getMetadataContent(id, path);
+			final XhtmlRenderer ren;
+			if (path.endsWith(".cls") || path.endsWith(".trigger")) {
+				ren = new JavaXhtmlRenderer();
+			} else {
+				ren = new XmlXhtmlRenderer();
+			}
+			final PipedInputStream in = new PipedInputStream();
+			final PipedOutputStream out = new PipedOutputStream(in);
+			new Thread(() -> {
+				try {
+					ren.highlight(path, input, out, "UTF-8", true);
+				} catch (final Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}).start();
+			final List<String> lines = new ArrayList<>();
+			final Pattern genPattern = Pattern.compile("<!--\\s+.*\\s+-->");
+			try (BufferedReader b = new BufferedReader(new InputStreamReader(in, "UTF-8"));) {
+				b.lines().filter(s -> !genPattern.matcher(s).find()).forEach(i -> {
+					lines.add(i.replaceAll("<span class=\"[a-zA-Z0-9_]+\"></span><br />", ""));
+				});
+				return lines;
+			}
+		} catch (final IOException e) {
 			throw new SalesforceException(e);
 		}
 	}

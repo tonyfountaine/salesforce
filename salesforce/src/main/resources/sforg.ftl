@@ -1,4 +1,4 @@
-<#-- @ftlvariable name="" type="nz.co.trineo.common.views.AccountView" -->
+<#-- @ftlvariable name="" type="nz.co.trineo.salesforce.views.SfOrgView" -->
 <html lang="en">
 <#assign title="${org.name}" />
 <#include "/head.ftl">
@@ -54,8 +54,8 @@
 								<div class="panel-heading">
 									<h3 class="panel-title" id="codeHead">Panel title</h3>
 								</div>
-								<pre id="code" class="prettyprint linenums lang-xml">
-								</pre>
+								<div id="code">
+								</div>
 							</div>
 						</div>
 					</div>
@@ -133,17 +133,18 @@ $.getJSON("/sf/orgs/${org.id}/metadata", "", function (data) {
 		$.ajax({
 			type: "GET",
 			url: "/sf/orgs/${org.id}/metadata" + path,
+			accepts: "text/html",
 			success: function (data) {
 				$('#codeHead').text(node.text);
-				$('#code').text(data);
+				$('#code').html(data);
 				//hljs.highlightBlock($('#code').get());
-				$('#code').removeClass('prettyprinted').removeClass('lang-xml').removeClass('lang-java');
-				if (node.text.contains('.cls')) {
-					$('#code').addClass('lang-java');
-				} else {
-					$('#code').addClass('lang-xml');
-				}
-				PR.prettyPrint();
+				//$('#code').removeClass('prettyprinted').removeClass('lang-xml').removeClass('lang-java');
+				//if (node.text.contains('.cls')) {
+				//	$('#code').addClass('lang-java');
+				//} else {
+				//	$('#code').addClass('lang-xml');
+				//}
+				//PR.prettyPrint();
 			},
 			error: function () {
 				alert("failure");

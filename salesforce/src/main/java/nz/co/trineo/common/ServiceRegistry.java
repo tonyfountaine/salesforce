@@ -8,10 +8,10 @@ public class ServiceRegistry {
 	private static final Map<String, ConnectedService> registry = new HashMap<>();
 
 	private ServiceRegistry() {
-//		final ServiceLoader<ConnectedService> loader = ServiceLoader.load(ConnectedService.class);
-//		loader.forEach(t -> {
-//			registerService(t);
-//		});
+		// final ServiceLoader<ConnectedService> loader = ServiceLoader.load(ConnectedService.class);
+		// loader.forEach(t -> {
+		// registerService(t);
+		// });
 	}
 
 	public static void registerService(final ConnectedService service) {
@@ -21,8 +21,8 @@ public class ServiceRegistry {
 	public static Set<String> listRegistedServices() {
 		return registry.keySet();
 	}
-	
-	public static ConnectedService getService(final String name){
+
+	public static ConnectedService getService(final String name) {
 		return registry.get(name.toLowerCase());
 	}
 }

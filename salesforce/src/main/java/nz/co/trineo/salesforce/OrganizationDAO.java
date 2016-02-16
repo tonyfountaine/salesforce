@@ -10,18 +10,18 @@ import io.dropwizard.hibernate.AbstractDAO;
 import nz.co.trineo.salesforce.model.Organization;
 
 public class OrganizationDAO extends AbstractDAO<Organization> {
-	public OrganizationDAO(SessionFactory sessionFactory) {
+	public OrganizationDAO(final SessionFactory sessionFactory) {
 		super(sessionFactory);
 	}
 
 	@Override
-	public Organization get(Serializable id) {
+	public Organization get(final Serializable id) {
 		final Organization organization = super.get(id);
 		return organization;
 	}
 
 	@Override
-	public Organization persist(Organization entity) throws HibernateException {
+	public Organization persist(final Organization entity) throws HibernateException {
 		return super.persist(entity);
 	}
 

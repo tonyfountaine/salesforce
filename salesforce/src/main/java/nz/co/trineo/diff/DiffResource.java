@@ -15,7 +15,7 @@ import nz.co.trineo.diff.model.Diff;
 public class DiffResource {
 	private final DiffService service;
 
-	public DiffResource(DiffService service) {
+	public DiffResource(final DiffService service) {
 		super();
 		this.service = service;
 	}

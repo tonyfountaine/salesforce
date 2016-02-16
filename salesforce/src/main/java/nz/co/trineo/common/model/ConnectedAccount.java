@@ -34,7 +34,7 @@ public class ConnectedAccount {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(final int id) {
 		this.id = id;
 	}
 
@@ -43,7 +43,7 @@ public class ConnectedAccount {
 		return service;
 	}
 
-	public void setService(String service) {
+	public void setService(final String service) {
 		this.service = service;
 	}
 
@@ -52,7 +52,7 @@ public class ConnectedAccount {
 		return credentals;
 	}
 
-	public void setCredentals(Credentals credentals) {
+	public void setCredentals(final Credentals credentals) {
 		this.credentals = credentals;
 	}
 
@@ -61,8 +61,8 @@ public class ConnectedAccount {
 		return token;
 	}
 
-	public void setToken(AccountToken accessToken) {
-		this.token = accessToken;
+	public void setToken(final AccountToken accessToken) {
+		token = accessToken;
 	}
 
 	@JsonProperty
@@ -70,7 +70,7 @@ public class ConnectedAccount {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
@@ -78,45 +78,57 @@ public class ConnectedAccount {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((credentals == null) ? 0 : credentals.hashCode());
+		result = prime * result + (credentals == null ? 0 : credentals.hashCode());
 		result = prime * result + id;
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((service == null) ? 0 : service.hashCode());
-		result = prime * result + ((token == null) ? 0 : token.hashCode());
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (service == null ? 0 : service.hashCode());
+		result = prime * result + (token == null ? 0 : token.hashCode());
 		return result;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
+	public boolean equals(final Object obj) {
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
-		ConnectedAccount other = (ConnectedAccount) obj;
+		}
+		final ConnectedAccount other = (ConnectedAccount) obj;
 		if (credentals == null) {
-			if (other.credentals != null)
+			if (other.credentals != null) {
 				return false;
-		} else if (!credentals.equals(other.credentals))
+			}
+		} else if (!credentals.equals(other.credentals)) {
 			return false;
-		if (id != other.id)
+		}
+		if (id != other.id) {
 			return false;
+		}
 		if (name == null) {
-			if (other.name != null)
+			if (other.name != null) {
 				return false;
-		} else if (!name.equals(other.name))
+			}
+		} else if (!name.equals(other.name)) {
 			return false;
+		}
 		if (service == null) {
-			if (other.service != null)
+			if (other.service != null) {
 				return false;
-		} else if (!service.equals(other.service))
+			}
+		} else if (!service.equals(other.service)) {
 			return false;
+		}
 		if (token == null) {
-			if (other.token != null)
+			if (other.token != null) {
 				return false;
-		} else if (!token.equals(other.token))
+			}
+		} else if (!token.equals(other.token)) {
 			return false;
+		}
 		return true;
 	}
 }

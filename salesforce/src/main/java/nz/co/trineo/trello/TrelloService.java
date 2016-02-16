@@ -28,7 +28,7 @@ public class TrelloService implements ConnectedService {
 	private final AppConfiguration configuration;
 	private final AccountDAO credDAO;
 
-	public TrelloService(AppConfiguration configuration, final AccountDAO credDAO) {
+	public TrelloService(final AppConfiguration configuration, final AccountDAO credDAO) {
 		this.configuration = configuration;
 		this.credDAO = credDAO;
 	}
@@ -45,7 +45,7 @@ public class TrelloService implements ConnectedService {
 
 	public List<String> listBoards(final int accId) {
 		final Trello trello = getTrello(accId);
-		Member member = trello.getMemberInformation("me");
+		final Member member = trello.getMemberInformation("me");
 		return member.getIdBoards();
 	}
 
@@ -86,7 +86,7 @@ public class TrelloService implements ConnectedService {
 		return "https://trello.com/1/OAuthGetAccessToken";
 	}
 
-	private Map<String, Token> tokenMap = new HashMap<>();
+	private final Map<String, Token> tokenMap = new HashMap<>();
 
 	@Override
 	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state) {

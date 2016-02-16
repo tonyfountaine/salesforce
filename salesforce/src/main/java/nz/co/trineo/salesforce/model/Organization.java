@@ -32,7 +32,7 @@ public class Organization {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 
@@ -41,7 +41,7 @@ public class Organization {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
@@ -50,7 +50,7 @@ public class Organization {
 		return organizationType;
 	}
 
-	public void setOrganizationType(String organizationType) {
+	public void setOrganizationType(final String organizationType) {
 		this.organizationType = organizationType;
 	}
 
@@ -59,7 +59,7 @@ public class Organization {
 		return sandbox;
 	}
 
-	public void setSandbox(boolean sandbox) {
+	public void setSandbox(final boolean sandbox) {
 		this.sandbox = sandbox;
 	}
 
@@ -67,45 +67,57 @@ public class Organization {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((account == null) ? 0 : account.hashCode());
-		result = prime * result + ((id == null) ? 0 : id.hashCode());
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((organizationType == null) ? 0 : organizationType.hashCode());
+		result = prime * result + (account == null ? 0 : account.hashCode());
+		result = prime * result + (id == null ? 0 : id.hashCode());
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (organizationType == null ? 0 : organizationType.hashCode());
 		result = prime * result + (sandbox ? 1231 : 1237);
 		return result;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
+	public boolean equals(final Object obj) {
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
-		Organization other = (Organization) obj;
+		}
+		final Organization other = (Organization) obj;
 		if (account == null) {
-			if (other.account != null)
+			if (other.account != null) {
 				return false;
-		} else if (!account.equals(other.account))
+			}
+		} else if (!account.equals(other.account)) {
 			return false;
+		}
 		if (id == null) {
-			if (other.id != null)
+			if (other.id != null) {
 				return false;
-		} else if (!id.equals(other.id))
+			}
+		} else if (!id.equals(other.id)) {
 			return false;
+		}
 		if (name == null) {
-			if (other.name != null)
+			if (other.name != null) {
 				return false;
-		} else if (!name.equals(other.name))
+			}
+		} else if (!name.equals(other.name)) {
 			return false;
+		}
 		if (organizationType == null) {
-			if (other.organizationType != null)
+			if (other.organizationType != null) {
 				return false;
-		} else if (!organizationType.equals(other.organizationType))
+			}
+		} else if (!organizationType.equals(other.organizationType)) {
 			return false;
-		if (sandbox != other.sandbox)
+		}
+		if (sandbox != other.sandbox) {
 			return false;
+		}
 		return true;
 	}
 
@@ -113,7 +125,7 @@ public class Organization {
 		return account;
 	}
 
-	public void setAccount(ConnectedAccount account) {
+	public void setAccount(final ConnectedAccount account) {
 		this.account = account;
 	}
 }

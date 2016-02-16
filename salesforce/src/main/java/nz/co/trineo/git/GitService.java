@@ -43,20 +43,20 @@ public class GitService {
 		private final GitProcess process;
 		private final GitProcessDAO processDAO;
 
-		public GitMonitor(GitProcess process, final GitProcessDAO processDAO) {
+		public GitMonitor(final GitProcess process, final GitProcessDAO processDAO) {
 			super();
 			this.process = process;
 			this.processDAO = processDAO;
 		}
 
 		@Override
-		public void update(int completed) {
+		public void update(final int completed) {
 			process.getTask().setCurrentWork(completed);
 			processDAO.persist(process);
 		}
 
 		@Override
-		public void start(int totalTasks) {
+		public void start(final int totalTasks) {
 			process.setTotalTasks(totalTasks);
 			processDAO.persist(process);
 		}
@@ -74,7 +74,7 @@ public class GitService {
 		}
 
 		@Override
-		public void beginTask(String title, int totalWork) {
+		public void beginTask(final String title, final int totalWork) {
 			process.setTask(new GitTask(title, totalWork));
 			processDAO.persist(process);
 		}
@@ -84,7 +84,7 @@ public class GitService {
 	private final GitProcessDAO processDAO;
 	private final AccountDAO accountDAO;
 
-	public GitService(AppConfiguration configuration, final GitProcessDAO processDAO, final AccountDAO accountDAO)
+	public GitService(final AppConfiguration configuration, final GitProcessDAO processDAO, final AccountDAO accountDAO)
 			throws IOException {
 		super();
 		this.configuration = configuration;
@@ -93,7 +93,7 @@ public class GitService {
 		forceMkdir(configuration.getGitDirectory());
 	}
 
-	public GitProcess clone(String name, String cloneURL, final int accId) throws GitServiceException {
+	public GitProcess clone(final String name, final String cloneURL, final int accId) throws GitServiceException {
 		final ConnectedAccount account = accountDAO.get(accId);
 		final GitProcess process = new GitProcess();
 		processDAO.persist(process);
@@ -103,7 +103,7 @@ public class GitService {
 		try (Git git = Git.cloneRepository().setDirectory(new File(configuration.getGitDirectory(), name))
 				.setURI(cloneURL).setProgressMonitor(monitor).setCredentialsProvider(credentialsProvider).call();) {
 			git.getRepository().close();
-		} catch (GitAPIException e) {
+		} catch (final GitAPIException e) {
 			throw new GitServiceException(e);
 		}
 		return process;
@@ -127,7 +127,7 @@ public class GitService {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir)) {
 			return true;
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			log.error("Not a valid Git Repo", e);
 		}
 		return false;
@@ -138,7 +138,7 @@ public class GitService {
 		try (Repository repository = FileRepositoryBuilder.create(gitDir)) {
 			final Map<String, Ref> tags = repository.getTags();
 			return tags.keySet();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new GitServiceException(e);
 		}
 	}
@@ -203,15 +203,15 @@ public class GitService {
 		}
 	}
 
-	private AbstractTreeIterator prepareTreeParser(Repository repository, String ref)
+	private AbstractTreeIterator prepareTreeParser(final Repository repository, final String ref)
 			throws IOException, MissingObjectException, IncorrectObjectTypeException {
 		// from the commit we can build the tree which allows us to construct the TreeParser
-		Ref head = repository.getRef(ref);
+		final Ref head = repository.getRef(ref);
 		try (RevWalk walk = new RevWalk(repository)) {
-			RevCommit commit = walk.parseCommit(head.getObjectId());
-			RevTree tree = walk.parseTree(commit.getTree().getId());
+			final RevCommit commit = walk.parseCommit(head.getObjectId());
+			final RevTree tree = walk.parseTree(commit.getTree().getId());
 
-			CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
+			final CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
 			try (ObjectReader oldReader = repository.newObjectReader()) {
 				oldTreeParser.reset(oldReader, tree.getId());
 			}

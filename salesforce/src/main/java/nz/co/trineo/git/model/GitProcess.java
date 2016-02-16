@@ -27,7 +27,7 @@ public class GitProcess {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(final int id) {
 		this.id = id;
 	}
 
@@ -35,7 +35,7 @@ public class GitProcess {
 		return totalTasks;
 	}
 
-	public void setTotalTasks(int totalTasks) {
+	public void setTotalTasks(final int totalTasks) {
 		this.totalTasks = totalTasks;
 	}
 
@@ -43,7 +43,7 @@ public class GitProcess {
 		return task;
 	}
 
-	public void setTask(GitTask task) {
+	public void setTask(final GitTask task) {
 		this.task = task;
 	}
 
@@ -51,7 +51,7 @@ public class GitProcess {
 		return completedTasks;
 	}
 
-	public void setCompletedTasks(int completedTasks) {
+	public void setCompletedTasks(final int completedTasks) {
 		this.completedTasks = completedTasks;
 	}
 }

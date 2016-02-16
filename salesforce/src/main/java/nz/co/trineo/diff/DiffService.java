@@ -21,7 +21,7 @@ public class DiffService {
 
 	private final DiffDAO dao;
 
-	public DiffService(DiffDAO dao) {
+	public DiffService(final DiffDAO dao) {
 		super();
 		this.dao = dao;
 	}
@@ -46,7 +46,7 @@ public class DiffService {
 			diff.getModified().put(getName(filea.getName()), string);
 			dao.persist(diff);
 			return diff;
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new DiffException(e);
 		}
 	}

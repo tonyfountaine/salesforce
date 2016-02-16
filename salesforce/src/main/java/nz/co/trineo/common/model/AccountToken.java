@@ -36,8 +36,8 @@ public class AccountToken {
 	}
 
 	@JsonProperty("access_token")
-	public void setAccessToken(String access_token) {
-		this.accessToken = access_token;
+	public void setAccessToken(final String access_token) {
+		accessToken = access_token;
 	}
 
 	@JsonProperty
@@ -45,7 +45,7 @@ public class AccountToken {
 		return scpoe;
 	}
 
-	public void setScpoe(String scpoe) {
+	public void setScpoe(final String scpoe) {
 		this.scpoe = scpoe;
 	}
 
@@ -55,8 +55,8 @@ public class AccountToken {
 	}
 
 	@JsonProperty("token_type")
-	public void setTokenType(String token_type) {
-		this.tokenType = token_type;
+	public void setTokenType(final String token_type) {
+		tokenType = token_type;
 	}
 
 	@JsonProperty("refresh_token")
@@ -65,8 +65,8 @@ public class AccountToken {
 	}
 
 	@JsonProperty("refresh_token")
-	public void setRefreshToken(String refresh_token) {
-		this.refreshToken = refresh_token;
+	public void setRefreshToken(final String refresh_token) {
+		refreshToken = refresh_token;
 	}
 
 	@JsonProperty("instance_url")
@@ -75,7 +75,7 @@ public class AccountToken {
 	}
 
 	@JsonProperty("instance_url")
-	public void setInstanceUrl(String instanceUrl) {
+	public void setInstanceUrl(final String instanceUrl) {
 		this.instanceUrl = instanceUrl;
 	}
 
@@ -83,48 +83,61 @@ public class AccountToken {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((accessToken == null) ? 0 : accessToken.hashCode());
-		result = prime * result + ((instanceUrl == null) ? 0 : instanceUrl.hashCode());
-		result = prime * result + ((refreshToken == null) ? 0 : refreshToken.hashCode());
-		result = prime * result + ((scpoe == null) ? 0 : scpoe.hashCode());
-		result = prime * result + ((tokenType == null) ? 0 : tokenType.hashCode());
+		result = prime * result + (accessToken == null ? 0 : accessToken.hashCode());
+		result = prime * result + (instanceUrl == null ? 0 : instanceUrl.hashCode());
+		result = prime * result + (refreshToken == null ? 0 : refreshToken.hashCode());
+		result = prime * result + (scpoe == null ? 0 : scpoe.hashCode());
+		result = prime * result + (tokenType == null ? 0 : tokenType.hashCode());
 		return result;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
+	public boolean equals(final Object obj) {
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
-		AccountToken other = (AccountToken) obj;
+		}
+		final AccountToken other = (AccountToken) obj;
 		if (accessToken == null) {
-			if (other.accessToken != null)
+			if (other.accessToken != null) {
 				return false;
-		} else if (!accessToken.equals(other.accessToken))
+			}
+		} else if (!accessToken.equals(other.accessToken)) {
 			return false;
+		}
 		if (instanceUrl == null) {
-			if (other.instanceUrl != null)
+			if (other.instanceUrl != null) {
 				return false;
-		} else if (!instanceUrl.equals(other.instanceUrl))
+			}
+		} else if (!instanceUrl.equals(other.instanceUrl)) {
 			return false;
+		}
 		if (refreshToken == null) {
-			if (other.refreshToken != null)
+			if (other.refreshToken != null) {
 				return false;
-		} else if (!refreshToken.equals(other.refreshToken))
+			}
+		} else if (!refreshToken.equals(other.refreshToken)) {
 			return false;
+		}
 		if (scpoe == null) {
-			if (other.scpoe != null)
+			if (other.scpoe != null) {
 				return false;
-		} else if (!scpoe.equals(other.scpoe))
+			}
+		} else if (!scpoe.equals(other.scpoe)) {
 			return false;
+		}
 		if (tokenType == null) {
-			if (other.tokenType != null)
+			if (other.tokenType != null) {
 				return false;
-		} else if (!tokenType.equals(other.tokenType))
+			}
+		} else if (!tokenType.equals(other.tokenType)) {
 			return false;
+		}
 		return true;
 	}
 }

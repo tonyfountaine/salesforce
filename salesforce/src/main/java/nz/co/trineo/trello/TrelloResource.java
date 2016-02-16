@@ -24,7 +24,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 public class TrelloResource {
 	private final TrelloService service;
 
-	public TrelloResource(TrelloService service) {
+	public TrelloResource(final TrelloService service) {
 		this.service = service;
 	}
 
@@ -50,8 +50,8 @@ public class TrelloResource {
 	@Timed
 	@Path("/boards/{id}")
 	@UnitOfWork
-	public Response getBoard(final @PathParam("id") String id,final @QueryParam("acc") int accId) {
-		final Board board = service.getBoard(id,accId);
+	public Response getBoard(final @PathParam("id") String id, final @QueryParam("acc") int accId) {
+		final Board board = service.getBoard(id, accId);
 		return Response.ok(board).build();
 	}
 
@@ -59,8 +59,8 @@ public class TrelloResource {
 	@Timed
 	@Path("/boards/{id}/cards")
 	@UnitOfWork
-	public Response getCards(final @PathParam("id") String id,final @QueryParam("acc") int accId) {
-		final List<Card> cards = service.getCards(id,accId);
+	public Response getCards(final @PathParam("id") String id, final @QueryParam("acc") int accId) {
+		final List<Card> cards = service.getCards(id, accId);
 		return Response.ok(cards).build();
 	}
 
@@ -68,8 +68,8 @@ public class TrelloResource {
 	@Timed
 	@Path("/cards/{id}")
 	@UnitOfWork
-	public Response getCard(final @PathParam("id") String id,final @QueryParam("acc") int accId) {
-		final Card card = service.getCard(id,accId);
+	public Response getCard(final @PathParam("id") String id, final @QueryParam("acc") int accId) {
+		final Card card = service.getCard(id, accId);
 		return Response.ok(card).build();
 	}
 }
