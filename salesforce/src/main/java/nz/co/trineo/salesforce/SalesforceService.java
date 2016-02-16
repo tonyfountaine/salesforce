@@ -74,6 +74,8 @@ public class SalesforceService implements ConnectedService {
 	private static final double API_VERSION = 35.0;
 	private static final long ONE_SECOND = 1000;
 	private static final int MAX_NUM_POLL_REQUESTS = 50;
+	private static final Pattern genPattern = Pattern.compile("<!--\\s+.*\\s+-->");
+
 	private final AccountDAO credDAO;
 	private final OrganizationDAO orgDAO;
 	private final AppConfiguration configuration;
@@ -393,7 +395,7 @@ public class SalesforceService implements ConnectedService {
 		final Path path = repoDir.toPath();
 		try {
 			Files.walk(path).filter(p -> {
-				return Files.isDirectory(path) && !p.toString().contains(".git") && !p.toString().endsWith("-meta.xml")
+				return !p.toString().contains(".git") && !p.toString().endsWith("-meta.xml")
 						&& !p.toString().contains("package.xml");
 			}).forEach(p -> {
 				final MetadataNode node = new MetadataNode();
@@ -431,33 +433,30 @@ public class SalesforceService implements ConnectedService {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	public List<String> getMetadataContentLines(final String id, final String path) throws SalesforceException {
-		try {
-			final InputStream input = getMetadataContent(id, path);
+		try (final InputStream input = getMetadataContent(id, path);) {
 			final XhtmlRenderer ren;
 			if (path.endsWith(".cls") || path.endsWith(".trigger")) {
 				ren = new JavaXhtmlRenderer();
 			} else {
 				ren = new XmlXhtmlRenderer();
 			}
-			final PipedInputStream in = new PipedInputStream();
-			final PipedOutputStream out = new PipedOutputStream(in);
-			new Thread(() -> {
-				try {
-					ren.highlight(path, input, out, "UTF-8", true);
-				} catch (final Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+			try (final PipedInputStream in = new PipedInputStream();
+					final PipedOutputStream out = new PipedOutputStream(in);) {
+				new Thread(() -> {
+					try {
+						ren.highlight(path, input, out, "UTF-8", true);
+					} catch (final Exception e) {
+						log.error("Unable to highlight the code", e);
+					}
+				}).start();
+				final List<String> lines = new ArrayList<>();
+				try (final BufferedReader b = new BufferedReader(new InputStreamReader(in, "UTF-8"));) {
+					b.lines().filter(s -> !genPattern.matcher(s).find()).forEach(i -> {
+						lines.add(i.replaceAll("<span class=\"[a-zA-Z0-9_]+\"></span><br />", ""));
+					});
+					return lines;
 				}
-			}).start();
-			final List<String> lines = new ArrayList<>();
-			final Pattern genPattern = Pattern.compile("<!--\\s+.*\\s+-->");
-			try (BufferedReader b = new BufferedReader(new InputStreamReader(in, "UTF-8"));) {
-				b.lines().filter(s -> !genPattern.matcher(s).find()).forEach(i -> {
-					lines.add(i.replaceAll("<span class=\"[a-zA-Z0-9_]+\"></span><br />", ""));
-				});
-				return lines;
 			}
 		} catch (final IOException e) {
 			throw new SalesforceException(e);
