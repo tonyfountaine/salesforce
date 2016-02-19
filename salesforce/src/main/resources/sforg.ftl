@@ -14,6 +14,7 @@
 				<li class="active"><a href="#backups" aria-controls="backups" data-toggle="pill">Backups</a></li>
 				<li><a href="#metadata" aria-controls="metadata" data-toggle="pill">Metadata</a></li>
 				<li><a href="#tests" aria-controls="tests" data-toggle="pill">Tests</a></li>
+				<li><a href="#compare" aria-controls="compare" data-toggle="pill">Compare</a></li>
 			</ul>
 			<div class="tab-content">
 				<div class="tab-pane active" id="backups">
@@ -88,11 +89,44 @@
 						</table>
 					</div>
 				</div>
+				<div class="tab-pane" id="compare">
+					<div class="row">
+						<div class="col-xs-6">
+							<div class="panel panel-default">
+								<div class="panel-heading">
+									<h3 class="panel-title" id="codeHead">
+										Source
+										<select class="form-control" id="sourceSelect">
+											<#list backups as backup>
+												<option>${backup}</option>
+											</#list>
+										</select>
+									</h3>
+								</div>
+							</div>
+						</div>
+						<div class="col-xs-6">
+							<div class="panel panel-default">
+								<div class="panel-heading">
+									<h3 class="panel-title" id="codeHead">
+										Target
+										<select class="form-control" id="targetSelect">
+											<#list backups as backup>
+												<option>${backup}</option>
+											</#list>
+										</select>
+									</h3>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row" id="compareData">
+					</div>
+				</div>
 			</div>
 		</div>
 <#include "/scripts.ftl">
 		<script>
-//hljs.initHighlightingOnLoad();
 $(function () {
     $('body').on('click', '.delete', function (e) {
         var value = $(this).data("id");
@@ -114,7 +148,6 @@ $(function () {
         window.open("/sf/orgs/${org.id}/backups/" + value);
     });
 });
-//$('#tree').treeview({data: getTree()});
 $.getJSON("/sf/orgs/${org.id}/metadata", "", function (data) {
 	var $tree = $('#tree').treeview({
 		data: [data],
@@ -137,20 +170,28 @@ $.getJSON("/sf/orgs/${org.id}/metadata", "", function (data) {
 			success: function (data) {
 				$('#codeHead').text(node.text);
 				$('#code').html(data);
-				//hljs.highlightBlock($('#code').get());
-				//$('#code').removeClass('prettyprinted').removeClass('lang-xml').removeClass('lang-java');
-				//if (node.text.contains('.cls')) {
-				//	$('#code').addClass('lang-java');
-				//} else {
-				//	$('#code').addClass('lang-xml');
-				//}
-				//PR.prettyPrint();
 			},
 			error: function () {
 				alert("failure");
 			}
 		});
 	});
+});
+$(function () {
+    $('body').on('change', '.form-control', function (e) {
+        var sourceValue = $('#sourceSelect').val();
+        var targetValue = $('#targetSelect').val();
+        $.ajax({
+            type: "GET",
+            url: "/sf/orgs/${org.id}/compare/" + sourceValue + "/" + targetValue,
+            success: function(data) {
+                $('#compareData').html(data);
+            },
+            error: function() {
+                alert("failure");
+            }
+        });
+    });
 });
 		</script>
 	</body>

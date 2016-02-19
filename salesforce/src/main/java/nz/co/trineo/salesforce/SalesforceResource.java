@@ -32,6 +32,7 @@ import nz.co.trineo.git.GitServiceException;
 import nz.co.trineo.salesforce.model.Environment;
 import nz.co.trineo.salesforce.model.MetadataNode;
 import nz.co.trineo.salesforce.model.Organization;
+import nz.co.trineo.salesforce.views.CompareView;
 import nz.co.trineo.salesforce.views.ContentView;
 import nz.co.trineo.salesforce.views.SfOrgView;
 import nz.co.trineo.salesforce.views.SfOrgsView;
@@ -96,13 +97,15 @@ public class SalesforceResource {
 	}
 
 	@GET
-	@Path("/orgs/{id}/diff/{first}/{second}")
+	@Path("/orgs/{id}/compare/{first}/{second}")
 	@Timed
 	@UnitOfWork
+	@Produces(MediaType.TEXT_HTML)
 	public Response diffBackups(final @PathParam("id") String id, final @PathParam("first") String first,
 			final @PathParam("second") String second) throws GitServiceException {
-		final String list = salesforceService.diffBackups(id, first, second);
-		return Response.ok(list).build();
+		final List<String> list = salesforceService.diffBackups(id, first, second);
+		final CompareView view = new CompareView(list);
+		return Response.ok(view).build();
 	}
 
 	@POST

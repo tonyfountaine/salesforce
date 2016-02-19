@@ -418,7 +418,7 @@ public class SalesforceService implements ConnectedService {
 		return rootNode;
 	}
 
-	public String diffBackups(final String id, final String first, final String second) throws GitServiceException {
+	public List<String> diffBackups(final String id, final String first, final String second) throws GitServiceException {
 		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
 		return gitService.diff(repoDir, first, second);
 	}

@@ -5,6 +5,7 @@ import static org.apache.commons.io.FileUtils.forceMkdir;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -180,7 +181,8 @@ public class GitService {
 		}
 	}
 
-	public String diff(final File repoDir, final String firstTag, final String secondTag) throws GitServiceException {
+	public List<String> diff(final File repoDir, final String firstTag, final String secondTag)
+			throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
 			final AbstractTreeIterator oldTreeIter = prepareTreeParser(repository, firstTag);
@@ -188,16 +190,19 @@ public class GitService {
 			final List<DiffEntry> diffs = git.diff().setNewTree(newTreeIter).setOldTree(oldTreeIter).call();
 
 			final ByteArrayOutputStream out = new ByteArrayOutputStream();
+			final List<String> diffList = new ArrayList<>();
 			try (final DiffFormatter df = new DiffFormatter(out);) {
 				df.setRepository(repository);
 
 				for (final DiffEntry diff : diffs) {
 					df.format(diff);
-					diff.getOldId();
+					// diff.getOldId();
+					diffList.add(out.toString("UTF-8"));
+					out.reset();
 				}
 			}
 
-			return out.toString("UTF-8");
+			return diffList;
 		} catch (IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
