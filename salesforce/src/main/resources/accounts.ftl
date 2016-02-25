@@ -4,7 +4,7 @@
 <#include "/head.ftl">
 	<body>
 <#include "/nav.ftl">
-		<div class="container">
+		<div class="container-fluid">
 			<div class="row">
 				<div class="col-xs-11 col-xs-offset-1">
 					<h1>${title}</h1>
@@ -85,10 +85,10 @@ $(function () {
         $.ajax({
             type: "DELETE",
             url: "accounts/" + value,
-            success: function() {
+            done: function(data, textStatus, jqXHR) {
                 location.reload(true);  
             },
-            error: function() {
+            fail: function(jqXHR, textStatus, errorThrown) {
                 alert("failure");
             }
         });

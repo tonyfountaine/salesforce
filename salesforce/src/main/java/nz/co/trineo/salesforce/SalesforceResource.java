@@ -102,8 +102,20 @@ public class SalesforceResource {
 	@UnitOfWork
 	@Produces(MediaType.TEXT_HTML)
 	public Response diffBackups(final @PathParam("id") String id, final @PathParam("first") String first,
-			final @PathParam("second") String second) throws GitServiceException {
+			final @PathParam("second") String second) throws SalesforceException {
 		final List<String> list = salesforceService.diffBackups(id, first, second);
+		final CompareView view = new CompareView(list);
+		return Response.ok(view).build();
+	}
+
+
+	@GET
+	@Path("/orgs/{idA}/compare/{idB}")
+	@Timed
+	@UnitOfWork
+	@Produces(MediaType.TEXT_HTML)
+	public Response diffOrgs(final @PathParam("idA") String idA, final @PathParam("idB") String idB) throws SalesforceException {
+		final List<String> list = salesforceService.diffOrgs(idA, idB);
 		final CompareView view = new CompareView(list);
 		return Response.ok(view).build();
 	}

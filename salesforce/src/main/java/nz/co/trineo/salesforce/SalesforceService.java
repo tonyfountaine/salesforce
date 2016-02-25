@@ -418,9 +418,24 @@ public class SalesforceService implements ConnectedService {
 		return rootNode;
 	}
 
-	public List<String> diffBackups(final String id, final String first, final String second) throws GitServiceException {
+	public List<String> diffBackups(final String id, final String first, final String second)
+			throws SalesforceException {
 		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
-		return gitService.diff(repoDir, first, second);
+		try {
+			return gitService.diff(repoDir, first, second);
+		} catch (GitServiceException e) {
+			throw new SalesforceException(e);
+		}
+	}
+
+	public List<String> diffOrgs(final String orgIdA, final String orgIdB) throws SalesforceException {
+		final File repoDirA = new File(configuration.getSalesforceDirectory(), orgIdA);
+		final File repoDirB = new File(configuration.getSalesforceDirectory(), orgIdB);
+		try {
+			return gitService.diffRepos(repoDirA, repoDirB);
+		} catch (GitServiceException e) {
+			throw new SalesforceException(e);
+		}
 	}
 
 	public InputStream getMetadataContent(final String id, final String path) throws SalesforceException {
@@ -472,11 +487,11 @@ public class SalesforceService implements ConnectedService {
 	}
 
 	public String tokenURL() {
-		return "https://login.salesforce.com/services/oauth2/token";
+		return "https://test.salesforce.com/services/oauth2/token";
 	}
 
 	public String authorizeURL() {
-		return "https://login.salesforce.com/services/oauth2/authorize";
+		return "https://test.salesforce.com/services/oauth2/authorize";
 	}
 
 	@Override

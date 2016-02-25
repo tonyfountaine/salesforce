@@ -4,7 +4,7 @@
 <#include "/head.ftl">
 	<body>
 <#include "/nav.ftl">
-		<div class="container">
+		<div class="container-fluid">
 			<div class="row">
 				<div class="col-xs-11 col-xs-offset-1">
 					<h1>${title} <small>${org.id}</small></h1>
@@ -133,10 +133,10 @@ $(function () {
         $.ajax({
             type: "DELETE",
             url: "/sf/orgs/${org.id}/backups/" + value,
-            success: function() {
+            success: function(data, textStatus, jqXHR) {
                 location.reload(true);  
             },
-            error: function() {
+            error: function(jqXHR, textStatus, errorThrown) {
                 alert("failure");
             }
         });
@@ -167,11 +167,11 @@ $.getJSON("/sf/orgs/${org.id}/metadata", "", function (data) {
 			type: "GET",
 			url: "/sf/orgs/${org.id}/metadata" + path,
 			accepts: "text/html",
-			success: function (data) {
+			success: function (data, textStatus, jqXHR) {
 				$('#codeHead').text(node.text);
 				$('#code').html(data);
 			},
-			error: function () {
+			error: function (jqXHR, textStatus, errorThrown) {
 				alert("failure");
 			}
 		});
@@ -184,10 +184,10 @@ $(function () {
         $.ajax({
             type: "GET",
             url: "/sf/orgs/${org.id}/compare/" + sourceValue + "/" + targetValue,
-            success: function(data) {
+            success: function(data, textStatus, jqXHR) {
                 $('#compareData').html(data);
             },
-            error: function() {
+            error: function(jqXHR, textStatus, errorThrown) {
                 alert("failure");
             }
         });

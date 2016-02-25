@@ -5,6 +5,7 @@ import static org.apache.commons.io.FileUtils.forceMkdir;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +15,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
@@ -184,28 +184,43 @@ public class GitService {
 	public List<String> diff(final File repoDir, final String firstTag, final String secondTag)
 			throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
-		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+		try (Repository repository = FileRepositoryBuilder.create(gitDir);) {
 			final AbstractTreeIterator oldTreeIter = prepareTreeParser(repository, firstTag);
 			final AbstractTreeIterator newTreeIter = prepareTreeParser(repository, secondTag);
-			final List<DiffEntry> diffs = git.diff().setNewTree(newTreeIter).setOldTree(oldTreeIter).call();
 
-			final ByteArrayOutputStream out = new ByteArrayOutputStream();
-			final List<String> diffList = new ArrayList<>();
-			try (final DiffFormatter df = new DiffFormatter(out);) {
-				df.setRepository(repository);
-
-				for (final DiffEntry diff : diffs) {
-					df.format(diff);
-					// diff.getOldId();
-					diffList.add(out.toString("UTF-8"));
-					out.reset();
-				}
-			}
-
-			return diffList;
-		} catch (IOException | GitAPIException e) {
+			return diffTrees(repository, oldTreeIter, newTreeIter);
+		} catch (IOException e) {
 			throw new GitServiceException(e);
 		}
+	}
+
+	public List<String> diffRepos(final File repoDirA, final File repoDirB) throws GitServiceException {
+		final File gitDirA = new File(repoDirA, ".git");
+		final File gitDirB = new File(repoDirB, ".git");
+		try (Repository repositoryA = FileRepositoryBuilder.create(gitDirA);
+				Repository repositoryB = FileRepositoryBuilder.create(gitDirB);) {
+			final AbstractTreeIterator oldTreeIter = prepareTreeParser(repositoryA, "refs/heads/master");
+			final AbstractTreeIterator newTreeIter = prepareTreeParser(repositoryB, "refs/heads/master");
+
+			return diffTrees(repositoryA, oldTreeIter, newTreeIter);
+		} catch (IOException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	private List<String> diffTrees(Repository repository, final AbstractTreeIterator oldTreeIter,
+			final AbstractTreeIterator newTreeIter) throws IOException, UnsupportedEncodingException {
+		final ByteArrayOutputStream out = new ByteArrayOutputStream();
+		final List<String> diffList = new ArrayList<>();
+		try (final DiffFormatter df = new DiffFormatter(out);) {
+			df.setRepository(repository);
+			df.setNewPrefix("");
+			df.setOldPrefix("");
+			df.format(oldTreeIter, newTreeIter);
+			diffList.add(out.toString("UTF-8"));
+		}
+
+		return diffList;
 	}
 
 	private AbstractTreeIterator prepareTreeParser(final Repository repository, final String ref)
