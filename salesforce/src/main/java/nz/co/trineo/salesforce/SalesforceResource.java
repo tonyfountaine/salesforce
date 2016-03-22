@@ -28,7 +28,7 @@ import com.sforce.soap.apex.RunTestsResult;
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.AccountService;
 import nz.co.trineo.common.model.ConnectedAccount;
-import nz.co.trineo.git.GitServiceException;
+import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.salesforce.model.Environment;
 import nz.co.trineo.salesforce.model.MetadataNode;
 import nz.co.trineo.salesforce.model.Organization;
@@ -103,19 +103,19 @@ public class SalesforceResource {
 	@Produces(MediaType.TEXT_HTML)
 	public Response diffBackups(final @PathParam("id") String id, final @PathParam("first") String first,
 			final @PathParam("second") String second) throws SalesforceException {
-		final List<String> list = salesforceService.diffBackups(id, first, second);
+		final List<GitDiff> list = salesforceService.diffBackups(id, first, second);
 		final CompareView view = new CompareView(list);
 		return Response.ok(view).build();
 	}
-
 
 	@GET
 	@Path("/orgs/{idA}/compare/{idB}")
 	@Timed
 	@UnitOfWork
 	@Produces(MediaType.TEXT_HTML)
-	public Response diffOrgs(final @PathParam("idA") String idA, final @PathParam("idB") String idB) throws SalesforceException {
-		final List<String> list = salesforceService.diffOrgs(idA, idB);
+	public Response diffOrgs(final @PathParam("idA") String idA, final @PathParam("idB") String idB)
+			throws SalesforceException {
+		final List<GitDiff> list = salesforceService.diffOrgs(idA, idB);
 		final CompareView view = new CompareView(list);
 		return Response.ok(view).build();
 	}

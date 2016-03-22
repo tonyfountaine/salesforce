@@ -120,7 +120,9 @@
 							</div>
 						</div>
 					</div>
-					<div class="row" id="compareData">
+					<div class="row">
+						<div id="compareData" class="col-xs-12">
+						</div>
 					</div>
 				</div>
 			</div>

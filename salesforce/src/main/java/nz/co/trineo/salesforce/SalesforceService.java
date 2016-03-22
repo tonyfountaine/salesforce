@@ -66,6 +66,7 @@ import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
+import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.salesforce.model.MetadataNode;
 import nz.co.trineo.salesforce.model.Organization;
 
@@ -418,22 +419,26 @@ public class SalesforceService implements ConnectedService {
 		return rootNode;
 	}
 
-	public List<String> diffBackups(final String id, final String first, final String second)
+	public List<GitDiff> diffBackups(final String id, final String first, final String second)
 			throws SalesforceException {
 		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
 		try {
 			return gitService.diff(repoDir, first, second);
-		} catch (GitServiceException e) {
+		} catch (final GitServiceException e) {
 			throw new SalesforceException(e);
 		}
 	}
 
-	public List<String> diffOrgs(final String orgIdA, final String orgIdB) throws SalesforceException {
+	public List<GitDiff> diffOrgs(final String orgIdA, final String orgIdB) throws SalesforceException {
 		final File repoDirA = new File(configuration.getSalesforceDirectory(), orgIdA);
 		final File repoDirB = new File(configuration.getSalesforceDirectory(), orgIdB);
 		try {
+			if (!gitService.isRemote(repoDirA, repoDirB)) {
+				gitService.addRemote(repoDirA, repoDirB);
+				gitService.fetch(repoDirA);
+			}
 			return gitService.diffRepos(repoDirA, repoDirB);
-		} catch (GitServiceException e) {
+		} catch (final GitServiceException e) {
 			throw new SalesforceException(e);
 		}
 	}
@@ -487,11 +492,11 @@ public class SalesforceService implements ConnectedService {
 	}
 
 	public String tokenURL() {
-		return "https://test.salesforce.com/services/oauth2/token";
+		return "https://login.salesforce.com/services/oauth2/token";
 	}
 
 	public String authorizeURL() {
-		return "https://test.salesforce.com/services/oauth2/authorize";
+		return "https://login.salesforce.com/services/oauth2/authorize";
 	}
 
 	@Override

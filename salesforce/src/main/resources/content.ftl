@@ -3,7 +3,7 @@
 	<#assign count=0 />
 	<#list lines as line>
 		<tr>
-			<td class="num">${line?counter}</td>
+			<td class="num">${line?counter?string["####"]}</td>
 			<td class="code">${line}</td>
 		</tr>
 	</#list>

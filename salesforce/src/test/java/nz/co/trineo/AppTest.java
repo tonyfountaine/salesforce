@@ -1,6 +1,9 @@
 package nz.co.trineo;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -11,7 +14,6 @@ import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.setup.Environment;
-import nz.co.trineo.App;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.github.GitHubResource;
 

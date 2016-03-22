@@ -5,8 +5,6 @@ import static org.apache.commons.io.FileUtils.forceMkdir;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,13 +13,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.diff.DiffFormatter;
+import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -33,6 +32,7 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
+import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.git.model.GitProcess;
 import nz.co.trineo.git.model.GitTask;
 
@@ -181,7 +181,7 @@ public class GitService {
 		}
 	}
 
-	public List<String> diff(final File repoDir, final String firstTag, final String secondTag)
+	public List<GitDiff> diff(final File repoDir, final String firstTag, final String secondTag)
 			throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir);) {
@@ -189,12 +189,12 @@ public class GitService {
 			final AbstractTreeIterator newTreeIter = prepareTreeParser(repository, secondTag);
 
 			return diffTrees(repository, oldTreeIter, newTreeIter);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new GitServiceException(e);
 		}
 	}
 
-	public List<String> diffRepos(final File repoDirA, final File repoDirB) throws GitServiceException {
+	public List<GitDiff> diffRepos(final File repoDirA, final File repoDirB) throws GitServiceException {
 		final File gitDirA = new File(repoDirA, ".git");
 		final File gitDirB = new File(repoDirB, ".git");
 		try (Repository repositoryA = FileRepositoryBuilder.create(gitDirA);
@@ -203,24 +203,69 @@ public class GitService {
 			final AbstractTreeIterator newTreeIter = prepareTreeParser(repositoryB, "refs/heads/master");
 
 			return diffTrees(repositoryA, oldTreeIter, newTreeIter);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new GitServiceException(e);
 		}
 	}
 
-	private List<String> diffTrees(Repository repository, final AbstractTreeIterator oldTreeIter,
-			final AbstractTreeIterator newTreeIter) throws IOException, UnsupportedEncodingException {
-		final ByteArrayOutputStream out = new ByteArrayOutputStream();
-		final List<String> diffList = new ArrayList<>();
-		try (final DiffFormatter df = new DiffFormatter(out);) {
+	public void fetch(final File repoDir) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			git.fetch().call();
+		} catch (IOException | GitAPIException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	public void addRemote(final File repoDirA, final File repoDirB) throws GitServiceException {
+		final File gitDirA = new File(repoDirA, ".git");
+		final File gitDirB = new File(repoDirB, ".git");
+		try (Repository repositoryA = FileRepositoryBuilder.create(gitDirA);) {
+			final StoredConfig config = repositoryA.getConfig();
+			config.setString("remote", "origin", "url", gitDirB.getAbsolutePath());
+			config.save();
+		} catch (final IOException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	public boolean isRemote(final File repoDirA, final File repoDirB) throws GitServiceException {
+		final File gitDirA = new File(repoDirA, ".git");
+		final File gitDirB = new File(repoDirB, ".git");
+		try (Repository repositoryA = FileRepositoryBuilder.create(gitDirA);) {
+			final StoredConfig config = repositoryA.getConfig();
+			final String remoteURL = config.getString("remote", "origin", "url");
+			return gitDirB.getAbsolutePath().equals(remoteURL);
+		} catch (final IOException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	private List<GitDiff> diffTrees(final Repository repository, final AbstractTreeIterator oldTreeIter,
+			final AbstractTreeIterator newTreeIter) throws GitServiceException {
+		try (final Git git = new Git(repository);
+				final ByteArrayOutputStream out = new ByteArrayOutputStream();
+				final GitDiffFormatter df = new GitDiffFormatter(out);) {
+			final List<DiffEntry> list = git.diff().setOldTree(oldTreeIter).setOldTree(oldTreeIter).call();
 			df.setRepository(repository);
+			df.setContext(5);
 			df.setNewPrefix("");
 			df.setOldPrefix("");
-			df.format(oldTreeIter, newTreeIter);
-			diffList.add(out.toString("UTF-8"));
+			list.forEach(d -> {
+				try {
+					log.info(d);
+					df.setPaths(d.getNewPath(), d.getOldPath());
+					df.format(d);
+					out.reset();
+				} catch (final Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			});
+			return df.getEntries();
+		} catch (GitAPIException | IOException e) {
+			throw new GitServiceException(e);
 		}
-
-		return diffList;
 	}
 
 	private AbstractTreeIterator prepareTreeParser(final Repository repository, final String ref)

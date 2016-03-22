@@ -21,7 +21,7 @@
 							<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#NewOrg"><span class="fa fa-plus" aria-hidden="true"></span> New</button>
 						</div>
 					</div>
-<!--
+
 					<div class="modal fade" id="NewOrg" tabindex="-1" role="dialog" aria-labelledby="NewOrgLabel">
 					  <div class="modal-dialog" role="document">
 					    <div class="modal-content">
@@ -45,12 +45,12 @@
 					        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 					        <button type="submit" class="btn btn-primary" data-dismiss="modal" id="submit">
 					        	Add
-					        </button
+					        </button>
 					      </div>
 					    </div>
 					  </div>
 					</div>
- -->
+
 					<div class="row">
 						<table class="table table-striped">
 							<thead>
