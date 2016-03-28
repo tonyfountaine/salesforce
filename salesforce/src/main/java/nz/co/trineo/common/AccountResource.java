@@ -4,7 +4,9 @@ import static javax.ws.rs.core.UriBuilder.fromResource;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -29,6 +31,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.common.views.AccountsView;
 import nz.co.trineo.common.views.SuccessView;
+import nz.co.trineo.salesforce.model.Environment;
 
 @Path("/accounts")
 @Produces(MediaType.APPLICATION_JSON)
@@ -97,14 +100,16 @@ public class AccountResource {
 	@UnitOfWork
 	@Path("/oauth")
 	@Produces(MediaType.TEXT_HTML)
-	public Response startConnect(final @QueryParam("service") String serviceName,
-			final @QueryParam("name") String name) {
+	public Response startConnect(final @QueryParam("service") String serviceName, final @QueryParam("name") String name,
+			final @QueryParam("environment") Environment env) {
 		final URI uri = getRedirectUri(serviceName);
 		final ConnectedAccount account = new ConnectedAccount();
 		account.setName(name);
 		account.setService(serviceName);
 		accountService.create(account);
-		final URI url = accountService.getAuthorizeURIForService(account, uri);
+		final Map<String, Object> additional = new HashMap<>();
+		additional.put("environment", env);
+		final URI url = accountService.getAuthorizeURIForService(account, uri, additional);
 		log.info(url);
 		return Response.temporaryRedirect(url).build();
 	}
