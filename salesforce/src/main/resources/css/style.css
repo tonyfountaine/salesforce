@@ -8,7 +8,7 @@ body {
 }
 
 #code, .diffContent {
-	overflow: scroll;
+	overflow: auto;
 }
 
 #code table, #compareData table {
@@ -61,10 +61,6 @@ body {
 
 #compareData table tr.added td.num {
 	border-color: #c1e9c1;
-}
-
-#tree > .list-group {
-	margin: 0 0;
 }
 
 .xml_plain {

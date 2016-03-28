@@ -89,7 +89,8 @@ public class TrelloService implements ConnectedService {
 	private final Map<String, Token> tokenMap = new HashMap<>();
 
 	@Override
-	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state) {
+	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state,
+			final Map<String, Object> additional) {
 		final OAuthService service = getOAuthService(redirectUri, state);
 		final Token requestToken = service.getRequestToken();
 		tokenMap.put(state, requestToken);
@@ -104,7 +105,8 @@ public class TrelloService implements ConnectedService {
 	}
 
 	@Override
-	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri) {
+	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri,
+			final Map<String, Object> additional) {
 		final OAuthService service = getOAuthService(redirectUri, state);
 
 		// getting access token

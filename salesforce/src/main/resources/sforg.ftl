@@ -45,10 +45,8 @@
 				</div>
 				<div class="tab-pane" id="metadata">
 					<div class="row">
-						<div class="col-xs-4">
-							<div class="panel panel-default">
-								<div id="tree"></div>
-							</div>
+						<div id="metaTree" class="col-xs-4">
+							<div id="tree"></div>
 						</div>
 						<div class="col-xs-8">
 							<div class="panel panel-default">
@@ -91,10 +89,10 @@
 				</div>
 				<div class="tab-pane" id="compare">
 					<div class="row">
-						<div class="col-xs-6">
+						<div class="col-xs-5">
 							<div class="panel panel-default">
 								<div class="panel-heading">
-									<h3 class="panel-title" id="codeHead">
+									<h3 class="panel-title">
 										Source
 										<select class="form-control" id="sourceSelect">
 											<#list backups as backup>
@@ -105,10 +103,10 @@
 								</div>
 							</div>
 						</div>
-						<div class="col-xs-6">
+						<div class="col-xs-5">
 							<div class="panel panel-default">
 								<div class="panel-heading">
-									<h3 class="panel-title" id="codeHead">
+									<h3 class="panel-title">
 										Target
 										<select class="form-control" id="targetSelect">
 											<#list backups as backup>
@@ -119,10 +117,19 @@
 								</div>
 							</div>
 						</div>
-					</div>
-					<div class="row">
-						<div id="compareData" class="col-xs-12">
+						<div class="col-xs-2">
+							<div class="panel panel-default">
+								<div class="panel-heading">
+									<h3 class="panel-title">
+										<button class="btn btn-default" id="compareButton">
+											Compare
+										</button>
+									</h3>
+								</div>
+							</div>
 						</div>
+					</div>
+					<div class="row" id="compareData">
 					</div>
 				</div>
 			</div>
@@ -143,24 +150,42 @@ $(function () {
             }
         });
     });
-});
-$(function () {
+
     $('body').on('click', '.download', function (e) {
         var value = $(this).data("id");
         window.open("/sf/orgs/${org.id}/backups/" + value);
     });
+
+    $('body').on('click', '#compareButton', function (e) {
+        var sourceValue = $('#sourceSelect').val();
+        var targetValue = $('#targetSelect').val();
+        $.ajax({
+            type: "GET",
+            url: "/sf/orgs/${org.id}/compare/" + sourceValue + "/" + targetValue,
+            success: function(data, textStatus, jqXHR) {
+                $('#compareData').html(data);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                alert("failure");
+            }
+        });
+    });
 });
+
 $.getJSON("/sf/orgs/${org.id}/metadata", "", function (data) {
 	var $tree = $('#tree').treeview({
 		data: [data],
 		collapseIcon: "fa fa-folder-open-o",
 		expandIcon: "fa fa-folder-o",
-		nodeIcon: "fa fa-file-o",
-		showBorder: false
+		nodeIcon: "fa fa-file-o"
 	});
+
 	$('#tree').on('nodeSelected', function(event, node) {
 		var path = "";
 		var n = node;
+		if (!n.text.contains(".")) {
+			return;
+		}
 		while (n.text != '/') {
 			path = "/" + n.text + path;
 			n = $tree.treeview('getParent', n);
@@ -178,22 +203,6 @@ $.getJSON("/sf/orgs/${org.id}/metadata", "", function (data) {
 			}
 		});
 	});
-});
-$(function () {
-    $('body').on('change', '.form-control', function (e) {
-        var sourceValue = $('#sourceSelect').val();
-        var targetValue = $('#targetSelect').val();
-        $.ajax({
-            type: "GET",
-            url: "/sf/orgs/${org.id}/compare/" + sourceValue + "/" + targetValue,
-            success: function(data, textStatus, jqXHR) {
-                $('#compareData').html(data);
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                alert("failure");
-            }
-        });
-    });
 });
 		</script>
 	</body>

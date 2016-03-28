@@ -29,7 +29,6 @@ import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.AccountService;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.git.model.GitDiff;
-import nz.co.trineo.salesforce.model.Environment;
 import nz.co.trineo.salesforce.model.MetadataNode;
 import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.salesforce.views.CompareView;
@@ -180,21 +179,6 @@ public class SalesforceResource {
 		final String backup = salesforceService.createBackup(id);
 		return Response.created(UriBuilder.fromMethod(getClass(), "getBackup").build(id, backup)).entity(backup)
 				.build();
-	}
-
-	private String getOrgurl(final Environment request) {
-		final String orgURL;
-		switch (request) {
-		case SANDBOX:
-			orgURL = "https://test.salesforce.com";
-			break;
-		case DEVELOPER:
-		case PRODUCTION:
-		default:
-			orgURL = "https://login.salesforce.com";
-			break;
-		}
-		return orgURL;
 	}
 
 	@GET

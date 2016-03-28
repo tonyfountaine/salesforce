@@ -26,6 +26,9 @@ public class GitDiffFormatter extends DiffFormatter {
 
 	public GitDiffFormatter(final OutputStream out) {
 		super(out);
+		setContext(5);
+		setNewPrefix("");
+		setOldPrefix("");
 	}
 
 	@Override

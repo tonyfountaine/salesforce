@@ -67,6 +67,7 @@ import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
 import nz.co.trineo.git.model.GitDiff;
+import nz.co.trineo.salesforce.model.Environment;
 import nz.co.trineo.salesforce.model.MetadataNode;
 import nz.co.trineo.salesforce.model.Organization;
 
@@ -312,7 +313,7 @@ public class SalesforceService implements ConnectedService {
 			if (e instanceof SoapFaultException) {
 				if (((SoapFaultException) e).getFaultCode().getLocalPart()
 						.equals(ExceptionCode.INVALID_SESSION_ID.toString())) {
-					refreshToken(account);
+					refreshToken(account, organization);
 					soapConnection = getSoapConnection(account);
 					try {
 						final RunTestsResult runTestsResult = soapConnection.runTests(runTestsRequest);
@@ -491,17 +492,33 @@ public class SalesforceService implements ConnectedService {
 		return configuration.getClientSecret();
 	}
 
-	public String tokenURL() {
-		return "https://login.salesforce.com/services/oauth2/token";
+	private String getOrgurl(final Environment request) {
+		final String orgURL;
+		switch (request) {
+		case SANDBOX:
+			orgURL = "https://test.salesforce.com";
+			break;
+		case DEVELOPER:
+		case PRODUCTION:
+		default:
+			orgURL = "https://login.salesforce.com";
+			break;
+		}
+		return orgURL;
 	}
 
-	public String authorizeURL() {
-		return "https://login.salesforce.com/services/oauth2/authorize";
+	public String tokenURL(final Environment object) {
+		return getOrgurl(object) + "/services/oauth2/token";
+	}
+
+	public String authorizeURL(final Environment object) {
+		return getOrgurl(object) + "/services/oauth2/authorize";
 	}
 
 	@Override
-	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state) {
-		final String uriTemplate = authorizeURL()
+	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state,
+			final Map<String, Object> additional) {
+		final String uriTemplate = authorizeURL((Environment) additional.get("environment"))
 				+ "?response_type=code&client_id={clientId}&redirect_uri={redirect_uri}&state={state}&scope={scope}&display={display}&prompt={prompt}";
 		final URI url = UriBuilder.fromUri(uriTemplate).build(getClientId(), redirectUri, state, "full refresh_token",
 				"popup", "login consent");
@@ -509,7 +526,8 @@ public class SalesforceService implements ConnectedService {
 	}
 
 	@Override
-	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri) {
+	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri,
+			final Map<String, Object> additional) {
 		final JerseyClient client = JerseyClientBuilder.createClient();
 		final Form entity = new Form();
 		entity.param("code", code);
@@ -517,19 +535,22 @@ public class SalesforceService implements ConnectedService {
 		entity.param("client_id", getClientId());
 		entity.param("client_secret", getClientSecret());
 		entity.param("redirect_uri", redirectUri.toString());
-		final AccountToken tokenResponse = client.target(tokenURL()).request(MediaType.APPLICATION_JSON_TYPE)
+		final AccountToken tokenResponse = client.target(tokenURL((Environment) additional.get("environment")))
+				.request(MediaType.APPLICATION_JSON_TYPE)
 				.post(Entity.entity(entity, MediaType.APPLICATION_FORM_URLENCODED_TYPE), AccountToken.class);
 		return tokenResponse;
 	}
 
-	public AccountToken refreshToken(final ConnectedAccount account) {
+	public AccountToken refreshToken(final ConnectedAccount account, final Organization organization) {
 		final JerseyClient client = JerseyClientBuilder.createClient();
 		final Form entity = new Form();
 		entity.param("grant_type", "refresh_token");
 		entity.param("client_id", getClientId());
 		entity.param("client_secret", getClientSecret());
 		entity.param("refresh_token", account.getToken().getRefreshToken());
-		final AccountToken tokenResponse = client.target(tokenURL()).request(MediaType.APPLICATION_JSON_TYPE)
+		final AccountToken tokenResponse = client
+				.target(tokenURL(organization.isSandbox() ? Environment.SANDBOX : Environment.PRODUCTION))
+				.request(MediaType.APPLICATION_JSON_TYPE)
 				.post(Entity.entity(entity, MediaType.APPLICATION_FORM_URLENCODED_TYPE), AccountToken.class);
 		account.setToken(tokenResponse);
 		credDAO.persist(account);

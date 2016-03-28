@@ -55,6 +55,14 @@
 							</select>
 						</div>
 						<div class="form-group">
+							<label class="control-label">Environment</label>
+							<select class="form-control" id="sfEnv" name="environment">
+								<#list environments as env>
+									<option value="${env}">${env}</option>
+								</#list>
+							</select>
+						</div>
+						<div class="form-group">
 							<label class="control-label">Name</label>
 							<input type="text" class="form-control" id="name" name="name" />
 						</div>
@@ -78,15 +86,14 @@ $(function () {
         e.preventDefault();
     	window.open("accounts/oauth?" + values, "oauth", "width=600,height=600,scrollbars=yes");
     });
-});
-$(function () {
+
     $('body').on('click', '.delete', function (e) {
         var value = $(this).data("id");
         $.ajax({
             type: "DELETE",
             url: "accounts/" + value,
             done: function(data, textStatus, jqXHR) {
-                location.reload(true);  
+                location.reload(true);
             },
             fail: function(jqXHR, textStatus, errorThrown) {
                 alert("failure");

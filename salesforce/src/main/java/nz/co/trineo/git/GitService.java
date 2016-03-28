@@ -189,7 +189,7 @@ public class GitService {
 			final AbstractTreeIterator newTreeIter = prepareTreeParser(repository, secondTag);
 
 			return diffTrees(repository, oldTreeIter, newTreeIter);
-		} catch (final IOException e) {
+		} catch (final IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
 	}
@@ -203,7 +203,7 @@ public class GitService {
 			final AbstractTreeIterator newTreeIter = prepareTreeParser(repositoryB, "refs/heads/master");
 
 			return diffTrees(repositoryA, oldTreeIter, newTreeIter);
-		} catch (final IOException e) {
+		} catch (final IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
 	}
@@ -242,15 +242,12 @@ public class GitService {
 	}
 
 	private List<GitDiff> diffTrees(final Repository repository, final AbstractTreeIterator oldTreeIter,
-			final AbstractTreeIterator newTreeIter) throws GitServiceException {
+			final AbstractTreeIterator newTreeIter) throws GitAPIException, IOException {
 		try (final Git git = new Git(repository);
 				final ByteArrayOutputStream out = new ByteArrayOutputStream();
 				final GitDiffFormatter df = new GitDiffFormatter(out);) {
 			final List<DiffEntry> list = git.diff().setOldTree(oldTreeIter).setOldTree(oldTreeIter).call();
 			df.setRepository(repository);
-			df.setContext(5);
-			df.setNewPrefix("");
-			df.setOldPrefix("");
 			list.forEach(d -> {
 				try {
 					log.info(d);
@@ -258,13 +255,10 @@ public class GitService {
 					df.format(d);
 					out.reset();
 				} catch (final Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					log.error("An error ocurred while processing an entry", e);
 				}
 			});
 			return df.getEntries();
-		} catch (GitAPIException | IOException e) {
-			throw new GitServiceException(e);
 		}
 	}
 

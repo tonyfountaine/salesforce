@@ -2,6 +2,7 @@ package nz.co.trineo.github;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
@@ -111,7 +112,8 @@ public class GitHubService implements ConnectedService {
 	}
 
 	@Override
-	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state) {
+	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state,
+			final Map<String, Object> additional) {
 		final String uriTemplate = authorizeURL()
 				+ "?client_id={clientId}&redirect_uri={redirect_uri}&state={state}&scope={scope}";
 		final URI url = UriBuilder.fromUri(uriTemplate).build(getClientId(), redirectUri, state,
@@ -120,7 +122,8 @@ public class GitHubService implements ConnectedService {
 	}
 
 	@Override
-	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri) {
+	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri,
+			final Map<String, Object> additional) {
 		final JerseyClient client = JerseyClientBuilder.createClient();
 		final Form entity = new Form();
 		entity.param("client_id", getClientId());

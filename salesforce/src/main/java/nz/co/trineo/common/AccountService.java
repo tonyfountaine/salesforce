@@ -14,6 +14,7 @@ public class AccountService {
 	private final AccountDAO accountDAO;
 
 	private final Map<String, ConnectedAccount> states = new HashMap<>();
+	private final Map<String, Map<String, Object>> additionalMap = new HashMap<>();
 
 	public AccountService(final AccountDAO accountDAO) {
 		super();
@@ -40,20 +41,23 @@ public class AccountService {
 		accountDAO.delete(id);
 	}
 
-	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri) {
+	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri,
+			final Map<String, Object> additional) {
 		final String state = HashCode.fromLong(System.currentTimeMillis()).toString();
 
 		states.put(state, account);
+		additionalMap.put(state, additional);
 
 		final ConnectedService service = ServiceRegistry.getService(account.getService());
-		return service.getAuthorizeURIForService(account, redirectUri, state);
+		return service.getAuthorizeURIForService(account, redirectUri, state, additional);
 	}
 
 	public void getAccessToken(final String code, final String state, final URI redirectUri) {
 		final ConnectedAccount account = states.get(state);
+		final Map<String, Object> additional = additionalMap.get(state);
 		final ConnectedService service = ServiceRegistry.getService(account.getService());
 
-		final AccountToken tokenResponse = service.getAccessToken(code, state, redirectUri);
+		final AccountToken tokenResponse = service.getAccessToken(code, state, redirectUri, additional);
 
 		account.setToken(tokenResponse);
 		create(account);
