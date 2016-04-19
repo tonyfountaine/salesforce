@@ -47,11 +47,11 @@ body {
 	border-color: #d2dff0;
 }
 
-#compareData table tr.removed {
+#code table tr.notcovered, #compareData table tr.removed {
 	background-color: #ffdddd;
 }
 
-#compareData table tr.removed td.num {
+#code table tr.notcovered td.num, #compareData table tr.removed td.num {
 	border-color: #f1c0c0;
 }
 

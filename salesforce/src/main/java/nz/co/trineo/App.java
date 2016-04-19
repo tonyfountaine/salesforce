@@ -31,7 +31,14 @@ import nz.co.trineo.github.GitHubService;
 import nz.co.trineo.salesforce.OrganizationDAO;
 import nz.co.trineo.salesforce.SalesforceResource;
 import nz.co.trineo.salesforce.SalesforceService;
+import nz.co.trineo.salesforce.TestRunDAO;
+import nz.co.trineo.salesforce.model.CodeCoverageResult;
+import nz.co.trineo.salesforce.model.CodeCoverageWarning;
+import nz.co.trineo.salesforce.model.CodeLocation;
 import nz.co.trineo.salesforce.model.Organization;
+import nz.co.trineo.salesforce.model.RunTestFailure;
+import nz.co.trineo.salesforce.model.RunTestSuccess;
+import nz.co.trineo.salesforce.model.RunTestsResult;
 import nz.co.trineo.trello.TrelloResource;
 import nz.co.trineo.trello.TrelloService;
 
@@ -42,7 +49,9 @@ import nz.co.trineo.trello.TrelloService;
 public class App extends Application<AppConfiguration> {
 
 	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(Credentals.class,
-			GitProcess.class, GitTask.class, Organization.class, ConnectedAccount.class, Diff.class) {
+			GitProcess.class, GitTask.class, Organization.class, ConnectedAccount.class, Diff.class,
+			CodeCoverageResult.class, CodeCoverageWarning.class, CodeLocation.class, RunTestFailure.class,
+			RunTestSuccess.class, RunTestsResult.class) {
 		@Override
 		public DataSourceFactory getDataSourceFactory(final AppConfiguration configuration) {
 			return configuration.getDataSourceFactory();
@@ -79,10 +88,12 @@ public class App extends Application<AppConfiguration> {
 		final OrganizationDAO organizationDAO = new OrganizationDAO(sessionFactory);
 		final AccountDAO accountDAO = new AccountDAO(sessionFactory);
 		final DiffDAO diffDAO = new DiffDAO(sessionFactory);
+		final TestRunDAO testRunDAO = new TestRunDAO(sessionFactory);
 
 		final GitService gService = new GitService(configuration, processDAO, accountDAO);
 		final GitHubService ghService = new GitHubService(accountDAO, configuration);
-		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService);
+		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService,
+				testRunDAO);
 		final DiffService dService = new DiffService(diffDAO);
 		final AccountService aService = new AccountService(accountDAO);
 		final TrelloService tService = new TrelloService(configuration, accountDAO);

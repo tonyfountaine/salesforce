@@ -35,7 +35,7 @@
 									<label class="control-label">Account</label>
 									<select class="form-control" id="acc" name="acc">
 										<#list accounts as account>
-											<option value="${account.id}">${account.name}</option>
+											<option value="${account.id?string["####"]}">${account.name}</option>
 										</#list>
 									</select>
 								</div>
@@ -68,7 +68,7 @@
 										<td><a href="/sf/orgs/${org.id}">${org.name!""}</a></td>
 										<td><a href="/sf/orgs/${org.id}">${org.organizationType}</a></td>
 										<td><a href="/sf/orgs/${org.id}">${org.sandbox?string('yes', 'no')}</a></td>
-										<td><a href="/accounts/${org.account.id}">${org.account.name}</a></td>
+										<td><a href="/accounts/${org.account.id?string["####"]}">${org.account.name}</a></td>
 										<td>
 											<button type="button" class="btn btn-default backup" data-id="${org.id}"><i class="fa fa-cloud-download" aria-hidden="true"></i> Backup</button>
 											<button type="button" class="btn btn-default tests" data-id="${org.id}"><i class="fa fa-tasks" aria-hidden="true"></i> Tests</button>

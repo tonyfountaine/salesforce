@@ -25,6 +25,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
@@ -37,6 +38,7 @@ import nz.co.trineo.git.model.GitProcess;
 import nz.co.trineo.git.model.GitTask;
 
 public class GitService {
+	private static final String ORIGIN = "origin";
 	private static final Log log = LogFactory.getLog(GitService.class);
 
 	public static final class GitMonitor implements ProgressMonitor {
@@ -208,10 +210,11 @@ public class GitService {
 		}
 	}
 
-	public void fetch(final File repoDir) throws GitServiceException {
+	public void fetchRemote(final File repoDir) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
-			git.fetch().call();
+			final RefSpec refSpec = new RefSpec("refs/head/*:refs/remotes/origin/*");
+			git.fetch().setRemote(ORIGIN).setCheckFetchedObjects(true).setRefSpecs(refSpec).call();
 		} catch (IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
@@ -222,7 +225,7 @@ public class GitService {
 		final File gitDirB = new File(repoDirB, ".git");
 		try (Repository repositoryA = FileRepositoryBuilder.create(gitDirA);) {
 			final StoredConfig config = repositoryA.getConfig();
-			config.setString("remote", "origin", "url", gitDirB.getAbsolutePath());
+			config.setString("remote", ORIGIN, "url", gitDirB.getAbsolutePath());
 			config.save();
 		} catch (final IOException e) {
 			throw new GitServiceException(e);
@@ -234,7 +237,7 @@ public class GitService {
 		final File gitDirB = new File(repoDirB, ".git");
 		try (Repository repositoryA = FileRepositoryBuilder.create(gitDirA);) {
 			final StoredConfig config = repositoryA.getConfig();
-			final String remoteURL = config.getString("remote", "origin", "url");
+			final String remoteURL = config.getString("remote", ORIGIN, "url");
 			return gitDirB.getAbsolutePath().equals(remoteURL);
 		} catch (final IOException e) {
 			throw new GitServiceException(e);

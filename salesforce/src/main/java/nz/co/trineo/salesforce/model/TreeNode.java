@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(Include.NON_DEFAULT)
-public class MetadataNode {
+public class TreeNode {
 
 	public static class NodeState {
 		private boolean checked;
@@ -64,7 +64,7 @@ public class MetadataNode {
 	private boolean selectable;
 	private NodeState state = new NodeState();
 	private Set<String> tags = new HashSet<>();
-	private List<MetadataNode> nodes = new ArrayList<>();
+	private List<TreeNode> nodes = new ArrayList<>();
 
 	@JsonProperty
 	public String getText() {
@@ -147,11 +147,11 @@ public class MetadataNode {
 		this.tags = tags;
 	}
 
-	public List<MetadataNode> getNodes() {
+	public List<TreeNode> getNodes() {
 		return nodes;
 	}
 
-	public void setNodes(final List<MetadataNode> nodes) {
+	public void setNodes(final List<TreeNode> nodes) {
 		this.nodes = nodes;
 	}
 }

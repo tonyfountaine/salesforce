@@ -1,8 +1,13 @@
 package nz.co.trineo.salesforce.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -26,6 +31,8 @@ public class Organization {
 	private boolean sandbox;
 	@OneToOne
 	private ConnectedAccount account;
+	@OneToMany(cascade = CascadeType.ALL)
+	private List<RunTestsResult> testResults = new ArrayList<>();
 
 	@JsonProperty
 	public String getId() {
@@ -127,5 +134,13 @@ public class Organization {
 
 	public void setAccount(final ConnectedAccount account) {
 		this.account = account;
+	}
+
+	public List<RunTestsResult> getTestResults() {
+		return testResults;
+	}
+
+	public void setTestResults(final List<RunTestsResult> testResults) {
+		this.testResults = testResults;
 	}
 }

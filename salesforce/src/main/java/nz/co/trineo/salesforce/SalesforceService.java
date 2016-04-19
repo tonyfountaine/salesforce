@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -24,6 +25,14 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -37,7 +46,6 @@ import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 
 import com.sforce.soap.apex.RunTestsRequest;
-import com.sforce.soap.apex.RunTestsResult;
 import com.sforce.soap.apex.SoapConnection;
 import com.sforce.soap.metadata.AsyncResult;
 import com.sforce.soap.metadata.DescribeMetadataObject;
@@ -67,9 +75,13 @@ import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
 import nz.co.trineo.git.model.GitDiff;
+import nz.co.trineo.salesforce.model.CodeCoverageResult;
 import nz.co.trineo.salesforce.model.Environment;
-import nz.co.trineo.salesforce.model.MetadataNode;
 import nz.co.trineo.salesforce.model.Organization;
+import nz.co.trineo.salesforce.model.RunTestFailure;
+import nz.co.trineo.salesforce.model.RunTestMessage;
+import nz.co.trineo.salesforce.model.RunTestsResult;
+import nz.co.trineo.salesforce.model.TreeNode;
 
 public class SalesforceService implements ConnectedService {
 	private static final Log log = LogFactory.getLog(SalesforceService.class);
@@ -82,13 +94,15 @@ public class SalesforceService implements ConnectedService {
 	private final OrganizationDAO orgDAO;
 	private final AppConfiguration configuration;
 	private final GitService gitService;
+	private final TestRunDAO testRunDAO;
 
 	public SalesforceService(final AccountDAO dao, final OrganizationDAO orgDAO, final AppConfiguration configuration,
-			final GitService gitService) throws IOException {
+			final GitService gitService, final TestRunDAO testRunDAO) throws IOException {
 		credDAO = dao;
 		this.orgDAO = orgDAO;
 		this.configuration = configuration;
 		this.gitService = gitService;
+		this.testRunDAO = testRunDAO;
 		forceMkdir(configuration.getSalesforceDirectory());
 		forceMkdir(configuration.getBackupDirectory());
 	}
@@ -302,22 +316,24 @@ public class SalesforceService implements ConnectedService {
 	public RunTestsResult runTests(final String orgId, final String[] tests) throws SalesforceException {
 		final Organization organization = orgDAO.get(orgId);
 		final ConnectedAccount account = organization.getAccount();
-		SoapConnection soapConnection = getSoapConnection(account);
 		final RunTestsRequest runTestsRequest = new RunTestsRequest();
 		runTestsRequest.setAllTests(tests == null || tests.length == 0);
 		runTestsRequest.setClasses(tests);
 		try {
-			final RunTestsResult runTestsResult = soapConnection.runTests(runTestsRequest);
-			return runTestsResult;
+			final RunTestsResult runTests = runTests(runTestsRequest, account);
+			organization.getTestResults().add(runTests);
+			orgDAO.persist(organization);
+			return runTests;
 		} catch (final ConnectionException e) {
 			if (e instanceof SoapFaultException) {
 				if (((SoapFaultException) e).getFaultCode().getLocalPart()
 						.equals(ExceptionCode.INVALID_SESSION_ID.toString())) {
 					refreshToken(account, organization);
-					soapConnection = getSoapConnection(account);
 					try {
-						final RunTestsResult runTestsResult = soapConnection.runTests(runTestsRequest);
-						return runTestsResult;
+						final RunTestsResult runTests = runTests(runTestsRequest, account);
+						organization.getTestResults().add(runTests);
+						orgDAO.persist(organization);
+						return runTests;
 					} catch (final ConnectionException e1) {
 						throw new SalesforceException(e1);
 					}
@@ -325,6 +341,55 @@ public class SalesforceService implements ConnectedService {
 			}
 			throw new SalesforceException(e);
 		}
+	}
+
+	private RunTestsResult runTests(final RunTestsRequest request, final ConnectedAccount account)
+			throws ConnectionException, SalesforceException {
+		com.sforce.soap.apex.RunTestsResult runTestsResult;
+		final SoapConnection soapConnection = getSoapConnection(account);
+		runTestsResult = soapConnection.runTests(request);
+		// runTestsResult = fakeRunTestResult();
+		final RunTestsResult testsResult = ConvertUtils.toRunTestsResult(runTestsResult);
+		// log.info(testsResult);
+		final RunTestsResult result = testRunDAO.persist(testsResult);
+		return result;
+	}
+
+	private com.sforce.soap.apex.RunTestsResult fakeRunTestResult() throws SalesforceException {
+		final XMLInputFactory xif = XMLInputFactory.newFactory();
+		final StreamSource xml = new StreamSource(getClass().getResourceAsStream("/testResult.xml"));
+		JAXBElement<com.sforce.soap.apex.RunTestsResult> jb;
+		try {
+			final XMLStreamReader xsr = xif.createXMLStreamReader(xml);
+			xsr.nextTag();
+			while (!xsr.getLocalName().equals("result")) {
+				xsr.nextTag();
+			}
+			final JAXBContext jaxbContext = JAXBContext.newInstance(com.sforce.soap.apex.RunTestsResult.class);
+			final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+			jb = unmarshaller.unmarshal(xsr, com.sforce.soap.apex.RunTestsResult.class);
+			xsr.close();
+			return jb.getValue();
+		} catch (XMLStreamException | JAXBException e) {
+			throw new SalesforceException(e);
+		}
+	}
+
+	public List<RunTestsResult> listTests(final String orgId) {
+		final Organization organization = orgDAO.get(orgId);
+		final List<RunTestsResult> testResults = organization.getTestResults();
+		testResults.size(); // lazy loading
+		return testResults;
+	}
+
+	public RunTestsResult showTest(final String runId) {
+		final RunTestsResult result = testRunDAO.get(runId);
+		log.debug(result); // log it to lazy load everything
+		// result.getCodeCoverage().size();
+		// result.getCodeCoverageWarnings().size();
+		// result.getFailures().size();
+		// result.getSuccesses().size();
+		return result;
 	}
 
 	public List<Organization> listOrgs() {
@@ -351,7 +416,7 @@ public class SalesforceService implements ConnectedService {
 					}
 				}
 				final SObject sObject = queryResult.getRecords()[0];
-				organization = toOrganization(sObject);
+				organization = ConvertUtils.toOrganization(sObject);
 			}
 			organization.setAccount(account);
 			final File repoDir = new File(configuration.getSalesforceDirectory(), organizationId);
@@ -371,16 +436,6 @@ public class SalesforceService implements ConnectedService {
 		return orgDAO.get(orgId);
 	}
 
-	private Organization toOrganization(final SObject sObject) {
-		log.info(sObject);
-		final Organization organization = new Organization();
-		organization.setId(sObject.getId());
-		organization.setName((String) sObject.getField("Name"));
-		organization.setOrganizationType((String) sObject.getField("OrganizationType"));
-		organization.setSandbox(Boolean.valueOf((String) sObject.getField("IsSandbox")));
-		return organization;
-	}
-
 	public List<String> deleteBackup(final String id, final String date) throws SalesforceException {
 		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
 		try {
@@ -390,9 +445,9 @@ public class SalesforceService implements ConnectedService {
 		}
 	}
 
-	public MetadataNode getMetadataTree(final String orgId) throws SalesforceException {
+	public TreeNode getMetadataTree(final String orgId) throws SalesforceException {
 		final File repoDir = new File(configuration.getSalesforceDirectory(), orgId);
-		final Map<String, MetadataNode> nodeMap = new HashMap<>();
+		final Map<String, TreeNode> nodeMap = new HashMap<>();
 
 		final Path path = repoDir.toPath();
 		try {
@@ -400,12 +455,12 @@ public class SalesforceService implements ConnectedService {
 				return !p.toString().contains(".git") && !p.toString().endsWith("-meta.xml")
 						&& !p.toString().contains("package.xml");
 			}).forEach(p -> {
-				final MetadataNode node = new MetadataNode();
+				final TreeNode node = new TreeNode();
 				node.setText(p.getFileName().toString());
 				nodeMap.put(p.toAbsolutePath().toString(), node);
 
 				final String pp = p.getParent().toAbsolutePath().toString();
-				final MetadataNode parentNode = nodeMap.get(pp);
+				final TreeNode parentNode = nodeMap.get(pp);
 				if (parentNode != null) {
 					parentNode.getNodes().add(node);
 				}
@@ -414,10 +469,60 @@ public class SalesforceService implements ConnectedService {
 			throw new SalesforceException(e);
 		}
 
-		final MetadataNode rootNode = nodeMap.get(path.toAbsolutePath().toString());
+		final TreeNode rootNode = nodeMap.get(path.toAbsolutePath().toString());
 		rootNode.setText("/");
 		rootNode.getState().setExpanded(true);
 		return rootNode;
+	}
+
+	public TreeNode getTestTree(final String orgId) throws SalesforceException {
+		final TreeNode rootNode = new TreeNode();
+		rootNode.setText("/");
+		rootNode.getState().setExpanded(true);
+		rootNode.setIcon("fa fa-cloud");
+		final Organization organization = orgDAO.get(orgId);
+		final List<RunTestsResult> testResults = organization.getTestResults();
+		testResults.forEach(r -> {
+			final TreeNode node = new TreeNode();
+			node.setText(String.valueOf(r.getId()));
+			node.setIcon("fa fa-tasks");
+			final List<RunTestMessage> messages = new ArrayList<>();
+			final Map<String, TreeNode> nodeMap = new HashMap<>();
+			messages.addAll(r.getSuccesses());
+			messages.addAll(r.getFailures());
+			messages.stream().sorted().forEach(m -> {
+				if (!nodeMap.containsKey(m.getName())) {
+					final TreeNode classNode = new TreeNode();
+					classNode.setText(m.getName());
+					nodeMap.put(m.getName(), classNode);
+					node.getNodes().add(classNode);
+				}
+				final TreeNode classNode = nodeMap.get(m.getName());
+				final TreeNode messageNode = new TreeNode();
+				messageNode.setText(m.getMethodName());
+				if (m instanceof RunTestFailure) {
+					messageNode.setIcon("fa fa-times");
+				} else {
+					messageNode.setIcon("fa fa-check");
+				}
+				classNode.getNodes().add(messageNode);
+			});
+			rootNode.getNodes().add(node);
+		});
+		return rootNode;
+	}
+
+	public List<CodeCoverageResult> getCodeCoverage(final String orgId) {
+		final List<RunTestsResult> tests = listTests(orgId);
+		if (tests.isEmpty()) {
+			return null;
+		}
+		final RunTestsResult test = tests.get(0);
+		final List<CodeCoverageResult> coverage = test.getCodeCoverage();
+		for (CodeCoverageResult codeCoverageResult : coverage) {
+			codeCoverageResult.getLocationsNotCovered().size();
+		}
+		return coverage;
 	}
 
 	public List<GitDiff> diffBackups(final String id, final String first, final String second)
@@ -436,8 +541,8 @@ public class SalesforceService implements ConnectedService {
 		try {
 			if (!gitService.isRemote(repoDirA, repoDirB)) {
 				gitService.addRemote(repoDirA, repoDirB);
-				gitService.fetch(repoDirA);
 			}
+			gitService.fetchRemote(repoDirA);
 			return gitService.diffRepos(repoDirA, repoDirB);
 		} catch (final GitServiceException e) {
 			throw new SalesforceException(e);
@@ -482,6 +587,20 @@ public class SalesforceService implements ConnectedService {
 		} catch (final IOException e) {
 			throw new SalesforceException(e);
 		}
+	}
+
+	public CodeCoverageResult getCoverageFor(final String orgId, final String filename) {
+		final List<RunTestsResult> tests = listTests(orgId);
+		if (tests.isEmpty()) {
+			return null;
+		}
+		final RunTestsResult test = tests.get(0);
+		final String key = filename.split("\\.")[0];
+		final Optional<CodeCoverageResult> first = test.getCodeCoverage().stream().filter(ccr -> {
+			return key.equals(ccr.getName());
+		}).findFirst();
+		final CodeCoverageResult result = first.orElse(null);
+		return result;
 	}
 
 	public String getClientId() {

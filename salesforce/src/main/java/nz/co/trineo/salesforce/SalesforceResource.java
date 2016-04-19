@@ -1,7 +1,10 @@
 package nz.co.trineo.salesforce;
 
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.ws.rs.Consumes;
@@ -23,16 +26,18 @@ import javax.ws.rs.core.UriBuilder;
 import org.apache.commons.io.IOUtils;
 
 import com.codahale.metrics.annotation.Timed;
-import com.sforce.soap.apex.RunTestsResult;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.AccountService;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.git.model.GitDiff;
-import nz.co.trineo.salesforce.model.MetadataNode;
+import nz.co.trineo.salesforce.model.CodeCoverageResult;
+import nz.co.trineo.salesforce.model.TreeNode;
 import nz.co.trineo.salesforce.model.Organization;
+import nz.co.trineo.salesforce.model.RunTestsResult;
 import nz.co.trineo.salesforce.views.CompareView;
 import nz.co.trineo.salesforce.views.ContentView;
+import nz.co.trineo.salesforce.views.CoverageView;
 import nz.co.trineo.salesforce.views.SfOrgView;
 import nz.co.trineo.salesforce.views.SfOrgsView;
 
@@ -91,7 +96,9 @@ public class SalesforceResource {
 	public Response getOrgHtml(final @PathParam("id") String id) throws SalesforceException {
 		final Organization org = salesforceService.getOrg(id);
 		final Set<String> backups = salesforceService.listBackups(id);
-		final SfOrgView view = new SfOrgView(org, backups);
+		final List<RunTestsResult> tests = org.getTestResults();
+		tests.size();
+		final SfOrgView view = new SfOrgView(org, backups, tests);
 		return Response.ok(view).build();
 	}
 
@@ -135,7 +142,7 @@ public class SalesforceResource {
 	@Timed
 	@UnitOfWork
 	public Response getMetadataTree(final @PathParam("id") String id) throws SalesforceException {
-		final MetadataNode metadataNode = salesforceService.getMetadataTree(id);
+		final TreeNode metadataNode = salesforceService.getMetadataTree(id);
 		return Response.ok(metadataNode).build();
 	}
 
@@ -167,7 +174,8 @@ public class SalesforceResource {
 	public Response getMetadataContentLines(final @PathParam("id") String id, final @PathParam("folder") String folder,
 			final @PathParam("file") String file) throws SalesforceException {
 		final List<String> lines = salesforceService.getMetadataContentLines(id, folder + "/" + file);
-		final ContentView view = new ContentView(lines);
+		final CodeCoverageResult result = salesforceService.getCoverageFor(id, file);
+		final ContentView view = new ContentView(lines, result);
 		return Response.ok(view).build();
 	}
 
@@ -219,22 +227,44 @@ public class SalesforceResource {
 		return Response.noContent().build();
 	}
 
+	@GET
+	@Path("/orgs/{id}/tests")
+	@Timed
+	@UnitOfWork
+	public Response getTestTree(final @PathParam("id") String id) throws SalesforceException {
+		final TreeNode metadataNode = salesforceService.getTestTree(id);
+		return Response.ok(metadataNode).build();
+	}
+
 	@POST
 	@Path("/orgs/{id}/tests")
 	@Timed
 	@UnitOfWork
 	public Response runTests(final @PathParam("id") String id) throws SalesforceException {
 		final RunTestsResult runTests = salesforceService.runTests(id, null);
-		return Response.created(UriBuilder.fromMethod(getClass(), "showTests").build(id, 1)).entity(runTests).build();
+		return Response.created(UriBuilder.fromMethod(getClass(), "showTest").build(id, runTests.getId()))
+				.entity(runTests).build();
 	}
 
 	@GET
 	@Path("/orgs/{id}/tests/{runId}")
 	@Timed
 	@UnitOfWork
-	public Response showTests(final @PathParam("id") String id, final @PathParam("runId") String runId)
+	public Response showTest(final @PathParam("id") String id, final @PathParam("runId") String runId)
 			throws SalesforceException {
-		final RunTestsResult runTests = salesforceService.runTests(id, null);
+		final RunTestsResult runTests = salesforceService.showTest(runId);
+
 		return Response.ok(runTests).build();
+	}
+
+	@GET
+	@Path("/orgs/{id}/coverage")
+	@Timed
+	@UnitOfWork
+	@Produces({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
+	public Response getCodeCoverage(final @PathParam("id") String id) throws SalesforceException {
+		final List<CodeCoverageResult> coverage = salesforceService.getCodeCoverage(id);
+		final CoverageView view = new CoverageView(coverage);
+		return Response.ok(view).build();
 	}
 }

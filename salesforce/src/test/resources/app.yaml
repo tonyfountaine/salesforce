@@ -1,0 +1,33 @@
+
+gitDirectory: /var/trineo/git
+salesforceDirectory: /var/trineo/salesforce
+backupDirectory: /var/trineo/backup
+
+# gitDirectory: d:\\tmp\\git
+# salesforceDirectory: d:\\tmp\\salesforce
+# backupDirectory: d:\\tmp\\backup
+
+
+# TODO: move client ids and secrets out of this config 
+clientKey: 3MVG9ZL0ppGP5UrC6uYG2F8MedFD2Yiy1y1KUpVsNmHUUqK6dqQSnZ05fwAtUkKX5k4zD.lbR2Tx4O.PuMfsY
+clientSecret: 1533324426739765893
+
+trelloKey: e804eb8fa9abab718b98bfac0fd43492
+trelloSecret: c3ccd4db76ef92ce847915903979ef4090ba4c6ed0e4b6375a23797b17c2df68
+# trelloToken: 69b3b1ded256c6febbbc465b377467765fb2b1ab35f003dd5632c14bbda869ba
+
+githubClientId: 440e12333e54c8a2caf7
+githubClientSecret: 615b3620ebbbfff58cb874f8dca8fd6742159504
+
+# server:
+#   rootPath: /api/
+
+database:
+  url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
+  driverClass: org.h2.Driver
+  user: sa
+  password: sa
+
+  properties:
+    hibernate.hbm2ddl.auto: create
+    hibernate.dialect: org.hibernate.dialect.H2Dialect

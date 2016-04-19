@@ -1,9 +1,9 @@
 <#-- @ftlvariable name="" type="nz.co.trineo.salesforce.views.SfOrgView" -->
 <html lang="en">
 <#assign title="${org.name}" />
-<#include "/head.ftl">
+<#include "/head.ftl" />
 	<body>
-<#include "/nav.ftl">
+<#include "/nav.ftl" />
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-xs-11 col-xs-offset-1">
@@ -45,8 +45,8 @@
 				</div>
 				<div class="tab-pane" id="metadata">
 					<div class="row">
-						<div id="metaTree" class="col-xs-4">
-							<div id="tree"></div>
+						<div class="col-xs-4">
+							<div id="metaTree"></div>
 						</div>
 						<div class="col-xs-8">
 							<div class="panel panel-default">
@@ -60,31 +60,29 @@
 					</div>
 				</div>
 				<div class="tab-pane" id="tests">
-					<div class="panel panel-default">
-						<div class="panel-heading">
-							<h3 class="panel-title">Test Runs</h3>
+					<div class="row">
+						<div class="col-xs-6">
+							<div id="testTree"></div>
 						</div>
-						<table class="table table-striped">
-							<thead>
-								<tr>
-									<th>Date</th>
-									<th>Results</th>
-									<th>&nbsp;</th>
-								</tr>
-							</thead>
-							<tbody>
-								<#list backups as backup>
-									<tr>
-										<td>${backup}</td>
-										<td>&nbsp;</td>
-										<td>
-											<button type="button" class="btn btn-default download" data-id="${backup}"><i class="fa fa-download" aria-hidden="true"></i> Download</button>
-											<button type="button" class="btn btn-warning delete" data-id="${backup}"><i class="fa fa-remove" aria-hidden="true"></i> Delete</button>
-										</td>
-									</tr>
-								</#list>
-							</tbody>
-						</table>
+						<div class="col-xs-6">
+							<div class="panel panel-default">
+								<div class="panel-heading">
+									<h3 class="panel-title" id="codeHead">Code Coverage</h3>
+								</div>
+								<table class="table table-striped table-responsive">
+									<thead>
+										<tr>
+											<th>Namespace</th>
+											<th>Name</th>
+											<th>Percent</th>
+											<th>Coverage</th>
+										</tr>
+									</thead>
+									<tbody id="coverage">
+									</tbody>
+								</table>
+							</div>
+						</div>
 					</div>
 				</div>
 				<div class="tab-pane" id="compare">
@@ -170,17 +168,29 @@ $(function () {
             }
         });
     });
+
+	$.ajax({
+		type: "GET",
+		url: "/sf/orgs/${org.id}/coverage",
+		accepts: "text/html",
+		success: function (data, textStatus, jqXHR) {
+			$('#coverage').html(data);
+		},
+		error: function (jqXHR, textStatus, errorThrown) {
+			alert("failure");
+		}
+	});
 });
 
 $.getJSON("/sf/orgs/${org.id}/metadata", "", function (data) {
-	var $tree = $('#tree').treeview({
+	var $metaTree = $('#metaTree').treeview({
 		data: [data],
 		collapseIcon: "fa fa-folder-open-o",
 		expandIcon: "fa fa-folder-o",
 		nodeIcon: "fa fa-file-o"
 	});
 
-	$('#tree').on('nodeSelected', function(event, node) {
+	$('#metaTree').on('nodeSelected', function(event, node) {
 		var path = "";
 		var n = node;
 		if (!n.text.contains(".")) {
@@ -188,7 +198,7 @@ $.getJSON("/sf/orgs/${org.id}/metadata", "", function (data) {
 		}
 		while (n.text != '/') {
 			path = "/" + n.text + path;
-			n = $tree.treeview('getParent', n);
+			n = $metaTree.treeview('getParent', n);
 		}
 		$.ajax({
 			type: "GET",
@@ -203,6 +213,39 @@ $.getJSON("/sf/orgs/${org.id}/metadata", "", function (data) {
 			}
 		});
 	});
+});
+
+$.getJSON("/sf/orgs/${org.id}/tests", "", function (data) {
+	var $metaTree = $('#testTree').treeview({
+		data: [data],
+		collapseIcon: "fa fa-folder-open-o",
+		expandIcon: "fa fa-folder-o",
+		nodeIcon: "fa fa-file-o"
+	});
+/*
+	$('#metaTree').on('nodeSelected', function(event, node) {
+		var path = "";
+		var n = node;
+		if (!n.text.contains(".")) {
+			return;
+		}
+		while (n.text != '/') {
+			path = "/" + n.text + path;
+			n = $metaTree.treeview('getParent', n);
+		}
+		$.ajax({
+			type: "GET",
+			url: "/sf/orgs/${org.id}/metadata" + path,
+			accepts: "text/html",
+			success: function (data, textStatus, jqXHR) {
+				$('#codeHead').text(node.text);
+				$('#code').html(data);
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				alert("failure");
+			}
+		});
+	});*/
 });
 		</script>
 	</body>
