@@ -5,6 +5,7 @@ import static org.apache.commons.io.FileUtils.forceMkdir;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -117,7 +118,11 @@ public class GitService {
 	}
 
 	public void createRepo(final File repoDir) throws GitServiceException {
-		repoDir.mkdirs();
+		try {
+			Files.createDirectory(repoDir.toPath());
+		} catch (IOException e) {
+			throw new GitServiceException(e);
+		}
 		final File gitDir = new File(repoDir, ".git");
 		try (Git git = Git.init().setDirectory(repoDir).call();
 				Repository repository = FileRepositoryBuilder.create(gitDir)) {
@@ -127,11 +132,13 @@ public class GitService {
 	}
 
 	public boolean isRepo(final File repoDir) throws GitServiceException {
-		final File gitDir = new File(repoDir, ".git");
-		try (Repository repository = FileRepositoryBuilder.create(gitDir)) {
-			return true;
-		} catch (final IOException e) {
-			log.error("Not a valid Git Repo", e);
+		if (Files.exists(repoDir.toPath())) {
+			final File gitDir = new File(repoDir, ".git");
+			try (Repository repository = FileRepositoryBuilder.create(gitDir)) {
+				return true;
+			} catch (final IOException e) {
+				log.error("Not a valid Git Repo", e);
+			}
 		}
 		return false;
 	}
@@ -213,8 +220,8 @@ public class GitService {
 	public void fetchRemote(final File repoDir) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
-			final RefSpec refSpec = new RefSpec("refs/head/*:refs/remotes/origin/*");
-			git.fetch().setRemote(ORIGIN).setCheckFetchedObjects(true).setRefSpecs(refSpec).call();
+			//final RefSpec refSpec = new RefSpec("refs/head/*:refs/remotes/origin/*");
+			git.fetch().setRemote(ORIGIN).setCheckFetchedObjects(true).call();//.setRefSpecs(refSpec)
 		} catch (IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
@@ -249,7 +256,7 @@ public class GitService {
 		try (final Git git = new Git(repository);
 				final ByteArrayOutputStream out = new ByteArrayOutputStream();
 				final GitDiffFormatter df = new GitDiffFormatter(out);) {
-			final List<DiffEntry> list = git.diff().setOldTree(oldTreeIter).setOldTree(oldTreeIter).call();
+			final List<DiffEntry> list = git.diff().setOldTree(oldTreeIter).setNewTree(newTreeIter).call();
 			df.setRepository(repository);
 			list.forEach(d -> {
 				try {

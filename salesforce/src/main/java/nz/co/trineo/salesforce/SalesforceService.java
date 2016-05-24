@@ -25,14 +25,6 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -63,7 +55,6 @@ import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 import com.sforce.ws.SoapFaultException;
-import com.uwyn.jhighlight.renderer.JavaXhtmlRenderer;
 import com.uwyn.jhighlight.renderer.XhtmlRenderer;
 import com.uwyn.jhighlight.renderer.XmlXhtmlRenderer;
 
@@ -319,6 +310,7 @@ public class SalesforceService implements ConnectedService {
 		final RunTestsRequest runTestsRequest = new RunTestsRequest();
 		runTestsRequest.setAllTests(tests == null || tests.length == 0);
 		runTestsRequest.setClasses(tests);
+		runTestsRequest.setNamespace("");
 		try {
 			final RunTestsResult runTests = runTests(runTestsRequest, account);
 			organization.getTestResults().add(runTests);
@@ -348,31 +340,9 @@ public class SalesforceService implements ConnectedService {
 		com.sforce.soap.apex.RunTestsResult runTestsResult;
 		final SoapConnection soapConnection = getSoapConnection(account);
 		runTestsResult = soapConnection.runTests(request);
-		// runTestsResult = fakeRunTestResult();
 		final RunTestsResult testsResult = ConvertUtils.toRunTestsResult(runTestsResult);
-		// log.info(testsResult);
 		final RunTestsResult result = testRunDAO.persist(testsResult);
 		return result;
-	}
-
-	private com.sforce.soap.apex.RunTestsResult fakeRunTestResult() throws SalesforceException {
-		final XMLInputFactory xif = XMLInputFactory.newFactory();
-		final StreamSource xml = new StreamSource(getClass().getResourceAsStream("/testResult.xml"));
-		JAXBElement<com.sforce.soap.apex.RunTestsResult> jb;
-		try {
-			final XMLStreamReader xsr = xif.createXMLStreamReader(xml);
-			xsr.nextTag();
-			while (!xsr.getLocalName().equals("result")) {
-				xsr.nextTag();
-			}
-			final JAXBContext jaxbContext = JAXBContext.newInstance(com.sforce.soap.apex.RunTestsResult.class);
-			final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-			jb = unmarshaller.unmarshal(xsr, com.sforce.soap.apex.RunTestsResult.class);
-			xsr.close();
-			return jb.getValue();
-		} catch (XMLStreamException | JAXBException e) {
-			throw new SalesforceException(e);
-		}
 	}
 
 	public List<RunTestsResult> listTests(final String orgId) {
@@ -385,10 +355,6 @@ public class SalesforceService implements ConnectedService {
 	public RunTestsResult showTest(final String runId) {
 		final RunTestsResult result = testRunDAO.get(runId);
 		log.debug(result); // log it to lazy load everything
-		// result.getCodeCoverage().size();
-		// result.getCodeCoverageWarnings().size();
-		// result.getFailures().size();
-		// result.getSuccesses().size();
 		return result;
 	}
 
@@ -563,7 +529,7 @@ public class SalesforceService implements ConnectedService {
 		try (final InputStream input = getMetadataContent(id, path);) {
 			final XhtmlRenderer ren;
 			if (path.endsWith(".cls") || path.endsWith(".trigger")) {
-				ren = new JavaXhtmlRenderer();
+				ren = new ApexXhtmlRenderer();
 			} else {
 				ren = new XmlXhtmlRenderer();
 			}
