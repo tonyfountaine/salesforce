@@ -121,7 +121,7 @@ public class RunTestsResult {
 	public void setTotalTime(final double totalTime) {
 		this.totalTime = totalTime;
 	}
-	
+
 	public int getId() {
 		return dbId;
 	}

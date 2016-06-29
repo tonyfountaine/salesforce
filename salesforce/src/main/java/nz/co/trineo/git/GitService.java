@@ -26,7 +26,6 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
@@ -103,7 +102,7 @@ public class GitService {
 		processDAO.persist(process);
 		final GitMonitor monitor = new GitMonitor(process, processDAO);
 		final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
-				account.getCredentals().getUsername(), account.getCredentals().getPassword());
+				account.getToken().getAccessToken(), "");
 		try (Git git = Git.cloneRepository().setDirectory(new File(configuration.getGitDirectory(), name))
 				.setURI(cloneURL).setProgressMonitor(monitor).setCredentialsProvider(credentialsProvider).call();) {
 			git.getRepository().close();
@@ -120,7 +119,7 @@ public class GitService {
 	public void createRepo(final File repoDir) throws GitServiceException {
 		try {
 			Files.createDirectory(repoDir.toPath());
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new GitServiceException(e);
 		}
 		final File gitDir = new File(repoDir, ".git");
@@ -174,8 +173,8 @@ public class GitService {
 	public void commit(final File repoDir, final String message) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
-			git.add().addFilepattern(".").call();
-			git.commit().setMessage(message).call();
+			//git.add().addFilepattern(".").call();
+			git.commit().setAll(true).setMessage(message).call();
 		} catch (IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
@@ -220,8 +219,8 @@ public class GitService {
 	public void fetchRemote(final File repoDir) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
-			//final RefSpec refSpec = new RefSpec("refs/head/*:refs/remotes/origin/*");
-			git.fetch().setRemote(ORIGIN).setCheckFetchedObjects(true).call();//.setRefSpecs(refSpec)
+			// final RefSpec refSpec = new RefSpec("refs/head/*:refs/remotes/origin/*");
+			git.fetch().setRemote(ORIGIN).setCheckFetchedObjects(true).call();// .setRefSpecs(refSpec)
 		} catch (IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}

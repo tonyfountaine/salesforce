@@ -16,7 +16,7 @@ public class ContentView extends View {
 	public ContentView(final List<String> lines, final CodeCoverageResult result) {
 		super("/content.ftl");
 		this.lines = lines;
-		this.coverage = new HashSet<>();
+		coverage = new HashSet<>();
 		this.result = result;
 		if (result != null) {
 			result.getLocationsNotCovered().forEach(cl -> {

@@ -20,7 +20,7 @@ public class TestRunDAO extends AbstractDAO<RunTestsResult> {
 		final RunTestsResult organization = super.get(id);
 		return organization;
 	}
-	
+
 	public RunTestsResult find(final String runId) {
 		return uniqueResult(currentSession().createCriteria(getEntityClass()).add(Restrictions.eq("apexLogId", runId)));
 	}

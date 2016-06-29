@@ -14,9 +14,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @Table(name = "runTestFailure")
 @JsonInclude(Include.NON_DEFAULT)
 public class RunTestFailure extends RunTestMessage {
-	@Column(length=65536)
+	@Column(length = 65536)
 	private String message;
-	@Column(length=65536)
+	@Column(length = 65536)
 	private String stackTrace;
 	@Column
 	private String type;

@@ -14,6 +14,7 @@ import nz.co.trineo.common.AccountService;
 import nz.co.trineo.common.ServiceRegistry;
 import nz.co.trineo.common.ServiceResource;
 import nz.co.trineo.common.StaticResource;
+import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.configuration.AppConfiguration;
@@ -49,7 +50,7 @@ import nz.co.trineo.trello.TrelloService;
 public class App extends Application<AppConfiguration> {
 
 	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(Credentals.class,
-			GitProcess.class, GitTask.class, Organization.class, ConnectedAccount.class, Diff.class,
+			GitProcess.class, GitTask.class, Organization.class, ConnectedAccount.class, AccountToken.class, Diff.class,
 			CodeCoverageResult.class, CodeCoverageWarning.class, CodeLocation.class, RunTestFailure.class,
 			RunTestSuccess.class, RunTestsResult.class) {
 		@Override

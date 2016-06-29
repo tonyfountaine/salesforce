@@ -28,9 +28,9 @@
 							<tr>
 								<td><i class="fa fa-${account.service} fa-2x"></i> ${account.name!""}</td>
 								<td>
-									<button type="button" class="btn btn-default"><i class="fa fa-check" aria-hidden="true"></i> Verify</button>
-									<button type="button" class="btn btn-default"><i class="fa fa-edit" aria-hidden="true"></i> Rename</button>
-									<button type="button" class="btn btn-warning delete" data-id="${account.id}"><i class="fa fa-remove" aria-hidden="true"></i> Delete</button>
+									<button type="button" class="btn btn-default verify" data-id="${account.id?string["####"]}"><i class="fa fa-check" aria-hidden="true"></i> Verify</button>
+									<button type="button" class="btn btn-default remane" data-id="${account.id?string["####"]}"><i class="fa fa-edit" aria-hidden="true"></i> Rename</button>
+									<button type="button" class="btn btn-warning delete" data-id="${account.id?string["####"]}"><i class="fa fa-remove" aria-hidden="true"></i> Delete</button>
 								</td>
 							</tr>
 						</#list>

@@ -136,7 +136,7 @@ public class AccountResource {
 	@Produces(MediaType.TEXT_HTML)
 	public SuccessView finishConnectState(final @PathParam("service") String serviceName,
 			final @PathParam("state") String state, final @QueryParam("oauth_verifier") String verifier)
-					throws IOException {
+			throws IOException {
 		log.info("processing state post");
 		return extracted(serviceName, verifier, state);
 	}
@@ -168,7 +168,7 @@ public class AccountResource {
 	@Produces(MediaType.TEXT_HTML)
 	public SuccessView getFinishConnectState(final @PathParam("service") String serviceName,
 			final @PathParam("state") String state, final @QueryParam("oauth_verifier") String verifier)
-					throws IOException {
+			throws IOException {
 		log.info("processing state get");
 		log.info(uriInfo.getAbsolutePath() + ", " + uriInfo.getQueryParameters());
 		return extracted(serviceName, verifier, state);

@@ -1,10 +1,7 @@
 package nz.co.trineo.salesforce;
 
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.ws.rs.Consumes;
@@ -16,9 +13,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriBuilder;
@@ -32,9 +27,9 @@ import nz.co.trineo.common.AccountService;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.salesforce.model.CodeCoverageResult;
-import nz.co.trineo.salesforce.model.TreeNode;
 import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.salesforce.model.RunTestsResult;
+import nz.co.trineo.salesforce.model.TreeNode;
 import nz.co.trineo.salesforce.views.CompareView;
 import nz.co.trineo.salesforce.views.ContentView;
 import nz.co.trineo.salesforce.views.CoverageView;
@@ -48,9 +43,6 @@ public class SalesforceResource {
 
 	private final SalesforceService salesforceService;
 	private final AccountService accountService;
-
-	@Context
-	private Request request;
 
 	public SalesforceResource(final SalesforceService salesforceService, final AccountService accountService) {
 		super();

@@ -5,8 +5,10 @@ import java.util.List;
 
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Restrictions;
 
 import io.dropwizard.hibernate.AbstractDAO;
+import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.salesforce.model.Organization;
 
 public class OrganizationDAO extends AbstractDAO<Organization> {
@@ -32,5 +34,9 @@ public class OrganizationDAO extends AbstractDAO<Organization> {
 
 	public List<Organization> listAll() {
 		return list(currentSession().createCriteria(getEntityClass()));
+	}
+
+	public Organization findOrganization(final ConnectedAccount account) {
+		return uniqueResult(currentSession().createCriteria(getEntityClass()).add(Restrictions.eq("account", account)));
 	}
 }

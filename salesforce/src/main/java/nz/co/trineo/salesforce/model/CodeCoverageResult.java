@@ -109,7 +109,7 @@ public class CodeCoverageResult implements Comparable<CodeCoverageResult> {
 		if (numLocations == 0) {
 			return 100;
 		}
-		return ((float) (numLocations - numLocationsNotCovered) / numLocations) * 100;
+		return (float) (numLocations - numLocationsNotCovered) / numLocations * 100;
 	}
 
 	@Override

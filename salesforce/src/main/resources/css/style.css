@@ -1,3 +1,19 @@
+/*html, body, .tab-pane, .tab-content, .container-fluid, #compareData {
+	height: 100%;
+	max-height: 100%;
+}
+
+html, body {
+	overflow: hidden;
+}
+
+#compareData .col-xs-2, #compareData .col-md-10 {
+	overflow-y: auto;
+	overflow-x: hidden;
+	max-height: 100%;
+	height: 100%;
+}*/
+
 body {
 	padding-top: 70px;
 }
@@ -105,35 +121,35 @@ body {
 	background-color: rgb(228,230,160);
 }
 
-.java_plain {
+.apex_plain {
 	color: rgb(0, 0, 0);	
 }			
-.java_keyword {
+.apex_keyword {
 	color: rgb(129, 0, 83);	
 	/*font-weight: bold;*/	
 }			
-.java_type {
+.apex_type {
 	color: rgb(0, 0, 0);	
 }			
-.java_operator {
+.apex_operator {
 	color: rgb(0, 0, 0);	
 }			
-.java_separator {
+.apex_separator {
 	color: rgb(0, 0, 0);	
 }			
-.java_literal {
+.apex_literal {
 	color: rgb(42, 0, 251);	
 }			
-.java_comment {
+.apex_comment {
 	color: rgb(61, 127, 96);
 	/*background-color: rgb(247,247,247);*/	
 }			
-.java_javadoc_comment {
+.apex_apexdoc_comment {
 	color: rgb(61, 127, 96);
 	/*background-color: rgb(247,247,247);	
 	font-style: italic;*/	
 }			
-.java_javadoc_tag {
+.apex_apexdoc_tag {
 	color: rgb(61, 93, 188);	
 	/*background-color: rgb(247,247,247);	
 	font-style: italic;*/	

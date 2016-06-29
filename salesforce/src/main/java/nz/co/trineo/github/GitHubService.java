@@ -59,6 +59,14 @@ public class GitHubService implements ConnectedService {
 		return repositories;
 	}
 
+	public List<Repository> getOrgRepos(final String org, final int accID) throws Exception {
+		final ConnectedAccount account = dao.get(accID);
+		final RepositoryService service = new RepositoryService();
+		service.getClient().setOAuth2Token(account.getToken().getAccessToken());
+		final List<Repository> repositories = service.getOrgRepositories(org);
+		return repositories;
+	}
+
 	public Repository getRepo(final String user, final String name, final int accId) throws Exception {
 		final ConnectedAccount account = dao.get(accId);
 		final RepositoryService service = new RepositoryService();
