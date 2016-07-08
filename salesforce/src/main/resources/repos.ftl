@@ -44,7 +44,7 @@ $(function () {
         var name = $(this).data("name");
         $.ajax({
             type: "POST",
-            url: "/github/repos/" + user + "/" + name,
+            url: "/github/users/" + user + "/repos/" + name,
          	success: function(data, textStatus, jqXHR) {
                 location.reload(true);  
             },

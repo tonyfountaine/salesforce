@@ -1,13 +1,10 @@
 package nz.co.trineo.common.model;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.OneToOne;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -23,11 +20,10 @@ public class ConnectedAccount {
 	private int id;
 	@Column
 	private String service;
-	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@Embedded
 	private Credentals credentals;
 	@Column
 	private String name;
-
 	@Embedded
 	private AccountToken token;
 

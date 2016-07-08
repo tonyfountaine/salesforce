@@ -20,7 +20,7 @@
 		          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Services <span class="caret"></span></a>
 		          <ul class="dropdown-menu">
 		            <li><a href="/sf/orgs"><i class="fa fa-cloud" aria-hidden="true"></i> Salesforce</a></li>
-		            <li><a href="/github"><i class="fa fa-github" aria-hidden="true"></i> GitHub</a></li>
+		            <li><a href="/github/repos"><i class="fa fa-github" aria-hidden="true"></i> GitHub</a></li>
 		            <li><a href="/trello"><i class="fa fa-trello" aria-hidden="true"></i> Trello</a></li>
 		          </ul>
 		        </li>
