@@ -58,8 +58,8 @@ public class ConvertUtilsTest {
 		final com.sforce.soap.apex.RunTestsResult element = new com.sforce.soap.apex.RunTestsResult();
 		element.setApexLogId("testApexLogId");
 		final QName root = new QName("result");
-		final JAXBElement<com.sforce.soap.apex.RunTestsResult> je = new JAXBElement<>(
-				root, com.sforce.soap.apex.RunTestsResult.class, element);
+		final JAXBElement<com.sforce.soap.apex.RunTestsResult> je = new JAXBElement<>(root,
+				com.sforce.soap.apex.RunTestsResult.class, element);
 		marshaller.marshal(je, os);
 		os.close();
 	}

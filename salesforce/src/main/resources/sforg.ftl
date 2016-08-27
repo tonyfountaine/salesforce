@@ -1,13 +1,32 @@
 <#-- @ftlvariable name="" type="nz.co.trineo.salesforce.views.SfOrgView" -->
 <html lang="en">
-<#assign title="${org.name}" />
+<#assign title="${org.nickName!org.name}" />
 <#include "/head.ftl" />
 	<body>
 <#include "/nav.ftl" />
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-xs-11 col-xs-offset-1">
-					<h1>${title} <small>${org.id}</small></h1>
+					<div id="orgName">
+						<h1>
+							<span>${title}</span>
+							<a class="small btn" id="editOrgName">
+								<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+							</a>
+							<small>${org.id}</small>
+						</h1>
+					</div>
+					<div class="input-group input-group-lg" id="orgNameEdit">
+    					<input type="text" class="form-control" id="newOrgName" value="${title}" placeholder="Org Name" />
+    					<span class="input-group-btn">
+							<button type="button" class="btn btn-danger" id="orgNameCancel">
+								<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+							</button>
+							<button type="button" class="btn btn-success" data-id="${org.id}" id="orgNameChange">
+								<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+							</button>
+						</span>
+					</div>
 				</div>
 			</div>
 			<ul class="nav nav-pills" id="OrgTabs">
@@ -18,29 +37,40 @@
 			</ul>
 			<div class="tab-content">
 				<div class="tab-pane active" id="backups">
-					<div class="panel panel-default">
-						<div class="panel-heading">
-							<h3 class="panel-title">Backups</h3>
+					<div class="row">
+						<div class="col-xs-1 col-xs-offset-1">
+							<p>
+								<button type="button" class="btn btn-primary backup" data-id="${org.id}"><i class="fa fa-cloud-download" aria-hidden="true"></i> New Backup</button>
+							</p>
 						</div>
-						<table class="table table-striped">
-							<thead>
-								<tr>
-									<th>Date</th>
-									<th>&nbsp;</th>
-								</tr>
-							</thead>
-							<tbody>
-								<#list backups as backup>
+					</div>
+					<div class="row">
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								<h3 class="panel-title">Backups</h3>
+							</div>
+							<table class="table table-striped">
+								<thead>
 									<tr>
-										<td>${backup}</td>
-										<td>
-											<button type="button" class="btn btn-default download" data-id="${backup}"><i class="fa fa-download" aria-hidden="true"></i> Download</button>
-											<button type="button" class="btn btn-warning delete" data-id="${backup}"><i class="fa fa-remove" aria-hidden="true"></i> Delete</button>
-										</td>
+										<th>Date</th>
+										<th>Status</th>
+										<th>&nbsp;</th>
 									</tr>
-								</#list>
-							</tbody>
-						</table>
+								</thead>
+								<tbody>
+									<#list backups as backup>
+										<tr>
+											<td>${backup.name!''}</td>
+											<td>${backup.status!''}</td>
+											<td>
+												<button type="button" class="btn btn-default download" data-id="${backup.id?string["####"]}"><i class="fa fa-download" aria-hidden="true"></i> Download</button>
+												<button type="button" class="btn btn-warning delete" data-id="${backup.id?string["####"]}"><i class="fa fa-remove" aria-hidden="true"></i> Delete</button>
+											</td>
+										</tr>
+									</#list>
+								</tbody>
+							</table>
+						</div>
 					</div>
 				</div>
 				<div class="tab-pane" id="metadata">
@@ -60,6 +90,13 @@
 					</div>
 				</div>
 				<div class="tab-pane" id="tests">
+					<div class="row">
+						<div class="col-xs-1 col-xs-offset-1">
+							<p>
+								<button type="button" class="btn btn-primary tests" data-id="${org.id}"><i class="fa fa-tasks" aria-hidden="true"></i> New Test Run</button>
+							</p>
+						</div>
+					</div>
 					<div class="row">
 						<div class="col-xs-6">
 							<div id="testTree"></div>
@@ -94,7 +131,7 @@
 										Source
 										<select class="form-control" id="sourceSelect">
 											<#list backups as backup>
-												<option>${backup}</option>
+												<option value="${backup.id?string["####"]}">${backup.name!''}</option>
 											</#list>
 										</select>
 									</h3>
@@ -108,7 +145,7 @@
 										Target
 										<select class="form-control" id="targetSelect">
 											<#list backups as backup>
-												<option>${backup}</option>
+												<option value="${backup.id?string["####"]}">${backup.name!''}</option>
 											</#list>
 										</select>
 									</h3>
@@ -179,6 +216,61 @@ $(function () {
 		error: function (jqXHR, textStatus, errorThrown) {
 			alert("failure");
 		}
+	});
+
+    $('body').on('click', '.backup', function (e) {
+        var value = $(this).data("id");
+        $.ajax({
+            type: "POST",
+            url: "/sf/orgs/" + value + "/backups",
+         	success: function(data, textStatus, jqXHR) {
+                location.reload(true);  
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                alert("failure");
+            }
+        });
+    });
+
+    $('body').on('click', '.tests', function (e) {
+        var value = $(this).data("id");
+        $.ajax({
+            type: "POST",
+            url: "/sf/orgs/" + value + "/tests",
+         	success: function(data, textStatus, jqXHR) {
+                location.reload(true);  
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                alert("failure: " + textStatus + ", " + errorThrown);
+            }
+        });
+    });
+
+	$("#orgName").show();
+	$("#orgNameEdit").hide();
+	$('body').on('click', '#editOrgName', function (e) {
+		$("#orgName").hide();
+		$("#orgNameEdit").show();
+	});
+	$('body').on('click', '#orgNameCancel', function (e) {
+		$("#orgName").show();
+		$("#orgNameEdit").hide();
+	});
+	$('body').on('click', '#orgNameChange', function (e) {
+		var newName = $('#newOrgName').val();
+		$.ajax({
+			data: JSON.stringify({id: "${org.id}", nickName: newName}),
+			type: "PUT",
+			url: "/sf/orgs/",
+			contentType: "application/json",
+			dataType: "json",
+			success: function (data, textStatus, jqXHR) {
+				window.location.reload();
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				alert("failure");
+			}
+		});
 	});
 });
 

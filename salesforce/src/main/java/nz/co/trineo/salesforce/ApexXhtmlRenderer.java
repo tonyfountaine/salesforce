@@ -7,11 +7,7 @@ import com.uwyn.jhighlight.highlighter.ExplicitStateHighlighter;
 import com.uwyn.jhighlight.renderer.XhtmlRenderer;
 
 public class ApexXhtmlRenderer extends XhtmlRenderer {
-	@SuppressWarnings("serial")
 	public final static Map<String, String> DEFAULT_CSS = new HashMap<String, String>() {
-		/**
-		 *
-		 */
 		private static final long serialVersionUID = -7350224508359224165L;
 
 		{

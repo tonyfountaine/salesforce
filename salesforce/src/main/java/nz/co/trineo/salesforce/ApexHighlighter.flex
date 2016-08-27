@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.io.IOException;
 import com.uwyn.jhighlight.highlighter.ExplicitStateHighlighter;
 
+@SuppressWarnings("unused")
 %%
 
 %class ApexHighlighter
@@ -23,7 +24,7 @@ import com.uwyn.jhighlight.highlighter.ExplicitStateHighlighter;
 %int
 
 %{
-	public static boolean ASSERT_IS_KEYWORD = false;
+	public static boolean ASSERT_IS_KEYWORD = true;
 
 	/* styles */
 	
@@ -282,7 +283,7 @@ Exponent = [eE] [+\-]? [0-9]+
   
   // comment unterminated
 
-  .|\n  { return APEXDOC_COMMENT_STYLE; }
+  [^]  { return APEXDOC_COMMENT_STYLE; }
 
   // comment terminated
 
@@ -295,4 +296,4 @@ Exponent = [eE] [+\-]? [0-9]+
 
 /* error fallback */
 
-.|\n                             { return PLAIN_STYLE; }
+[^]                             { return PLAIN_STYLE; }

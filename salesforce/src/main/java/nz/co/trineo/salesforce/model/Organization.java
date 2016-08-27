@@ -11,6 +11,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -33,6 +34,10 @@ public class Organization {
 	private ConnectedAccount account;
 	@OneToMany(cascade = CascadeType.ALL)
 	private List<RunTestsResult> testResults = new ArrayList<>();
+	@Column
+	private String nickName;
+	@OneToMany(cascade = CascadeType.ALL)
+	private List<Backup> backups = new ArrayList<>();
 
 	@JsonProperty
 	public String getId() {
@@ -75,10 +80,13 @@ public class Organization {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (account == null ? 0 : account.hashCode());
+		result = prime * result + (backups == null ? 0 : backups.hashCode());
 		result = prime * result + (id == null ? 0 : id.hashCode());
 		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (nickName == null ? 0 : nickName.hashCode());
 		result = prime * result + (organizationType == null ? 0 : organizationType.hashCode());
 		result = prime * result + (sandbox ? 1231 : 1237);
+		result = prime * result + (testResults == null ? 0 : testResults.hashCode());
 		return result;
 	}
 
@@ -101,6 +109,13 @@ public class Organization {
 		} else if (!account.equals(other.account)) {
 			return false;
 		}
+		if (backups == null) {
+			if (other.backups != null) {
+				return false;
+			}
+		} else if (!backups.equals(other.backups)) {
+			return false;
+		}
 		if (id == null) {
 			if (other.id != null) {
 				return false;
@@ -115,6 +130,13 @@ public class Organization {
 		} else if (!name.equals(other.name)) {
 			return false;
 		}
+		if (nickName == null) {
+			if (other.nickName != null) {
+				return false;
+			}
+		} else if (!nickName.equals(other.nickName)) {
+			return false;
+		}
 		if (organizationType == null) {
 			if (other.organizationType != null) {
 				return false;
@@ -125,9 +147,17 @@ public class Organization {
 		if (sandbox != other.sandbox) {
 			return false;
 		}
+		if (testResults == null) {
+			if (other.testResults != null) {
+				return false;
+			}
+		} else if (!testResults.equals(other.testResults)) {
+			return false;
+		}
 		return true;
 	}
 
+	@JsonProperty
 	public ConnectedAccount getAccount() {
 		return account;
 	}
@@ -136,11 +166,36 @@ public class Organization {
 		this.account = account;
 	}
 
+	@JsonIgnore
 	public List<RunTestsResult> getTestResults() {
 		return testResults;
 	}
 
 	public void setTestResults(final List<RunTestsResult> testResults) {
 		this.testResults = testResults;
+	}
+
+	@JsonProperty
+	public String getNickName() {
+		return nickName;
+	}
+
+	public void setNickName(final String nickName) {
+		this.nickName = nickName;
+	}
+
+	public void update(final Organization that) {
+		if (that.nickName != null) {
+			nickName = that.nickName;
+		}
+	}
+
+	@JsonIgnore
+	public List<Backup> getBackups() {
+		return backups;
+	}
+
+	public void setBackups(final List<Backup> backups) {
+		this.backups = backups;
 	}
 }

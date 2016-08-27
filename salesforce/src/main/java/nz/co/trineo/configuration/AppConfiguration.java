@@ -29,6 +29,9 @@ public class AppConfiguration extends Configuration {
 
 	@Valid
 	private String clientSecret;
+	
+	@Valid
+	private String apiVersion;
 
 	@Valid
 	private String trelloKey;
@@ -100,6 +103,16 @@ public class AppConfiguration extends Configuration {
 	@JsonProperty
 	public void setClientSecret(final String clientSecret) {
 		this.clientSecret = clientSecret;
+	}
+
+	@JsonProperty
+	public String getApiVersion() {
+		return apiVersion;
+	}
+
+	@JsonProperty
+	public void setApiVersion(final String apiVersion) {
+		this.apiVersion = apiVersion;
 	}
 
 	@JsonProperty

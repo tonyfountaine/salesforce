@@ -6,9 +6,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -17,6 +16,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.lib.Ref;
@@ -26,6 +26,8 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.FetchResult;
+import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
@@ -116,6 +118,11 @@ public class GitService {
 		return processDAO.get(id);
 	}
 
+	public void createRepo(final String name) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		createRepo(repoDir);
+	}
+
 	public void createRepo(final File repoDir) throws GitServiceException {
 		try {
 			Files.createDirectory(repoDir.toPath());
@@ -130,6 +137,11 @@ public class GitService {
 		}
 	}
 
+	public boolean isRepo(final String name) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		return isRepo(repoDir);
+	}
+
 	public boolean isRepo(final File repoDir) throws GitServiceException {
 		if (Files.exists(repoDir.toPath())) {
 			final File gitDir = new File(repoDir, ".git");
@@ -142,14 +154,28 @@ public class GitService {
 		return false;
 	}
 
-	public Set<String> getTags(final File repoDir) throws GitServiceException {
+	public List<String> getTags(final String name) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		return getTags(repoDir);
+	}
+
+	public List<String> getTags(final File repoDir) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
-		try (Repository repository = FileRepositoryBuilder.create(gitDir)) {
-			final Map<String, Ref> tags = repository.getTags();
-			return tags.keySet();
-		} catch (final IOException e) {
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			final List<Ref> refs = git.tagList().call();
+			final List<String> tags = new ArrayList<>();
+			refs.forEach(r -> {
+				tags.add(r.getName().replace("refs/tags/", ""));
+			});
+			return tags;
+		} catch (final IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
+	}
+
+	public List<String> removeTag(final String name, final String tag) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		return removeTag(repoDir, tag);
 	}
 
 	public List<String> removeTag(final File repoDir, final String tag) throws GitServiceException {
@@ -161,6 +187,11 @@ public class GitService {
 		}
 	}
 
+	public void checkout(final String name, final String branch) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		checkout(repoDir, branch);
+	}
+
 	public void checkout(final File repoDir, final String name) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
@@ -170,23 +201,39 @@ public class GitService {
 		}
 	}
 
+	public void commit(final String name, final String message) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		commit(repoDir, message);
+	}
+
 	public void commit(final File repoDir, final String message) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
-			//git.add().addFilepattern(".").call();
+			git.add().addFilepattern(".").call();
 			git.commit().setAll(true).setMessage(message).call();
 		} catch (IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
 	}
 
-	public void tag(final File repoDir, final String date) throws GitServiceException {
+	public void tag(final String name, final String tag) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		tag(repoDir, tag);
+	}
+
+	public void tag(final File repoDir, final String tag) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
-			git.tag().setName(date).setAnnotated(true).call();
+			git.tag().setName(tag).setAnnotated(true).call();
 		} catch (IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
+	}
+
+	public List<GitDiff> diff(final String name, final String firstTag, final String secondTag)
+			throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		return diff(repoDir, firstTag, secondTag);
 	}
 
 	public List<GitDiff> diff(final File repoDir, final String firstTag, final String secondTag)
@@ -202,28 +249,48 @@ public class GitService {
 		}
 	}
 
-	public List<GitDiff> diffRepos(final File repoDirA, final File repoDirB) throws GitServiceException {
-		final File gitDirA = new File(repoDirA, ".git");
-		final File gitDirB = new File(repoDirB, ".git");
-		try (Repository repositoryA = FileRepositoryBuilder.create(gitDirA);
-				Repository repositoryB = FileRepositoryBuilder.create(gitDirB);) {
-			final AbstractTreeIterator oldTreeIter = prepareTreeParser(repositoryA, "refs/heads/master");
-			final AbstractTreeIterator newTreeIter = prepareTreeParser(repositoryB, "refs/heads/master");
+	public List<GitDiff> diffRepos(final String name) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		return diffRepos(repoDir);
+	}
 
-			return diffTrees(repositoryA, oldTreeIter, newTreeIter);
+	public List<GitDiff> diffRepos(final File repoDir) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repo = FileRepositoryBuilder.create(gitDir);) {
+			final ObjectId fetchHead = repo.resolve("FETCH_HEAD^{tree}");
+			final ObjectId head = repo.resolve("HEAD^{tree}");
+			final ObjectReader reader = repo.newObjectReader();
+			final CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
+			oldTreeIter.reset(reader, fetchHead);
+			final CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
+			newTreeIter.reset(reader, head);
+
+			return diffTrees(repo, oldTreeIter, newTreeIter);
 		} catch (final IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
 	}
 
+	public void fetchRemote(final String name) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		fetchRemote(repoDir);
+	}
+
 	public void fetchRemote(final File repoDir) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
-			// final RefSpec refSpec = new RefSpec("refs/head/*:refs/remotes/origin/*");
-			git.fetch().setRemote(ORIGIN).setCheckFetchedObjects(true).call();// .setRefSpecs(refSpec)
+			final RefSpec refSpec = new RefSpec("refs/heads/master:refs/remotes/" + ORIGIN + "/master");
+			final FetchResult result = git.fetch().setCheckFetchedObjects(true).setRefSpecs(refSpec).call();// setRemote(ORIGIN).call();
+			log.info(result.getMessages());
 		} catch (IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
+	}
+
+	public void addRemote(final String nameA, final String nameB) throws GitServiceException {
+		final File repoDirA = new File(configuration.getGitDirectory(), nameA);
+		final File repoDirB = new File(configuration.getGitDirectory(), nameB);
+		addRemote(repoDirA, repoDirB);
 	}
 
 	public void addRemote(final File repoDirA, final File repoDirB) throws GitServiceException {
@@ -238,6 +305,12 @@ public class GitService {
 		}
 	}
 
+	public boolean isRemote(final String nameA, final String nameB) throws GitServiceException {
+		final File repoDirA = new File(configuration.getGitDirectory(), nameA);
+		final File repoDirB = new File(configuration.getGitDirectory(), nameB);
+		return isRemote(repoDirA, repoDirB);
+	}
+
 	public boolean isRemote(final File repoDirA, final File repoDirB) throws GitServiceException {
 		final File gitDirA = new File(repoDirA, ".git");
 		final File gitDirB = new File(repoDirB, ".git");
@@ -248,6 +321,41 @@ public class GitService {
 		} catch (final IOException e) {
 			throw new GitServiceException(e);
 		}
+	}
+
+	public void removeRemote(final String name) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		removeRemote(repoDir);
+	}
+
+	public void removeRemote(final File repoDir) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir);) {
+			final StoredConfig config = repository.getConfig();
+			config.unsetSection("remote", ORIGIN);
+			config.save();
+		} catch (final IOException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	public List<String> log(final String name) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		return log(repoDir);
+	}
+
+	public List<String> log(final File repoDir) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		final List<String> logEntries = new ArrayList<>();
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			final Iterable<RevCommit> log = git.log().call();
+			log.forEach(r -> {
+				logEntries.add(r.getFullMessage());
+			});
+		} catch (final IOException | GitAPIException e) {
+			throw new GitServiceException(e);
+		}
+		return logEntries;
 	}
 
 	private List<GitDiff> diffTrees(final Repository repository, final AbstractTreeIterator oldTreeIter,

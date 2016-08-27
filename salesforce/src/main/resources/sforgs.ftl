@@ -65,7 +65,7 @@
 							<tbody>
 								<#list orgs as org>
 									<tr>
-										<td><a href="/sf/orgs/${org.id}">${org.name!""}</a></td>
+										<td><a href="/sf/orgs/${org.id}">${org.nickName!org.name!""}</a></td>
 										<td><a href="/sf/orgs/${org.id}">${org.organizationType}</a></td>
 										<td><a href="/sf/orgs/${org.id}">${org.sandbox?string('yes', 'no')}</a></td>
 										<td><a href="/accounts/${org.account.id?string["####"]}">${org.account.name}</a></td>
@@ -88,7 +88,7 @@
 										Source
 										<select class="form-control" id="sourceSelect">
 											<#list orgs as org>
-												<option value="${org.id}">${org.name!""} - ${org.sandbox?string('yes', 'no')}</option>
+												<option value="${org.id}">${org.nickName!org.name!""} - ${org.sandbox?string('yes', 'no')}</option>
 											</#list>
 										</select>
 									</h3>
@@ -102,7 +102,7 @@
 										Target
 										<select class="form-control" id="targetSelect">
 											<#list orgs as org>
-												<option value="${org.id}">${org.name!""} - ${org.sandbox?string('yes', 'no')}</option>
+												<option value="${org.id}">${org.nickName!org.name!""} - ${org.sandbox?string('yes', 'no')}</option>
 											</#list>
 										</select>
 									</h3>

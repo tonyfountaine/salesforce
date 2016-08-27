@@ -3,11 +3,13 @@ package nz.co.trineo;
 import org.hibernate.SessionFactory;
 
 import io.dropwizard.Application;
+import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
+import nz.co.anzac.dropwizard.quartz.QuartzBundle;
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.AccountResource;
 import nz.co.trineo.common.AccountService;
@@ -29,10 +31,14 @@ import nz.co.trineo.git.model.GitProcess;
 import nz.co.trineo.git.model.GitTask;
 import nz.co.trineo.github.GitHubResource;
 import nz.co.trineo.github.GitHubService;
+import nz.co.trineo.salesforce.BackupDAO;
 import nz.co.trineo.salesforce.OrganizationDAO;
+import nz.co.trineo.salesforce.RefreshBackupsTask;
+import nz.co.trineo.salesforce.SalesforceScheduleManager;
 import nz.co.trineo.salesforce.SalesforceResource;
 import nz.co.trineo.salesforce.SalesforceService;
 import nz.co.trineo.salesforce.TestRunDAO;
+import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.CodeCoverageResult;
 import nz.co.trineo.salesforce.model.CodeCoverageWarning;
 import nz.co.trineo.salesforce.model.CodeLocation;
@@ -52,7 +58,7 @@ public class App extends Application<AppConfiguration> {
 	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(Credentals.class,
 			GitProcess.class, GitTask.class, Organization.class, ConnectedAccount.class, AccountToken.class, Diff.class,
 			CodeCoverageResult.class, CodeCoverageWarning.class, CodeLocation.class, RunTestFailure.class,
-			RunTestSuccess.class, RunTestsResult.class) {
+			RunTestSuccess.class, RunTestsResult.class, Backup.class) {
 		@Override
 		public DataSourceFactory getDataSourceFactory(final AppConfiguration configuration) {
 			return configuration.getDataSourceFactory();
@@ -80,6 +86,9 @@ public class App extends Application<AppConfiguration> {
 		// });
 		bootstrap.addBundle(hibernate);
 		bootstrap.addBundle(new ViewBundle<AppConfiguration>());
+		bootstrap.addBundle(new AssetsBundle("/js", "/js", null, "js"));
+		bootstrap.addBundle(new AssetsBundle("/css", "/css", null, "css"));
+		bootstrap.addBundle(new QuartzBundle(hibernate.getSessionFactory()));
 	}
 
 	@Override
@@ -90,11 +99,12 @@ public class App extends Application<AppConfiguration> {
 		final AccountDAO accountDAO = new AccountDAO(sessionFactory);
 		final DiffDAO diffDAO = new DiffDAO(sessionFactory);
 		final TestRunDAO testRunDAO = new TestRunDAO(sessionFactory);
+		final BackupDAO backupDAO = new BackupDAO(sessionFactory);
 
 		final GitService gService = new GitService(configuration, processDAO, accountDAO);
 		final GitHubService ghService = new GitHubService(accountDAO, configuration);
 		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService,
-				testRunDAO);
+				testRunDAO, backupDAO, sessionFactory);
 		final DiffService dService = new DiffService(diffDAO);
 		final AccountService aService = new AccountService(accountDAO);
 		final TrelloService tService = new TrelloService(configuration, accountDAO);
@@ -120,5 +130,8 @@ public class App extends Application<AppConfiguration> {
 		environment.jersey().register(tResource);
 		environment.jersey().register(staticResource);
 		environment.jersey().register(serviceResource);
+
+		environment.admin().addTask(new RefreshBackupsTask(organizationDAO, gService, configuration, sessionFactory));
+		environment.lifecycle().manage(new SalesforceScheduleManager(sessionFactory, sfService));
 	}
 }

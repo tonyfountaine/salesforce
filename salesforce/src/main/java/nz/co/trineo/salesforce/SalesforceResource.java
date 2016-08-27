@@ -2,17 +2,8 @@ package nz.co.trineo.salesforce;
 
 import java.io.InputStream;
 import java.util.List;
-import java.util.Set;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -26,6 +17,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.AccountService;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.git.model.GitDiff;
+import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.CodeCoverageResult;
 import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.salesforce.model.RunTestsResult;
@@ -71,6 +63,15 @@ public class SalesforceResource {
 		return Response.created(UriBuilder.fromMethod(getClass(), "getOrg").build(org.getId())).entity(org).build();
 	}
 
+	@PUT
+	@Path("/orgs")
+	@Timed
+	@UnitOfWork
+	public Response updateOrg(final Organization org) throws SalesforceException {
+		final Organization updatedOrg = salesforceService.updateOrg(org);
+		return Response.ok(updatedOrg).build();
+	}
+
 	@GET
 	@Path("/orgs/{id}")
 	@Timed
@@ -87,7 +88,7 @@ public class SalesforceResource {
 	@Produces(MediaType.TEXT_HTML)
 	public Response getOrgHtml(final @PathParam("id") String id) throws SalesforceException {
 		final Organization org = salesforceService.getOrg(id);
-		final Set<String> backups = salesforceService.listBackups(id);
+		final List<Backup> backups = org.getBackups();
 		final List<RunTestsResult> tests = org.getTestResults();
 		tests.size();
 		final SfOrgView view = new SfOrgView(org, backups, tests);
@@ -99,8 +100,8 @@ public class SalesforceResource {
 	@Timed
 	@UnitOfWork
 	@Produces(MediaType.TEXT_HTML)
-	public Response diffBackups(final @PathParam("id") String id, final @PathParam("first") String first,
-			final @PathParam("second") String second) throws SalesforceException {
+	public Response diffBackups(final @PathParam("id") String id, final @PathParam("first") int first,
+			final @PathParam("second") int second) throws SalesforceException {
 		final List<GitDiff> list = salesforceService.diffBackups(id, first, second);
 		final CompareView view = new CompareView(list);
 		return Response.ok(view).build();
@@ -176,9 +177,8 @@ public class SalesforceResource {
 	@Timed
 	@UnitOfWork
 	public Response createBackup(final @PathParam("id") String id) throws SalesforceException {
-		final String backup = salesforceService.createBackup(id);
-		return Response.created(UriBuilder.fromMethod(getClass(), "getBackup").build(id, backup)).entity(backup)
-				.build();
+		final Backup backup = salesforceService.createBackup(id);
+		return Response.ok(backup).build();
 	}
 
 	@GET
@@ -186,18 +186,29 @@ public class SalesforceResource {
 	@Timed
 	@UnitOfWork
 	public Response listBackups(final @PathParam("id") String id) throws SalesforceException {
-		final Set<String> backups = salesforceService.listBackups(id);
+		final List<Backup> backups = salesforceService.listBackups(id);
 		return Response.ok(backups).build();
 	}
 
 	@GET
-	@Path("/orgs/{id}/backups/{date}")
+	@Path("/orgs/{id}/backups/{backupId}")
+	@Timed
+	@UnitOfWork
+	public Response getBackup(final @PathParam("id") String id, final @PathParam("backupId") int backupId)
+			throws SalesforceException {
+		final Backup b = salesforceService.getBackup(backupId);
+		return Response.ok(b).build();
+	}
+
+	@GET
+	@Path("/orgs/{id}/backups/{backupId}")
 	@Timed
 	@UnitOfWork
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public Response getBackup(final @PathParam("id") String id, final @PathParam("date") String date)
+	public Response downloadBackup(final @PathParam("id") String id, final @PathParam("backupId") int backupId)
 			throws SalesforceException {
-		final InputStream in = salesforceService.downloadBackup(id, date);
+		final Backup b = salesforceService.getBackup(backupId);
+		final InputStream in = salesforceService.downloadBackup(id, backupId);
 		final StreamingOutput stream = output -> {
 			try {
 				IOUtils.copy(in, output);
@@ -206,16 +217,17 @@ public class SalesforceResource {
 			}
 		};
 
-		return Response.ok(stream).header("content-disposition", "attachment; filename = " + date + ".zip").build();
+		return Response.ok(stream).header("content-disposition", "attachment; filename = " + b.getName() + ".zip")
+				.build();
 	}
 
 	@DELETE
-	@Path("/orgs/{id}/backups/{date}")
+	@Path("/orgs/{id}/backups/{backupId}")
 	@Timed
 	@UnitOfWork
-	public Response deleteBackup(final @PathParam("id") String id, final @PathParam("date") String date)
+	public Response deleteBackup(final @PathParam("id") String id, final @PathParam("backupId") int backupId)
 			throws SalesforceException {
-		salesforceService.deleteBackup(id, date);
+		salesforceService.deleteBackup(id, backupId);
 		return Response.noContent().build();
 	}
 
