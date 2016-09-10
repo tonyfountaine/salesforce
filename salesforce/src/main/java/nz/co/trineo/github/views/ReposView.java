@@ -2,9 +2,8 @@ package nz.co.trineo.github.views;
 
 import java.util.List;
 
-import org.eclipse.egit.github.core.Repository;
-
 import io.dropwizard.views.View;
+import nz.co.trineo.github.model.Repository;
 
 public class ReposView extends View {
 	private final List<Repository> repos;
@@ -17,5 +16,4 @@ public class ReposView extends View {
 	public List<Repository> getRepos() {
 		return repos;
 	}
-
 }

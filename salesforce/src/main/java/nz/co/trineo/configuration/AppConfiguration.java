@@ -29,7 +29,7 @@ public class AppConfiguration extends Configuration {
 
 	@Valid
 	private String clientSecret;
-	
+
 	@Valid
 	private String apiVersion;
 

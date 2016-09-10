@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class ServiceRegistry {
-	private static final Map<String, ConnectedService> registry = new HashMap<>();
+	private static final Map<String, Service> registry = new HashMap<>();
 
 	private ServiceRegistry() {
 		// final ServiceLoader<ConnectedService> loader = ServiceLoader.load(ConnectedService.class);
@@ -14,7 +14,7 @@ public class ServiceRegistry {
 		// });
 	}
 
-	public static void registerService(final ConnectedService service) {
+	public static void registerService(final Service service) {
 		registry.put(service.getName().toLowerCase(), service);
 	}
 
@@ -22,7 +22,7 @@ public class ServiceRegistry {
 		return registry.keySet();
 	}
 
-	public static ConnectedService getService(final String name) {
+	public static Service getService(final String name) {
 		return registry.get(name.toLowerCase());
 	}
 }

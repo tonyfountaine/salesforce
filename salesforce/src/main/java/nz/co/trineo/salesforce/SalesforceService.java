@@ -121,7 +121,7 @@ public class SalesforceService implements ConnectedService {
 		this.sessionFactory = sessionFactory;
 		forceMkdir(configuration.getSalesforceDirectory());
 		forceMkdir(configuration.getBackupDirectory());
-		this.apiVersion = configuration.getApiVersion();
+		apiVersion = configuration.getApiVersion();
 	}
 
 	/* (non-Javadoc)
@@ -378,7 +378,8 @@ public class SalesforceService implements ConnectedService {
 				refreshToken(account);
 				metadataConnection = getMetadataConnection(account);
 				try {
-					final DescribeMetadataResult result = metadataConnection.describeMetadata(Double.valueOf(apiVersion));
+					final DescribeMetadataResult result = metadataConnection
+							.describeMetadata(Double.valueOf(apiVersion));
 					metadata = result.getMetadataObjects();
 				} catch (final ConnectionException e1) {
 					throw new SalesforceException(e1);

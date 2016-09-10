@@ -48,14 +48,14 @@ public class AccountService {
 		states.put(state, account);
 		additionalMap.put(state, additional);
 
-		final ConnectedService service = ServiceRegistry.getService(account.getService());
+		final ConnectedService service = (ConnectedService) ServiceRegistry.getService(account.getService());
 		return service.getAuthorizeURIForService(account, redirectUri, state, additional);
 	}
 
 	public void getAccessToken(final String code, final String state, final URI redirectUri) {
 		final ConnectedAccount account = states.get(state);
 		final Map<String, Object> additional = additionalMap.get(state);
-		final ConnectedService service = ServiceRegistry.getService(account.getService());
+		final ConnectedService service = (ConnectedService) ServiceRegistry.getService(account.getService());
 
 		final AccountToken tokenResponse = service.getAccessToken(code, state, redirectUri, additional);
 

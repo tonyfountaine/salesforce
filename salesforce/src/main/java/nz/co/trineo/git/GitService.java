@@ -12,13 +12,14 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ListBranchCommand.ListMode;
+import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
-import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.StoredConfig;
@@ -27,90 +28,68 @@ import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.FetchResult;
+import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 
-import nz.co.trineo.common.AccountDAO;
-import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.common.Service;
+import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.git.model.GitProcess;
-import nz.co.trineo.git.model.GitTask;
+import nz.co.trineo.git.model.GitRepo;
 
-public class GitService {
+public class GitService implements Service {
 	private static final String ORIGIN = "origin";
 	private static final Log log = LogFactory.getLog(GitService.class);
 
-	public static final class GitMonitor implements ProgressMonitor {
-
-		private final GitProcess process;
-		private final GitProcessDAO processDAO;
-
-		public GitMonitor(final GitProcess process, final GitProcessDAO processDAO) {
-			super();
-			this.process = process;
-			this.processDAO = processDAO;
-		}
-
-		@Override
-		public void update(final int completed) {
-			process.getTask().setCurrentWork(completed);
-			processDAO.persist(process);
-		}
-
-		@Override
-		public void start(final int totalTasks) {
-			process.setTotalTasks(totalTasks);
-			processDAO.persist(process);
-		}
-
-		@Override
-		public boolean isCancelled() {
-			return false;
-		}
-
-		@Override
-		public void endTask() {
-			process.setTask(null);
-			process.setCompletedTasks(process.getCompletedTasks() + 1);
-			processDAO.persist(process);
-		}
-
-		@Override
-		public void beginTask(final String title, final int totalWork) {
-			process.setTask(new GitTask(title, totalWork));
-			processDAO.persist(process);
-		}
-	}
-
 	private final AppConfiguration configuration;
 	private final GitProcessDAO processDAO;
-	private final AccountDAO accountDAO;
+	private final GitRepoDAO gitRepoDAO;
 
-	public GitService(final AppConfiguration configuration, final GitProcessDAO processDAO, final AccountDAO accountDAO)
+	public GitService(final AppConfiguration configuration, final GitProcessDAO processDAO, final GitRepoDAO gitRepoDAO)
 			throws IOException {
 		super();
 		this.configuration = configuration;
 		this.processDAO = processDAO;
-		this.accountDAO = accountDAO;
+		this.gitRepoDAO = gitRepoDAO;
 		forceMkdir(configuration.getGitDirectory());
 	}
 
-	public GitProcess clone(final String name, final String cloneURL, final int accId) throws GitServiceException {
-		final ConnectedAccount account = accountDAO.get(accId);
+	public List<GitRepo> listRepos() throws GitServiceException {
+		return gitRepoDAO.listAll();
+		/* final List<GitRepo> repos = new ArrayList<>(); final Path gitDirectory =
+		 * configuration.getGitDirectory().toPath(); try { Files.walk(gitDirectory, 1).filter(p ->
+		 * Files.isDirectory(p.resolve(".git"))).forEach(p -> { try { final String remote = getRemote(p.toFile()); final
+		 * GitRepo repo = new GitRepo(); repo.setName(p.getFileName().toString()); repo.setRemote(remote);
+		 *
+		 * repos.add(repo); } catch (final GitServiceException e) { log.error(e); } }); } catch (final IOException e) {
+		 * log.error(e); } return repos; */
+	}
+
+	public GitProcess clone(final String name, final String cloneURL, final String username, final String password)
+			throws GitServiceException {
+		final GitRepo gitRepo = new GitRepo();
+		gitRepo.setName(name);
+		gitRepo.setRemote(cloneURL);
+		gitRepo.setCredentals(new Credentals());
+		gitRepo.getCredentals().setPassword(password);
+		gitRepo.getCredentals().setUsername(username);
 		final GitProcess process = new GitProcess();
 		processDAO.persist(process);
 		final GitMonitor monitor = new GitMonitor(process, processDAO);
 		final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
-				account.getToken().getAccessToken(), "");
-		try (Git git = Git.cloneRepository().setDirectory(new File(configuration.getGitDirectory(), name))
-				.setURI(cloneURL).setProgressMonitor(monitor).setCredentialsProvider(credentialsProvider).call();) {
+				gitRepo.getCredentals().getUsername(), gitRepo.getCredentals().getPassword());
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		try (Git git = Git.cloneRepository().setDirectory(repoDir).setURI(cloneURL).setProgressMonitor(monitor)
+				.setCredentialsProvider(credentialsProvider).call();) {
 			git.getRepository().close();
 		} catch (final GitAPIException e) {
 			throw new GitServiceException(e);
 		}
+		gitRepoDAO.persist(gitRepo);
 		return process;
 	}
 
@@ -124,17 +103,22 @@ public class GitService {
 	}
 
 	public void createRepo(final File repoDir) throws GitServiceException {
-		try {
-			Files.createDirectory(repoDir.toPath());
-		} catch (final IOException e) {
-			throw new GitServiceException(e);
+		final GitRepo gitRepo = new GitRepo();
+		gitRepo.setName(repoDir.getName());
+		if (!isRepo(repoDir)) {
+			try {
+				Files.createDirectory(repoDir.toPath());
+			} catch (final IOException e) {
+				throw new GitServiceException(e);
+			}
+			final File gitDir = new File(repoDir, ".git");
+			try (Git git = Git.init().setDirectory(repoDir).call();
+					Repository repository = FileRepositoryBuilder.create(gitDir)) {
+			} catch (IllegalStateException | GitAPIException | IOException e) {
+				throw new GitServiceException(e);
+			}
 		}
-		final File gitDir = new File(repoDir, ".git");
-		try (Git git = Git.init().setDirectory(repoDir).call();
-				Repository repository = FileRepositoryBuilder.create(gitDir)) {
-		} catch (IllegalStateException | GitAPIException | IOException e) {
-			throw new GitServiceException(e);
-		}
+		gitRepoDAO.persist(gitRepo);
 	}
 
 	public boolean isRepo(final String name) throws GitServiceException {
@@ -271,6 +255,22 @@ public class GitService {
 		}
 	}
 
+	public String getRemote(final String name) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		return getRemote(repoDir);
+	}
+
+	public String getRemote(final File repoDir) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir);) {
+			final StoredConfig config = repository.getConfig();
+			final String remoteURL = config.getString("remote", ORIGIN, "url");
+			return remoteURL;
+		} catch (final IOException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
 	public void fetchRemote(final String name) throws GitServiceException {
 		final File repoDir = new File(configuration.getGitDirectory(), name);
 		fetchRemote(repoDir);
@@ -395,6 +395,80 @@ public class GitService {
 			walk.dispose();
 
 			return oldTreeParser;
+		}
+	}
+
+	public List<String> branches(final String name) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		return branches(repoDir);
+	}
+
+	public List<String> branches(final File repoDir) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		final List<String> branches = new ArrayList<>();
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			final List<Ref> list = git.branchList().setListMode(ListMode.ALL).call();
+			list.forEach(r -> {
+				final String name = r.getName();
+				branches.add(name);
+			});
+			return branches;
+		} catch (final IOException | GitAPIException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	@Override
+	public String getName() {
+		return "Git";
+	}
+
+	public void credentals(final String name, final String username, final String password) {
+		final GitRepo gitRepo = gitRepoDAO.getByName(name);
+		if (gitRepo.getCredentals() == null) {
+			gitRepo.setCredentals(new Credentals());
+		}
+		final Credentals credentals = gitRepo.getCredentals();
+		credentals.setPassword(password);
+		credentals.setUsername(username);
+		gitRepoDAO.persist(gitRepo);
+	}
+
+	public PullResult pull(final String name) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		return pull(repoDir);
+	}
+
+	public PullResult pull(final File repoDir) throws GitServiceException {
+		final GitRepo gitRepo = gitRepoDAO.getByName(repoDir.getName());
+		final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
+				gitRepo.getCredentals().getUsername(), gitRepo.getCredentals().getPassword());
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			final PullResult call = git.pull().setCredentialsProvider(credentialsProvider)
+					.setRemote(gitRepo.getRemote()).call();
+			return call;
+		} catch (final GitAPIException | IOException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	public Iterable<PushResult> push(final String name) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		return push(repoDir);
+	}
+
+	public Iterable<PushResult> push(final File repoDir) throws GitServiceException {
+		final GitRepo gitRepo = gitRepoDAO.getByName(repoDir.getName());
+		final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
+				gitRepo.getCredentals().getUsername(), gitRepo.getCredentals().getPassword());
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			final Iterable<PushResult> call = git.push().setCredentialsProvider(credentialsProvider)
+					.setRemote(gitRepo.getRemote()).call();
+			return call;
+		} catch (final GitAPIException | IOException e) {
+			throw new GitServiceException(e);
 		}
 	}
 }

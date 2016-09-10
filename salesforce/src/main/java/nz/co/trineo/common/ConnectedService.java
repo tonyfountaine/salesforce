@@ -6,9 +6,7 @@ import java.util.Map;
 import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.ConnectedAccount;
 
-public interface ConnectedService {
-	String getName();
-
+public interface ConnectedService extends Service {
 	URI getAuthorizeURIForService(ConnectedAccount account, URI redirectUri, String state,
 			Map<String, Object> additional);
 

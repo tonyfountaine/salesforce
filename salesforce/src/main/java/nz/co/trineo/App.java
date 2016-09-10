@@ -25,17 +25,21 @@ import nz.co.trineo.diff.DiffResource;
 import nz.co.trineo.diff.DiffService;
 import nz.co.trineo.diff.model.Diff;
 import nz.co.trineo.git.GitProcessDAO;
+import nz.co.trineo.git.GitRepoDAO;
 import nz.co.trineo.git.GitResource;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.model.GitProcess;
+import nz.co.trineo.git.model.GitRepo;
 import nz.co.trineo.git.model.GitTask;
+import nz.co.trineo.github.GitHubRepoDAO;
 import nz.co.trineo.github.GitHubResource;
 import nz.co.trineo.github.GitHubService;
+import nz.co.trineo.github.model.Repository;
 import nz.co.trineo.salesforce.BackupDAO;
 import nz.co.trineo.salesforce.OrganizationDAO;
 import nz.co.trineo.salesforce.RefreshBackupsTask;
-import nz.co.trineo.salesforce.SalesforceScheduleManager;
 import nz.co.trineo.salesforce.SalesforceResource;
+import nz.co.trineo.salesforce.SalesforceScheduleManager;
 import nz.co.trineo.salesforce.SalesforceService;
 import nz.co.trineo.salesforce.TestRunDAO;
 import nz.co.trineo.salesforce.model.Backup;
@@ -58,7 +62,7 @@ public class App extends Application<AppConfiguration> {
 	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(Credentals.class,
 			GitProcess.class, GitTask.class, Organization.class, ConnectedAccount.class, AccountToken.class, Diff.class,
 			CodeCoverageResult.class, CodeCoverageWarning.class, CodeLocation.class, RunTestFailure.class,
-			RunTestSuccess.class, RunTestsResult.class, Backup.class) {
+			RunTestSuccess.class, RunTestsResult.class, Backup.class, GitRepo.class, Repository.class) {
 		@Override
 		public DataSourceFactory getDataSourceFactory(final AppConfiguration configuration) {
 			return configuration.getDataSourceFactory();
@@ -100,9 +104,11 @@ public class App extends Application<AppConfiguration> {
 		final DiffDAO diffDAO = new DiffDAO(sessionFactory);
 		final TestRunDAO testRunDAO = new TestRunDAO(sessionFactory);
 		final BackupDAO backupDAO = new BackupDAO(sessionFactory);
+		final GitRepoDAO gitRepoDAO = new GitRepoDAO(sessionFactory);
+		final GitHubRepoDAO gitHubRepoDAO = new GitHubRepoDAO(sessionFactory);
 
-		final GitService gService = new GitService(configuration, processDAO, accountDAO);
-		final GitHubService ghService = new GitHubService(accountDAO, configuration);
+		final GitService gService = new GitService(configuration, processDAO, gitRepoDAO);
+		final GitHubService ghService = new GitHubService(gitHubRepoDAO, configuration, accountDAO);
 		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService,
 				testRunDAO, backupDAO, sessionFactory);
 		final DiffService dService = new DiffService(diffDAO);
@@ -110,7 +116,7 @@ public class App extends Application<AppConfiguration> {
 		final TrelloService tService = new TrelloService(configuration, accountDAO);
 
 		final GitResource gResource = new GitResource(gService);
-		final GitHubResource ghResource = new GitHubResource(ghService, gService);
+		final GitHubResource ghResource = new GitHubResource(ghService);
 		final SalesforceResource sfResource = new SalesforceResource(sfService, aService);
 		final DiffResource dResource = new DiffResource(dService);
 		final AccountResource aResource = new AccountResource(aService);
@@ -121,6 +127,7 @@ public class App extends Application<AppConfiguration> {
 		ServiceRegistry.registerService(tService);
 		ServiceRegistry.registerService(sfService);
 		ServiceRegistry.registerService(ghService);
+		ServiceRegistry.registerService(gService);
 
 		environment.jersey().register(ghResource);
 		environment.jersey().register(gResource);

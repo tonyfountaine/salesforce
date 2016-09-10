@@ -14,11 +14,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.eclipse.jgit.api.PullResult;
+import org.eclipse.jgit.transport.PushResult;
+
 import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.git.model.GitProcess;
+import nz.co.trineo.git.model.GitRepo;
 
 @Path("/git")
 @Produces(MediaType.APPLICATION_JSON)
@@ -50,25 +54,66 @@ public class GitResource {
 	// return Response.ok(process).build();
 	// }
 
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/repo")
+	public Response listRepos() throws GitServiceException {
+		final List<GitRepo> listRepos = service.listRepos();
+		return Response.ok(listRepos).build();
+	}
+
 	@POST
 	@Timed
+	@UnitOfWork
 	@Path("/repo/{name}")
 	public Response createRepo(final @PathParam("name") String name) throws GitServiceException {
 		service.createRepo(name);
 		return Response.ok().build();
 	}
 
-	@PUT
+	@POST
 	@Timed
-	@Path("/repo/{name}")
+	@UnitOfWork
+	@Path("/repo/{name}/commit")
 	public Response commit(final @PathParam("name") String name, final @FormParam("message") String message)
 			throws GitServiceException {
 		service.commit(name, message);
 		return Response.ok().build();
 	}
 
+	@POST
+	@Timed
+	@UnitOfWork
+	@Path("/repo/{name}/pull")
+	public Response pull(final @PathParam("name") String name) throws GitServiceException {
+		final PullResult result = service.pull(name);
+		return Response.ok(result).build();
+	}
+
+	@POST
+	@Timed
+	@UnitOfWork
+	@Path("/repo/{name}/push")
+	public Response push(final @PathParam("name") String name) throws GitServiceException {
+		final Iterable<PushResult> push = service.push(name);
+		return Response.ok(push).build();
+	}
+
+	@PUT
+	@Timed
+	@UnitOfWork
+	@Path("/repo/{name}/creds")
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	public Response credentals(final @PathParam("name") String name, final @FormParam("username") String username,
+			final @FormParam("password") String password) throws GitServiceException {
+		service.credentals(name, username, password);
+		return Response.ok().build();
+	}
+
 	@GET
 	@Timed
+	@UnitOfWork
 	@Path("/repo/{name}/tags")
 	public Response getTags(final @PathParam("name") String name) throws GitServiceException {
 		final List<String> tags = service.getTags(name);
@@ -77,6 +122,7 @@ public class GitResource {
 
 	@DELETE
 	@Timed
+	@UnitOfWork
 	@Path("/repo/{name}/tags/{tag}")
 	public Response removeTag(final @PathParam("name") String name, final @PathParam("tag") String tag)
 			throws GitServiceException {
@@ -86,6 +132,7 @@ public class GitResource {
 
 	@POST
 	@Timed
+	@UnitOfWork
 	@Path("/repo/{name}/tags/{tag}")
 	public Response createTag(final @PathParam("name") String name, final @PathParam("tag") String tag)
 			throws GitServiceException {
@@ -93,8 +140,18 @@ public class GitResource {
 		return Response.ok().build();
 	}
 
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/repo/{name}/branches")
+	public Response listBranches(final @PathParam("name") String name) throws GitServiceException {
+		final List<String> branches = service.branches(name);
+		return Response.ok(branches).build();
+	}
+
 	@POST
 	@Timed
+	@UnitOfWork
 	@Path("/repo/{name}/branches/{branch}")
 	public Response checkout(final @PathParam("name") String name, final @PathParam("branch") String branch)
 			throws GitServiceException {
@@ -104,6 +161,7 @@ public class GitResource {
 
 	@POST
 	@Timed
+	@UnitOfWork
 	@Path("/repo/{name}/diff/{first}/{second}")
 	public Response diff(final @PathParam("name") String name, final @PathParam("first") String first,
 			final @PathParam("second") String second) throws GitServiceException {
@@ -111,8 +169,18 @@ public class GitResource {
 		return Response.ok(list).build();
 	}
 
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/repo/{name}/remote")
+	public Response getRemote(final @PathParam("name") String name) throws GitServiceException {
+		final String remote = service.getRemote(name);
+		return Response.ok(remote).build();
+	}
+
 	@POST
 	@Timed
+	@UnitOfWork
 	@Path("/repo/{name}/remote/fetch")
 	public Response fetch(final @PathParam("name") String name) throws GitServiceException {
 		service.fetchRemote(name);
@@ -121,6 +189,7 @@ public class GitResource {
 
 	@POST
 	@Timed
+	@UnitOfWork
 	@Path("/repo/{name}/remote/diff")
 	public Response diffRepos(final @PathParam("nameA") String name) throws GitServiceException {
 		final List<GitDiff> list = service.diffRepos(name);
@@ -129,6 +198,7 @@ public class GitResource {
 
 	@POST
 	@Timed
+	@UnitOfWork
 	@Path("/repo/{nameA}/remote/{nameB}")
 	public Response setRemote(final @PathParam("nameA") String nameA, final @PathParam("nameB") String nameB)
 			throws GitServiceException {
@@ -138,6 +208,7 @@ public class GitResource {
 
 	@DELETE
 	@Timed
+	@UnitOfWork
 	@Path("/repo/{name}/remote")
 	public Response removeRemote(final @PathParam("name") String name) throws GitServiceException {
 		service.removeRemote(name);

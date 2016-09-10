@@ -6,7 +6,7 @@ import nz.co.anzac.dropwizard.quartz.Job;
 import nz.co.anzac.dropwizard.quartz.annotation.Schedule;
 import nz.co.trineo.salesforce.SalesforceService;
 
-@Schedule(cron="0 0 1 * * ?")
+@Schedule(cron = "0 0 1 * * ?")
 public class TestsJob extends Job {
 
 	@Override

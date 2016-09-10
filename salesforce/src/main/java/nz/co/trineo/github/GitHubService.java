@@ -1,8 +1,12 @@
 package nz.co.trineo.github;
 
+import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
@@ -11,7 +15,6 @@ import javax.ws.rs.core.UriBuilder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryBranch;
 import org.eclipse.egit.github.core.RepositoryCommit;
 import org.eclipse.egit.github.core.RepositoryId;
@@ -26,16 +29,20 @@ import nz.co.trineo.common.ConnectedService;
 import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
+import nz.co.trineo.github.model.Repository;
 
 public class GitHubService implements ConnectedService {
 	private static final Log log = LogFactory.getLog(GitHubService.class);
+	private static final Pattern urlPatten = Pattern.compile("github.com/(.*)/(.*)\\.git");
 
-	private final AccountDAO dao;
+	private final GitHubRepoDAO dao;
+	private final AccountDAO credDAO;
 	private final AppConfiguration configuration;
 
-	public GitHubService(final AccountDAO dao, final AppConfiguration configuration) {
+	public GitHubService(final GitHubRepoDAO dao, final AppConfiguration configuration, final AccountDAO credDAO) {
 		this.dao = dao;
 		this.configuration = configuration;
+		this.credDAO = credDAO;
 	}
 
 	@Override
@@ -43,64 +50,116 @@ public class GitHubService implements ConnectedService {
 		return "GitHub";
 	}
 
-	public List<Repository> getRepos(final int accID) throws Exception {
-		final ConnectedAccount account = dao.get(accID);
-		final RepositoryService service = new RepositoryService();
-		service.getClient().setOAuth2Token(account.getToken().getAccessToken());
-		final List<Repository> repositories = service.getRepositories();
-		return repositories;
+	public List<Repository> getRepos() throws GitHubServiceException {
+		return dao.listAll();
 	}
 
-	public List<Repository> getRepos(final String user, final int accID) throws Exception {
-		final ConnectedAccount account = dao.get(accID);
-		final RepositoryService service = new RepositoryService();
-		service.getClient().setOAuth2Token(account.getToken().getAccessToken());
-		final List<Repository> repositories = service.getRepositories(user);
-		return repositories;
+	public Repository getRepo(final String name) throws GitHubServiceException {
+		return dao.getByName(name);
 	}
 
-	public List<Repository> getOrgRepos(final String org, final int accID) throws Exception {
-		final ConnectedAccount account = dao.get(accID);
-		final RepositoryService service = new RepositoryService();
-		service.getClient().setOAuth2Token(account.getToken().getAccessToken());
-		final List<Repository> repositories = service.getOrgRepositories(org);
-		return repositories;
+	public Repository createRepo(final String repoURL, final int accId) throws GitHubServiceException {
+		final Repository repository = new Repository();
+		final ConnectedAccount account = credDAO.get(accId);
+
+		repository.setAccount(account);
+		repository.setCloneURL(repoURL);
+		final Matcher matcher = urlPatten.matcher(repoURL);
+		if (matcher.find()) {
+			final String user = matcher.group(1);
+			final String name = matcher.group(2);
+			final RepositoryService service = new RepositoryService();
+			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
+			try {
+				org.eclipse.egit.github.core.Repository repository2 = service.getRepository(user, name);
+				repository.setName(repository2.getName());
+			} catch (IOException e) {
+				throw new GitHubServiceException(e);
+			}
+		}
+
+		dao.persist(repository);
+		return repository;
 	}
 
-	public Repository getRepo(final String user, final String name, final int accId) throws Exception {
-		final ConnectedAccount account = dao.get(accId);
-		final RepositoryService service = new RepositoryService();
-		service.getClient().setOAuth2Token(account.getToken().getAccessToken());
-		return service.getRepository(user, name);
+	public List<String> getBranches(final String name) throws GitHubServiceException {
+		final List<String> list = new ArrayList<>();
+		final Repository repository = dao.getByName(name);
+		final ConnectedAccount account = repository.getAccount();
+		final Matcher matcher = urlPatten.matcher(repository.getCloneURL());
+		if (matcher.find()) {
+			final String user = matcher.group(1);
+			final RepositoryService service = new RepositoryService();
+			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
+			try {
+				List<RepositoryBranch> branches = service.getBranches(RepositoryId.create(user, name));
+				branches.forEach(b -> {
+					list.add(b.getName());
+				});
+			} catch (IOException e) {
+				throw new GitHubServiceException(e);
+			}
+		}
+		return list;
 	}
 
-	public List<RepositoryBranch> getBranches(final String user, final String name, final int accId) throws Exception {
-		final ConnectedAccount account = dao.get(accId);
-		final RepositoryService service = new RepositoryService();
-		service.getClient().setOAuth2Token(account.getToken().getAccessToken());
-		return service.getBranches(RepositoryId.create(user, name));
+	public List<String> getTags(final String name) throws GitHubServiceException {
+		final List<String> list = new ArrayList<>();
+		final Repository repository = dao.getByName(name);
+		final ConnectedAccount account = repository.getAccount();
+		final Matcher matcher = urlPatten.matcher(repository.getCloneURL());
+		if (matcher.find()) {
+			final String user = matcher.group(1);
+			final RepositoryService service = new RepositoryService();
+			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
+			try {
+				List<RepositoryTag> tags = service.getTags(RepositoryId.create(user, name));
+				tags.forEach(t -> {
+					list.add(t.getName());
+				});
+			} catch (IOException e) {
+				throw new GitHubServiceException(e);
+			}
+		}
+		return list;
 	}
 
-	public List<RepositoryTag> getTags(final String user, final String name, final int accId) throws Exception {
-		final ConnectedAccount account = dao.get(accId);
-		final RepositoryService service = new RepositoryService();
-		service.getClient().setOAuth2Token(account.getToken().getAccessToken());
-		return service.getTags(RepositoryId.create(user, name));
+	public List<String> getCommits(final String name) throws GitHubServiceException {
+		final List<String> list = new ArrayList<>();
+		final Repository repository = dao.getByName(name);
+		final ConnectedAccount account = repository.getAccount();
+		final Matcher matcher = urlPatten.matcher(repository.getCloneURL());
+		if (matcher.find()) {
+			final String user = matcher.group(1);
+			final CommitService service = new CommitService();
+			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
+			try {
+				List<RepositoryCommit> tags = service.getCommits(RepositoryId.create(user, name));
+				tags.forEach(t -> {
+					list.add(t.getSha());
+				});
+			} catch (IOException e) {
+				throw new GitHubServiceException(e);
+			}
+		}
+		return list;
 	}
 
-	public List<RepositoryCommit> getCommits(final String user, final String name, final int accId) throws Exception {
-		final ConnectedAccount account = dao.get(accId);
-		final CommitService service = new CommitService();
-		service.getClient().setOAuth2Token(account.getToken().getAccessToken());
-		return service.getCommits(RepositoryId.create(user, name));
-	}
-
-	public RepositoryCommit getCommit(final String user, final String name, final int accId, final String sha1)
-			throws Exception {
-		final ConnectedAccount account = dao.get(accId);
-		final CommitService service = new CommitService();
-		service.getClient().setOAuth2Token(account.getToken().getAccessToken());
-		return service.getCommit(RepositoryId.create(user, name), sha1);
+	public RepositoryCommit getCommit(final String name, final String sha1) throws GitHubServiceException {
+		final Repository repository = dao.getByName(name);
+		final ConnectedAccount account = repository.getAccount();
+		final Matcher matcher = urlPatten.matcher(repository.getCloneURL());
+		if (matcher.find()) {
+			final String user = matcher.group(1);
+			final CommitService service = new CommitService();
+			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
+			try {
+				return service.getCommit(RepositoryId.create(user, name), sha1);
+			} catch (IOException e) {
+				throw new GitHubServiceException(e);
+			}
+		}
+		return null;
 	}
 
 	private String getClientId() {
