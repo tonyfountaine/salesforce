@@ -18,6 +18,9 @@ public class ConvertUtils {
 
 	public static RunTestsResult toRunTestsResult(final com.sforce.soap.apex.RunTestsResult result) {
 		log.info(result);
+		if (result == null) {
+			return null;
+		}
 		final RunTestsResult runTestsResult = new RunTestsResult();
 		runTestsResult.setApexLogId(result.getApexLogId());
 		runTestsResult.setNumFailures(result.getNumFailures());

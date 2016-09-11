@@ -49,7 +49,7 @@
 							<div class="panel-heading">
 								<h3 class="panel-title">Backups</h3>
 							</div>
-							<table class="table table-striped">
+							<table class="table table-striped table-hover">
 								<thead>
 									<tr>
 										<th>Date</th>
@@ -106,7 +106,7 @@
 								<div class="panel-heading">
 									<h3 class="panel-title" id="codeHead">Code Coverage</h3>
 								</div>
-								<table class="table table-striped table-responsive">
+								<table class="table table-striped table-responsive table-hover">
 									<thead>
 										<tr>
 											<th>Namespace</th>
@@ -285,7 +285,7 @@ $.getJSON("/sf/orgs/${org.id}/metadata", "", function (data) {
 	$('#metaTree').on('nodeSelected', function(event, node) {
 		var path = "";
 		var n = node;
-		if (!n.text.contains(".")) {
+		if (n.text.indexOf(".") == -1) {
 			return;
 		}
 		while (n.text != '/') {

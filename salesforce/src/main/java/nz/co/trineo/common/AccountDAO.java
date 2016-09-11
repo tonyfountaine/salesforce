@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Restrictions;
 
 import io.dropwizard.hibernate.AbstractDAO;
 import nz.co.trineo.common.model.ConnectedAccount;
@@ -31,5 +32,9 @@ public class AccountDAO extends AbstractDAO<ConnectedAccount> {
 	public void delete(final int id) {
 		final ConnectedAccount account = get(id);
 		currentSession().delete(account);
+	}
+
+	public List<ConnectedAccount> listByService(final String service) {
+		return list(currentSession().createCriteria(getEntityClass()).add(Restrictions.eq("service", service)));
 	}
 }

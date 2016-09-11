@@ -54,10 +54,14 @@ public class GitHubService implements ConnectedService {
 		return dao.listAll();
 	}
 
-	public Repository getRepo(final String name) throws GitHubServiceException {
-		return dao.getByName(name);
+	public Repository getRepo(final int id) throws GitHubServiceException {
+		return dao.get(id);
 	}
 
+	public void deleteRepo(final int id) {
+		dao.delete(id);
+	}
+	
 	public Repository createRepo(final String repoURL, final int accId) throws GitHubServiceException {
 		final Repository repository = new Repository();
 		final ConnectedAccount account = credDAO.get(accId);
@@ -71,7 +75,7 @@ public class GitHubService implements ConnectedService {
 			final RepositoryService service = new RepositoryService();
 			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
 			try {
-				org.eclipse.egit.github.core.Repository repository2 = service.getRepository(user, name);
+				final org.eclipse.egit.github.core.Repository repository2 = service.getRepository(user, name);
 				repository.setName(repository2.getName());
 			} catch (IOException e) {
 				throw new GitHubServiceException(e);
@@ -82,13 +86,14 @@ public class GitHubService implements ConnectedService {
 		return repository;
 	}
 
-	public List<String> getBranches(final String name) throws GitHubServiceException {
+	public List<String> getBranches(final int id) throws GitHubServiceException {
 		final List<String> list = new ArrayList<>();
-		final Repository repository = dao.getByName(name);
+		final Repository repository = dao.get(id);
 		final ConnectedAccount account = repository.getAccount();
 		final Matcher matcher = urlPatten.matcher(repository.getCloneURL());
 		if (matcher.find()) {
 			final String user = matcher.group(1);
+			final String name = matcher.group(2);
 			final RepositoryService service = new RepositoryService();
 			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
 			try {
@@ -103,13 +108,14 @@ public class GitHubService implements ConnectedService {
 		return list;
 	}
 
-	public List<String> getTags(final String name) throws GitHubServiceException {
+	public List<String> getTags(final int id) throws GitHubServiceException {
 		final List<String> list = new ArrayList<>();
-		final Repository repository = dao.getByName(name);
+		final Repository repository = dao.get(id);
 		final ConnectedAccount account = repository.getAccount();
 		final Matcher matcher = urlPatten.matcher(repository.getCloneURL());
 		if (matcher.find()) {
 			final String user = matcher.group(1);
+			final String name = matcher.group(2);
 			final RepositoryService service = new RepositoryService();
 			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
 			try {
@@ -124,13 +130,14 @@ public class GitHubService implements ConnectedService {
 		return list;
 	}
 
-	public List<String> getCommits(final String name) throws GitHubServiceException {
+	public List<String> getCommits(final int id) throws GitHubServiceException {
 		final List<String> list = new ArrayList<>();
-		final Repository repository = dao.getByName(name);
+		final Repository repository = dao.get(id);
 		final ConnectedAccount account = repository.getAccount();
 		final Matcher matcher = urlPatten.matcher(repository.getCloneURL());
 		if (matcher.find()) {
 			final String user = matcher.group(1);
+			final String name = matcher.group(2);
 			final CommitService service = new CommitService();
 			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
 			try {
@@ -145,12 +152,13 @@ public class GitHubService implements ConnectedService {
 		return list;
 	}
 
-	public RepositoryCommit getCommit(final String name, final String sha1) throws GitHubServiceException {
-		final Repository repository = dao.getByName(name);
+	public RepositoryCommit getCommit(final int id, final String sha1) throws GitHubServiceException {
+		final Repository repository = dao.get(id);
 		final ConnectedAccount account = repository.getAccount();
 		final Matcher matcher = urlPatten.matcher(repository.getCloneURL());
 		if (matcher.find()) {
 			final String user = matcher.group(1);
+			final String name = matcher.group(2);
 			final CommitService service = new CommitService();
 			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
 			try {

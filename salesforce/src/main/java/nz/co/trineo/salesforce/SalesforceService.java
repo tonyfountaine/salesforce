@@ -569,9 +569,12 @@ public class SalesforceService implements ConnectedService {
 				}
 			}
 		}
-		final RunTestsResult testsResult = ConvertUtils.toRunTestsResult(runTestsResult);
-		final RunTestsResult result = testRunDAO.persist(testsResult);
-		return result;
+		if (runTestsResult != null) {
+			final RunTestsResult testsResult = ConvertUtils.toRunTestsResult(runTestsResult);
+			final RunTestsResult result = testRunDAO.persist(testsResult);
+			return result;
+		}
+		return null;
 	}
 
 	/**

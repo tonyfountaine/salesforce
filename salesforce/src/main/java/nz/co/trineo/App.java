@@ -116,7 +116,7 @@ public class App extends Application<AppConfiguration> {
 		final TrelloService tService = new TrelloService(configuration, accountDAO);
 
 		final GitResource gResource = new GitResource(gService);
-		final GitHubResource ghResource = new GitHubResource(ghService);
+		final GitHubResource ghResource = new GitHubResource(ghService, aService);
 		final SalesforceResource sfResource = new SalesforceResource(sfService, aService);
 		final DiffResource dResource = new DiffResource(dService);
 		final AccountResource aResource = new AccountResource(aService);

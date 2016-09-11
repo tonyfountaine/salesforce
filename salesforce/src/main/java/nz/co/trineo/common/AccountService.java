@@ -41,6 +41,10 @@ public class AccountService {
 		accountDAO.delete(id);
 	}
 
+	public List<ConnectedAccount> byService(final String service) {
+		return accountDAO.listByService(service);
+	}
+
 	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri,
 			final Map<String, Object> additional) {
 		final String state = HashCode.fromLong(System.currentTimeMillis()).toString();
