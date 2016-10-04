@@ -2,6 +2,7 @@
 gitDirectory: /var/trineo/git
 salesforceDirectory: /var/trineo/salesforce
 backupDirectory: /var/trineo/backup
+githubDirectory: /var/trineo/github
 
 # gitDirectory: d:\\tmp\\git
 # salesforceDirectory: d:\\tmp\\salesforce

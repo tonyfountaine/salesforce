@@ -18,6 +18,10 @@ body {
 	padding-top: 70px;
 }
 
+a.btn {
+	color: #777;
+}
+
 .fa-salesforce::before {
     content: "\f0c2"
 }
@@ -31,18 +35,18 @@ body {
 	overflow: auto;
 }
 
-#code table, #compareData table {
+#code table, #compareData table, #compareBranchData table {
 	margin-bottom: 0;
 	/*width: 100%;
 	overflow: auto;*/
 }
 
-#code table td, #compareData table td {
+#code table td, #compareData table td, #compareBranchData table td {
 	border-top: none;
 	padding: 0px;
 }
 
-#code table td.num, #compareData table td.num {
+#code table td.num, #compareData table td.num, #compareBranchData table td.num {
 	border: solid #eee;
 	border-width: 0 1 0 0;
 	text-align: right;
@@ -52,34 +56,34 @@ body {
 	min-width: 20px;
 }
 
-#code table td.code, #compareData table td.line {
+#code table td.code, #compareData table td.line, #compareBranchData table td.line {
 	padding-right: 10px;
 	padding-left: 10px;
 	word-wrap: normal;
 	white-space: pre;
 }
 
-#compareData table tr.header {
+#compareData table tr.header, #compareBranchData table tr.header {
 	background-color: #edf2f9;
 }
 
-#compareData table tr.header td.num {
+#compareData table tr.header td.num, #compareBranchData table tr.header td.num {
 	border-color: #d2dff0;
 }
 
-#code table tr.notcovered, #compareData table tr.removed {
+#code table tr.notcovered, #compareData table tr.removed, #compareBranchData table tr.removed {
 	background-color: #ffdddd;
 }
 
-#code table tr.notcovered td.num, #compareData table tr.removed td.num {
+#code table tr.notcovered td.num, #compareData table tr.removed td.num, #compareBranchData table tr.removed td.num {
 	border-color: #f1c0c0;
 }
 
-#compareData table tr.added {
+#compareData table tr.added, #compareBranchData table tr.added {
 	background-color: #dbffdb;
 }
 
-#compareData table tr.added td.num {
+#compareData table tr.added td.num, #compareBranchData table tr.added td.num {
 	border-color: #c1e9c1;
 }
 

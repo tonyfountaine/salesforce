@@ -4,7 +4,7 @@
 <#include "/head.ftl">
 	<body>
 <#include "/nav.ftl">
-		<div class="container-fluid">
+		<div class="container">
 			<div class="row">
 				<div class="col-xs-11 col-xs-offset-1">
 					<h1>${title}</h1>
@@ -59,6 +59,7 @@
 									<th>Type</th>
 									<th>Sandbox</th>
 									<th>Account</th>
+									<th>Client</th>
 									<th>&nbsp;</th>
 								</tr>
 							</thead>
@@ -69,6 +70,11 @@
 										<td><a href="/sf/orgs/${org.id}">${org.organizationType}</a></td>
 										<td><a href="/sf/orgs/${org.id}">${org.sandbox?string('yes', 'no')}</a></td>
 										<td><a href="/accounts/${org.account.id?string["####"]}">${org.account.name}</a></td>
+										<td>
+                                            <#if org.client??>
+        										<a href="/clients/${org.client.id?string["####"]}">${org.client.name!""}</a>
+        									</#if>
+										</td>
 										<td>
 											<button type="button" class="btn btn-default backup" data-id="${org.id}"><i class="fa fa-cloud-download" aria-hidden="true"></i> Backup</button>
 											<button type="button" class="btn btn-default tests" data-id="${org.id}"><i class="fa fa-tasks" aria-hidden="true"></i> Tests</button>

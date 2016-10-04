@@ -1,6 +1,7 @@
 package nz.co.trineo.salesforce;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ws.rs.*;
@@ -15,8 +16,11 @@ import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.AccountService;
+import nz.co.trineo.common.ClientService;
+import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.git.model.GitDiff;
+import nz.co.trineo.github.model.Branch;
 import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.CodeCoverageResult;
 import nz.co.trineo.salesforce.model.Organization;
@@ -35,11 +39,14 @@ public class SalesforceResource {
 
 	private final SalesforceService salesforceService;
 	private final AccountService accountService;
+	private final ClientService clientService;
 
-	public SalesforceResource(final SalesforceService salesforceService, final AccountService accountService) {
+	public SalesforceResource(final SalesforceService salesforceService, final AccountService accountService,
+			final ClientService clientService) {
 		super();
 		this.salesforceService = salesforceService;
 		this.accountService = accountService;
+		this.clientService = clientService;
 	}
 
 	@GET
@@ -49,7 +56,7 @@ public class SalesforceResource {
 	@Produces(MediaType.TEXT_HTML)
 	public Response getOrgs() {
 		final List<Organization> orgs = salesforceService.listOrgs();
-		final List<ConnectedAccount> accounts = accountService.list();
+		final List<ConnectedAccount> accounts = accountService.byService(salesforceService.getName().toLowerCase());
 		final SfOrgsView view = new SfOrgsView(orgs, accounts);
 		return Response.ok(view).build();
 	}
@@ -91,7 +98,14 @@ public class SalesforceResource {
 		final List<Backup> backups = org.getBackups();
 		final List<RunTestsResult> tests = org.getTestResults();
 		tests.size();
-		final SfOrgView view = new SfOrgView(org, backups, tests);
+		final List<Client> clients = clientService.list();
+		final List<Branch> branches = new ArrayList<>();
+		org.getClient().getRepositories().forEach(r -> {
+			r.getBranches().forEach(b -> {
+				branches.add(b);
+			});
+		});
+		final SfOrgView view = new SfOrgView(org, backups, tests, clients, branches);
 		return Response.ok(view).build();
 	}
 
@@ -103,6 +117,17 @@ public class SalesforceResource {
 	public Response diffBackups(final @PathParam("id") String id, final @PathParam("first") int first,
 			final @PathParam("second") int second) throws SalesforceException {
 		final List<GitDiff> list = salesforceService.diffBackups(id, first, second);
+		final CompareView view = new CompareView(list);
+		return Response.ok(view).build();
+	}
+
+	@POST
+	@Path("/orgs/{id}/compareBranch")
+	@Timed
+	@UnitOfWork
+	@Produces(MediaType.TEXT_HTML)
+	public Response diffBranch(final @PathParam("id") String id) throws SalesforceException {
+		final List<GitDiff> list = salesforceService.diffBranch(id);
 		final CompareView view = new CompareView(list);
 		return Response.ok(view).build();
 	}

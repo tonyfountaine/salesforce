@@ -6,6 +6,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -19,10 +20,15 @@ import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.AccountService;
+import nz.co.trineo.common.ClientService;
+import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.github.model.Branch;
 import nz.co.trineo.github.model.Repository;
+import nz.co.trineo.github.model.Tag;
 import nz.co.trineo.github.views.RepoView;
 import nz.co.trineo.github.views.ReposView;
+import nz.co.trineo.salesforce.SalesforceException;
 
 @Path("/github")
 @Produces(MediaType.APPLICATION_JSON)
@@ -31,10 +37,13 @@ public class GitHubResource {
 
 	private final GitHubService ghService;
 	private final AccountService accountService;
+	private final ClientService clientService;
 
-	public GitHubResource(final GitHubService ghService, final AccountService accountService) {
+	public GitHubResource(final GitHubService ghService, final AccountService accountService,
+			final ClientService clientService) {
 		this.ghService = ghService;
 		this.accountService = accountService;
+		this.clientService = clientService;
 	}
 
 	@GET
@@ -49,6 +58,15 @@ public class GitHubResource {
 		return Response.ok(view).build();
 	}
 
+	@PUT
+	@Path("/repos")
+	@Timed
+	@UnitOfWork
+	public Response updateRepo(final Repository repo) throws SalesforceException {
+		final Repository updatedRepo = ghService.updateRepo(repo);
+		return Response.ok(updatedRepo).build();
+	}
+
 	@GET
 	@Timed
 	@Path("/repos/{id}")
@@ -56,7 +74,10 @@ public class GitHubResource {
 	@Produces(MediaType.TEXT_HTML)
 	public Response getRepo(final @PathParam("id") int id) throws GitHubServiceException {
 		final Repository repo = ghService.getRepo(id);
-		final RepoView view = new RepoView(repo);
+		final List<Branch> branches = repo.getBranches();
+		final List<Tag> tags = repo.getTags();
+		final List<Client> clients = clientService.list();
+		final RepoView view = new RepoView(repo, branches, tags, clients);
 		return Response.ok(view).build();
 	}
 
@@ -65,7 +86,7 @@ public class GitHubResource {
 	@Path("/repos/{id}/branches")
 	@UnitOfWork
 	public Response getBranches(final @PathParam("id") int id) throws GitHubServiceException {
-		final List<String> branches = ghService.getBranches(id);
+		final List<Branch> branches = ghService.getBranches(id);
 		return Response.ok(branches).build();
 	}
 
@@ -74,7 +95,7 @@ public class GitHubResource {
 	@Path("/repos/{id}/tags")
 	@UnitOfWork
 	public Response getTags(final @PathParam("id") int id) throws GitHubServiceException {
-		final List<String> tags = ghService.getTags(id);
+		final List<Tag> tags = ghService.getTags(id);
 		return Response.ok(tags).build();
 	}
 

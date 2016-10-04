@@ -1,5 +1,6 @@
 package nz.co.trineo.github;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -25,11 +26,17 @@ import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 
 import nz.co.trineo.common.AccountDAO;
+import nz.co.trineo.common.ClientService;
 import nz.co.trineo.common.ConnectedService;
 import nz.co.trineo.common.model.AccountToken;
+import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
+import nz.co.trineo.git.GitService;
+import nz.co.trineo.git.GitServiceException;
+import nz.co.trineo.github.model.Branch;
 import nz.co.trineo.github.model.Repository;
+import nz.co.trineo.github.model.Tag;
 
 public class GitHubService implements ConnectedService {
 	private static final Log log = LogFactory.getLog(GitHubService.class);
@@ -38,11 +45,16 @@ public class GitHubService implements ConnectedService {
 	private final GitHubRepoDAO dao;
 	private final AccountDAO credDAO;
 	private final AppConfiguration configuration;
+	private final ClientService clientService;
+	private final GitService gitService;
 
-	public GitHubService(final GitHubRepoDAO dao, final AppConfiguration configuration, final AccountDAO credDAO) {
+	public GitHubService(final GitHubRepoDAO dao, final AppConfiguration configuration, final AccountDAO credDAO,
+			final ClientService clientService, final GitService gitService) {
 		this.dao = dao;
 		this.configuration = configuration;
 		this.credDAO = credDAO;
+		this.clientService = clientService;
+		this.gitService = gitService;
 	}
 
 	@Override
@@ -55,13 +67,15 @@ public class GitHubService implements ConnectedService {
 	}
 
 	public Repository getRepo(final int id) throws GitHubServiceException {
-		return dao.get(id);
+		final Repository repository = dao.get(id);
+		log.debug(repository);
+		return repository;
 	}
 
 	public void deleteRepo(final int id) {
 		dao.delete(id);
 	}
-	
+
 	public Repository createRepo(final String repoURL, final int accId) throws GitHubServiceException {
 		final Repository repository = new Repository();
 		final ConnectedAccount account = credDAO.get(accId);
@@ -77,7 +91,7 @@ public class GitHubService implements ConnectedService {
 			try {
 				final org.eclipse.egit.github.core.Repository repository2 = service.getRepository(user, name);
 				repository.setName(repository2.getName());
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				throw new GitHubServiceException(e);
 			}
 		}
@@ -86,8 +100,31 @@ public class GitHubService implements ConnectedService {
 		return repository;
 	}
 
-	public List<String> getBranches(final int id) throws GitHubServiceException {
-		final List<String> list = new ArrayList<>();
+	public Repository updateRepo(final Repository repo) {
+		final Repository repository = dao.get(repo.getId());
+		if (repo.getClient() != null) {
+			final Client client = clientService.read(repo.getClient().getId());
+			repository.setClient(client);
+			if (!client.getRepositories().contains(repository)) {
+				client.getRepositories().add(repository);
+			}
+			clientService.update(client);
+		}
+		dao.persist(repository);
+		return repository;
+	}
+
+	public List<Branch> getBranches(final int id) throws GitHubServiceException {
+		final Repository repository = dao.get(id);
+		log.info(repository);
+		if (repository.getBranches() == null || repository.getBranches().isEmpty()) {
+			return updateBranches(id);
+		}
+		return repository.getBranches();
+	}
+
+	public List<Branch> updateBranches(final int id) throws GitHubServiceException {
+		final List<Branch> list = new ArrayList<>();
 		final Repository repository = dao.get(id);
 		final ConnectedAccount account = repository.getAccount();
 		final Matcher matcher = urlPatten.matcher(repository.getCloneURL());
@@ -97,19 +134,38 @@ public class GitHubService implements ConnectedService {
 			final RepositoryService service = new RepositoryService();
 			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
 			try {
-				List<RepositoryBranch> branches = service.getBranches(RepositoryId.create(user, name));
+				final List<RepositoryBranch> branches = service.getBranches(RepositoryId.create(user, name));
 				branches.forEach(b -> {
-					list.add(b.getName());
+					final Branch br = new Branch();
+					br.setName(b.getName());
+					br.setUrl(b.getCommit().getType());
+					br.setSha(b.getCommit().getSha());
+					br.setRepo(repository);
+					list.add(br);
 				});
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				throw new GitHubServiceException(e);
 			}
 		}
+		repository.setBranches(list);
+		dao.persist(repository);
 		return list;
 	}
 
-	public List<String> getTags(final int id) throws GitHubServiceException {
-		final List<String> list = new ArrayList<>();
+	public Branch readBranch(final long id) {
+		return dao.getBranch(id);
+	}
+
+	public List<Tag> getTags(final int id) throws GitHubServiceException {
+		final Repository repository = dao.get(id);
+		if (repository.getTags() == null || repository.getTags().isEmpty()) {
+			return updateTags(id);
+		}
+		return repository.getTags();
+	}
+
+	public List<Tag> updateTags(final int id) throws GitHubServiceException {
+		final List<Tag> list = new ArrayList<>();
 		final Repository repository = dao.get(id);
 		final ConnectedAccount account = repository.getAccount();
 		final Matcher matcher = urlPatten.matcher(repository.getCloneURL());
@@ -119,14 +175,23 @@ public class GitHubService implements ConnectedService {
 			final RepositoryService service = new RepositoryService();
 			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
 			try {
-				List<RepositoryTag> tags = service.getTags(RepositoryId.create(user, name));
+				final List<RepositoryTag> tags = service.getTags(RepositoryId.create(user, name));
 				tags.forEach(t -> {
-					list.add(t.getName());
+					final Tag tag = new Tag();
+					tag.setName(t.getName());
+					tag.setSha(t.getCommit().getSha());
+					tag.setTarballUrl(t.getTarballUrl());
+					tag.setUrl(t.getCommit().getUrl());
+					tag.setZipballUrl(t.getZipballUrl());
+					tag.setRepo(repository);
+					list.add(tag);
 				});
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				throw new GitHubServiceException(e);
 			}
 		}
+		repository.setTags(list);
+		dao.persist(repository);
 		return list;
 	}
 
@@ -141,11 +206,11 @@ public class GitHubService implements ConnectedService {
 			final CommitService service = new CommitService();
 			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
 			try {
-				List<RepositoryCommit> tags = service.getCommits(RepositoryId.create(user, name));
+				final List<RepositoryCommit> tags = service.getCommits(RepositoryId.create(user, name));
 				tags.forEach(t -> {
 					list.add(t.getSha());
 				});
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				throw new GitHubServiceException(e);
 			}
 		}
@@ -163,7 +228,7 @@ public class GitHubService implements ConnectedService {
 			service.getClient().setOAuth2Token(account.getToken().getAccessToken());
 			try {
 				return service.getCommit(RepositoryId.create(user, name), sha1);
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				throw new GitHubServiceException(e);
 			}
 		}
@@ -209,5 +274,46 @@ public class GitHubService implements ConnectedService {
 		final AccountToken tokenResponse = client.target(tokenURL()).request(MediaType.APPLICATION_JSON_TYPE)
 				.post(Entity.entity(entity, MediaType.APPLICATION_FORM_URLENCODED_TYPE), AccountToken.class);
 		return tokenResponse;
+	}
+
+	public boolean isRepo(final int id) throws GitHubServiceException {
+		final Repository repository = dao.get(id);
+		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
+		try {
+			return gitService.isRepo(repoDir);
+		} catch (final GitServiceException e) {
+			throw new GitHubServiceException(e);
+		}
+	}
+
+	public void clone(final int id) throws GitHubServiceException {
+		final Repository repository = dao.get(id);
+		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
+		try {
+			gitService.clone(repoDir, repository.getCloneURL(), repository.getAccount().getToken().getAccessToken(),
+					null);
+		} catch (final GitServiceException e) {
+			throw new GitHubServiceException(e);
+		}
+	}
+
+	public void checkout(final int id, final String name) throws GitHubServiceException {
+		final Repository repository = dao.get(id);
+		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
+		try {
+			gitService.checkout(repoDir, name);
+		} catch (final GitServiceException e) {
+			throw new GitHubServiceException(e);
+		}
+	}
+
+	public void pull(final int id) throws GitHubServiceException {
+		final Repository repository = dao.get(id);
+		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
+		try {
+			gitService.pull(repoDir);
+		} catch (final GitServiceException e) {
+			throw new GitHubServiceException(e);
+		}
 	}
 }

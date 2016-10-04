@@ -4,7 +4,7 @@
 <#include "/head.ftl" />
 	<body>
 <#include "/nav.ftl" />
-		<div class="container-fluid">
+		<div class="container">
 			<div class="row">
 				<div class="col-xs-11 col-xs-offset-1">
 					<div id="orgName">
@@ -30,13 +30,95 @@
 				</div>
 			</div>
 			<ul class="nav nav-pills" id="OrgTabs">
-				<li class="active"><a href="#backups" aria-controls="backups" data-toggle="pill">Backups</a></li>
+				<li class="active"><a href="#overview" aria-controls="overview" data-toggle="pill">Overview</a></li>
+                <li><a href="#backups" aria-controls="backups" data-toggle="pill">Backups</a></li>
 				<li><a href="#metadata" aria-controls="metadata" data-toggle="pill">Metadata</a></li>
 				<li><a href="#tests" aria-controls="tests" data-toggle="pill">Tests</a></li>
 				<li><a href="#compare" aria-controls="compare" data-toggle="pill">Compare</a></li>
+                <li><a href="#compareBranch" aria-controls="compareBranch" data-toggle="pill">Compare Branch</a></li>
 			</ul>
 			<div class="tab-content">
-				<div class="tab-pane active" id="backups">
+                <div class="tab-pane active" id="overview">
+                    <div class="row">
+                        <div class="col-xs-11 col-xs-offset-1">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div id="clientName">
+                                        <span>Client: </span>
+                                        <span>
+                                            <#if org.client??>
+                                            ${org.client.name!""}
+                                            </#if>
+                                        </span>
+                                        <a class="btn" id="editClientName">
+                                            <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                                        </a>
+                                    </div>
+                                    <div class="input-group" id="clientNameEdit">
+                                        <#if org.client??>
+                                            <select class="form-control" id="newClientName" placeholder="Client Name" value="${org.client.id}">
+                                                <#list clients as client>
+                                                    <option value="${client.id?string["####"]}">${client.name}</option>
+                                                </#list>
+                                            </select>
+                                        <#else />
+                                            <select class="form-control" id="newClientName" placeholder="Client Name">
+                                                <#list clients as client>
+                                                    <option value="${client.id?string["####"]}">${client.name}</option>
+                                                </#list>
+                                            </select>
+                                        </#if>
+                                        <span class="input-group-btn">
+                                            <button type="button" class="btn btn-danger" id="clientNameCancel">
+                                                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                            </button>
+                                            <button type="button" class="btn btn-success" data-id="${org.id}" id="clientNameChange">
+                                                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                                            </button>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div id="branchName">
+                                        <span>Branch: </span>
+                                        <span>
+                                            <#if org.branch??>
+                                            ${org.branch.repo.name!""}/${org.branch.name!""}
+                                            </#if>
+                                        </span>
+                                        <a class="btn" id="editBranchName">
+                                            <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                                        </a>
+                                    </div>
+                                    <div class="input-group" id="branchNameEdit">
+                                        <#if org.branch??>
+                                            <select class="form-control" id="newBranchName" placeholder="Branch Name" value="${org.branch.id}">
+                                                <#list branches as branch>
+                                                    <option value="${branch.id?string["####"]}">${branch.repo.name!""}/${branch.name!""}</option>
+                                                </#list>
+                                            </select>
+                                        <#else />
+                                            <select class="form-control" id="newBranchName" placeholder="Branch Name">
+                                                <#list branches as branch>
+                                                    <option value="${branch.id?string["####"]}">${branch.repo.name!""}/${branch.name!""}</option>
+                                                </#list>
+                                            </select>
+                                        </#if>
+                                        <span class="input-group-btn">
+                                            <button type="button" class="btn btn-danger" id="branchNameCancel">
+                                                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                            </button>
+                                            <button type="button" class="btn btn-success" data-id="${org.id}" id="branchNameChange">
+                                                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                                            </button>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				<div class="tab-pane" id="backups">
 					<div class="row">
 						<div class="col-xs-1 col-xs-offset-1">
 							<p>
@@ -98,10 +180,10 @@
 						</div>
 					</div>
 					<div class="row">
-						<div class="col-xs-6">
+						<div class="col-xs-5">
 							<div id="testTree"></div>
 						</div>
-						<div class="col-xs-6">
+						<div class="col-xs-7">
 							<div class="panel panel-default">
 								<div class="panel-heading">
 									<h3 class="panel-title" id="codeHead">Code Coverage</h3>
@@ -167,6 +249,49 @@
 					<div class="row" id="compareData">
 					</div>
 				</div>
+                <div class="tab-pane" id="compareBranch">
+                    <div class="row">
+                        <div class="col-xs-5">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">
+                                        Source
+                                        <select class="form-control" id="sourceSelect">
+                                            <#list backups as backup>
+                                                <option value="${backup.id?string["####"]}">${backup.name!''}</option>
+                                            </#list>
+                                        </select>
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-5">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">
+                                        Target
+                                        <#if org.branch??>
+                                        ${org.branch.repo.name!""}/${org.branch.name!""}
+                                        </#if>
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-2">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">
+                                        <button class="btn btn-default" id="compareBranchButton">
+                                            Compare
+                                        </button>
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="compareBranchData">
+                    </div>
+                </div>
 			</div>
 		</div>
 <#include "/scripts.ftl">
@@ -199,6 +324,20 @@ $(function () {
             url: "/sf/orgs/${org.id}/compare/" + sourceValue + "/" + targetValue,
             success: function(data, textStatus, jqXHR) {
                 $('#compareData').html(data);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                alert("failure");
+            }
+        });
+    });
+
+    $('body').on('click', '#compareBranchButton', function (e) {
+        var sourceValue = $('#sourceSelect').val();
+        $.ajax({
+            type: "POST",
+            url: "/sf/orgs/${org.id}/compareBranch",
+            success: function(data, textStatus, jqXHR) {
+                $('#compareBranchData').html(data);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 alert("failure");
@@ -272,6 +411,62 @@ $(function () {
 			}
 		});
 	});
+
+    $("#clientName").show();
+    $("#clientNameEdit").hide();
+    $('body').on('click', '#editClientName', function (e) {
+        $("#clientName").hide();
+        $("#clientNameEdit").show();
+    });
+    $('body').on('click', '#clientNameCancel', function (e) {
+        $("#clientName").show();
+        $("#clientNameEdit").hide();
+    });
+    $('body').on('click', '#clientNameChange', function (e) {
+        var newName = parseInt($('#newClientName').val());
+        var data = JSON.stringify({id: "${org.id}", client: {id: newName}});
+        $.ajax({
+            data: data,
+            type: "PUT",
+            url: "/sf/orgs/",
+            contentType: "application/json",
+            dataType: "json",
+            success: function (data, textStatus, jqXHR) {
+                window.location.reload();
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert("failure");
+            }
+        });
+    });
+
+    $("#branchName").show();
+    $("#branchNameEdit").hide();
+    $('body').on('click', '#editBranchName', function (e) {
+        $("#branchName").hide();
+        $("#branchNameEdit").show();
+    });
+    $('body').on('click', '#branchNameCancel', function (e) {
+        $("#branchName").show();
+        $("#branchNameEdit").hide();
+    });
+    $('body').on('click', '#branchNameChange', function (e) {
+        var newName = parseInt($('#newBranchName').val());
+        var data = JSON.stringify({id: "${org.id}", branch: {id: newName}});
+        $.ajax({
+            data: data,
+            type: "PUT",
+            url: "/sf/orgs/",
+            contentType: "application/json",
+            dataType: "json",
+            success: function (data, textStatus, jqXHR) {
+                window.location.reload();
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert("failure");
+            }
+        });
+    });
 });
 
 $.getJSON("/sf/orgs/${org.id}/metadata", "", function (data) {

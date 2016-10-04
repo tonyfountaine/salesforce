@@ -4,7 +4,7 @@
 <#include "/head.ftl">
 	<body>
 <#include "/nav.ftl">
-		<div class="container-fluid">
+		<div class="container">
             <div class="modal fade" id="NewAccount" tabindex="-1" role="dialog" aria-labelledby="NewAccountLabel">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
@@ -50,6 +50,7 @@
 					<thead>
 						<tr>
 							<th>Name</th>
+							<th>Client</th>
 							<th>&nbsp;</th>
 						</tr>
 					</thead>
@@ -57,6 +58,11 @@
 						<#list repos as repo>
 							<tr>
 								<td><a href="/github/repos/${repo.id?string["####"]}">${repo.name}</a></td>
+                                <td>
+                                    <#if repo.client??>
+                                        <a href="/clients/${repo.client.id?string["####"]}">${repo.client.name!""}</a>
+                                    </#if>
+                                </td>
 								<td>
                                     <button type="button" class="btn btn-warning delete" data-id="${repo.id?string["####"]}"><i class="fa fa-remove" aria-hidden="true"></i> Delete</button>
 								</td>

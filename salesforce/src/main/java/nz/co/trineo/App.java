@@ -13,10 +13,14 @@ import nz.co.anzac.dropwizard.quartz.QuartzBundle;
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.AccountResource;
 import nz.co.trineo.common.AccountService;
+import nz.co.trineo.common.ClientDAO;
+import nz.co.trineo.common.ClientResource;
+import nz.co.trineo.common.ClientService;
 import nz.co.trineo.common.ServiceRegistry;
 import nz.co.trineo.common.ServiceResource;
 import nz.co.trineo.common.StaticResource;
 import nz.co.trineo.common.model.AccountToken;
+import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.configuration.AppConfiguration;
@@ -34,7 +38,9 @@ import nz.co.trineo.git.model.GitTask;
 import nz.co.trineo.github.GitHubRepoDAO;
 import nz.co.trineo.github.GitHubResource;
 import nz.co.trineo.github.GitHubService;
+import nz.co.trineo.github.model.Branch;
 import nz.co.trineo.github.model.Repository;
+import nz.co.trineo.github.model.Tag;
 import nz.co.trineo.salesforce.BackupDAO;
 import nz.co.trineo.salesforce.OrganizationDAO;
 import nz.co.trineo.salesforce.RefreshBackupsTask;
@@ -59,10 +65,11 @@ import nz.co.trineo.trello.TrelloService;
  */
 public class App extends Application<AppConfiguration> {
 
-	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(Credentals.class,
-			GitProcess.class, GitTask.class, Organization.class, ConnectedAccount.class, AccountToken.class, Diff.class,
-			CodeCoverageResult.class, CodeCoverageWarning.class, CodeLocation.class, RunTestFailure.class,
-			RunTestSuccess.class, RunTestsResult.class, Backup.class, GitRepo.class, Repository.class) {
+	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(
+			AccountToken.class, Client.class, ConnectedAccount.class, Credentals.class, Diff.class, GitProcess.class,
+			GitRepo.class, GitTask.class, Backup.class, CodeCoverageResult.class, CodeCoverageWarning.class,
+			CodeLocation.class, Organization.class, RunTestFailure.class, RunTestsResult.class, RunTestSuccess.class,
+			Repository.class, Branch.class, Tag.class) {
 		@Override
 		public DataSourceFactory getDataSourceFactory(final AppConfiguration configuration) {
 			return configuration.getDataSourceFactory();
@@ -106,23 +113,27 @@ public class App extends Application<AppConfiguration> {
 		final BackupDAO backupDAO = new BackupDAO(sessionFactory);
 		final GitRepoDAO gitRepoDAO = new GitRepoDAO(sessionFactory);
 		final GitHubRepoDAO gitHubRepoDAO = new GitHubRepoDAO(sessionFactory);
+		final ClientDAO clientDAO = new ClientDAO(sessionFactory);
 
 		final GitService gService = new GitService(configuration, processDAO, gitRepoDAO);
-		final GitHubService ghService = new GitHubService(gitHubRepoDAO, configuration, accountDAO);
+		final ClientService clientService = new ClientService(clientDAO);
+		final GitHubService ghService = new GitHubService(gitHubRepoDAO, configuration, accountDAO, clientService,
+				gService);
 		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService,
-				testRunDAO, backupDAO, sessionFactory);
+				testRunDAO, backupDAO, sessionFactory, clientService, ghService);
 		final DiffService dService = new DiffService(diffDAO);
 		final AccountService aService = new AccountService(accountDAO);
 		final TrelloService tService = new TrelloService(configuration, accountDAO);
 
 		final GitResource gResource = new GitResource(gService);
-		final GitHubResource ghResource = new GitHubResource(ghService, aService);
-		final SalesforceResource sfResource = new SalesforceResource(sfService, aService);
+		final GitHubResource ghResource = new GitHubResource(ghService, aService, clientService);
+		final SalesforceResource sfResource = new SalesforceResource(sfService, aService, clientService);
 		final DiffResource dResource = new DiffResource(dService);
 		final AccountResource aResource = new AccountResource(aService);
 		final TrelloResource tResource = new TrelloResource(tService);
 		final StaticResource staticResource = new StaticResource();
 		final ServiceResource serviceResource = new ServiceResource();
+		final ClientResource clientResource = new ClientResource(clientService);
 
 		ServiceRegistry.registerService(tService);
 		ServiceRegistry.registerService(sfService);
@@ -137,6 +148,7 @@ public class App extends Application<AppConfiguration> {
 		environment.jersey().register(tResource);
 		environment.jersey().register(staticResource);
 		environment.jersey().register(serviceResource);
+		environment.jersey().register(clientResource);
 
 		environment.admin().addTask(new RefreshBackupsTask(organizationDAO, gService, configuration, sessionFactory));
 		environment.lifecycle().manage(new SalesforceScheduleManager(sessionFactory, sfService));

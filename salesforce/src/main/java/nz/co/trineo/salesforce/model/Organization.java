@@ -7,16 +7,22 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.github.model.Branch;
 
 @Entity
 @Table(name = "sforg")
@@ -38,6 +44,11 @@ public class Organization {
 	private String nickName;
 	@OneToMany(cascade = CascadeType.ALL)
 	private List<Backup> backups = new ArrayList<>();
+	@OneToOne
+	private Branch branch;
+	@ManyToOne
+	@JoinColumn(name = "CLIENT_ID")
+	private Client client;
 
 	@JsonProperty
 	public String getId() {
@@ -81,6 +92,8 @@ public class Organization {
 		int result = 1;
 		result = prime * result + (account == null ? 0 : account.hashCode());
 		result = prime * result + (backups == null ? 0 : backups.hashCode());
+		result = prime * result + (branch == null ? 0 : branch.hashCode());
+		result = prime * result + (client == null ? 0 : client.hashCode());
 		result = prime * result + (id == null ? 0 : id.hashCode());
 		result = prime * result + (name == null ? 0 : name.hashCode());
 		result = prime * result + (nickName == null ? 0 : nickName.hashCode());
@@ -114,6 +127,20 @@ public class Organization {
 				return false;
 			}
 		} else if (!backups.equals(other.backups)) {
+			return false;
+		}
+		if (branch == null) {
+			if (other.branch != null) {
+				return false;
+			}
+		} else if (!branch.equals(other.branch)) {
+			return false;
+		}
+		if (client == null) {
+			if (other.client != null) {
+				return false;
+			}
+		} else if (!client.equals(other.client)) {
 			return false;
 		}
 		if (id == null) {
@@ -188,6 +215,9 @@ public class Organization {
 		if (that.nickName != null) {
 			nickName = that.nickName;
 		}
+		if (that.client != null) {
+			client = that.client;
+		}
 	}
 
 	@JsonIgnore
@@ -197,5 +227,28 @@ public class Organization {
 
 	public void setBackups(final List<Backup> backups) {
 		this.backups = backups;
+	}
+
+	@JsonProperty
+	public Branch getBranch() {
+		return branch;
+	}
+
+	public void setBranch(final Branch branch) {
+		this.branch = branch;
+	}
+
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this);
+	}
+
+	@JsonProperty
+	public Client getClient() {
+		return client;
+	}
+
+	public void setClient(final Client client) {
+		this.client = client;
 	}
 }

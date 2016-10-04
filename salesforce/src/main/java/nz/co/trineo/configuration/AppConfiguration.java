@@ -25,6 +25,9 @@ public class AppConfiguration extends Configuration {
 	private File backupDirectory;
 
 	@Valid
+	private File githubDirectory;
+
+	@Valid
 	private String clientKey;
 
 	@Valid
@@ -50,7 +53,6 @@ public class AppConfiguration extends Configuration {
 		return database;
 	}
 
-	@JsonProperty("database")
 	public void setDataSourceFactory(final DataSourceFactory factory) {
 		database = factory;
 	}
@@ -60,7 +62,6 @@ public class AppConfiguration extends Configuration {
 		return gitDirectory;
 	}
 
-	@JsonProperty
 	public void setGitDirectory(final File gitDirectory) {
 		this.gitDirectory = gitDirectory;
 	}
@@ -70,7 +71,6 @@ public class AppConfiguration extends Configuration {
 		return salesforceDirectory;
 	}
 
-	@JsonProperty
 	public void setSalesforceDirectory(final File salesforceDirectory) {
 		this.salesforceDirectory = salesforceDirectory;
 	}
@@ -80,7 +80,6 @@ public class AppConfiguration extends Configuration {
 		return backupDirectory;
 	}
 
-	@JsonProperty
 	public void setBackupDirectory(final File backupDirectory) {
 		this.backupDirectory = backupDirectory;
 	}
@@ -90,7 +89,6 @@ public class AppConfiguration extends Configuration {
 		return clientKey;
 	}
 
-	@JsonProperty
 	public void setClientKey(final String clientKey) {
 		this.clientKey = clientKey;
 	}
@@ -100,7 +98,6 @@ public class AppConfiguration extends Configuration {
 		return clientSecret;
 	}
 
-	@JsonProperty
 	public void setClientSecret(final String clientSecret) {
 		this.clientSecret = clientSecret;
 	}
@@ -110,7 +107,6 @@ public class AppConfiguration extends Configuration {
 		return apiVersion;
 	}
 
-	@JsonProperty
 	public void setApiVersion(final String apiVersion) {
 		this.apiVersion = apiVersion;
 	}
@@ -120,7 +116,6 @@ public class AppConfiguration extends Configuration {
 		return trelloKey;
 	}
 
-	@JsonProperty
 	public void setTrelloKey(final String trelloKey) {
 		this.trelloKey = trelloKey;
 	}
@@ -130,7 +125,6 @@ public class AppConfiguration extends Configuration {
 		return trelloSecret;
 	}
 
-	@JsonProperty
 	public void setTrelloSecret(final String trelloSecret) {
 		this.trelloSecret = trelloSecret;
 	}
@@ -140,7 +134,6 @@ public class AppConfiguration extends Configuration {
 	// return trelloToken;
 	// }
 	//
-	// @JsonProperty
 	// public void setTrelloToken(String trelloToken) {
 	// this.trelloToken = trelloToken;
 	// }
@@ -150,7 +143,6 @@ public class AppConfiguration extends Configuration {
 		return githubClientId;
 	}
 
-	@JsonProperty
 	public void setGithubClientId(final String githubClientId) {
 		this.githubClientId = githubClientId;
 	}
@@ -160,8 +152,16 @@ public class AppConfiguration extends Configuration {
 		return githubClientSecret;
 	}
 
-	@JsonProperty
 	public void setGithubClientSecret(final String githubClientSecret) {
 		this.githubClientSecret = githubClientSecret;
+	}
+
+	@JsonProperty
+	public File getGithubDirectory() {
+		return githubDirectory;
+	}
+
+	public void setGithubDirectory(final File githubDirectory) {
+		this.githubDirectory = githubDirectory;
 	}
 }

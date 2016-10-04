@@ -4,7 +4,7 @@
 <#include "/head.ftl">
 	<body>
 <#include "/nav.ftl">
-		<div class="container-fluid">
+		<div class="container">
 			<div class="row">
 				<div class="col-xs-11 col-xs-offset-1">
 					<h1>${title}</h1>

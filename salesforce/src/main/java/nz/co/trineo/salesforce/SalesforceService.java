@@ -32,6 +32,7 @@ import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.glassfish.jersey.client.JerseyClient;
@@ -65,13 +66,19 @@ import com.uwyn.jhighlight.renderer.XhtmlRenderer;
 import com.uwyn.jhighlight.renderer.XmlXhtmlRenderer;
 
 import nz.co.trineo.common.AccountDAO;
+import nz.co.trineo.common.ClientService;
 import nz.co.trineo.common.ConnectedService;
 import nz.co.trineo.common.model.AccountToken;
+import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
 import nz.co.trineo.git.model.GitDiff;
+import nz.co.trineo.github.GitHubService;
+import nz.co.trineo.github.GitHubServiceException;
+import nz.co.trineo.github.model.Branch;
+import nz.co.trineo.github.model.Repository;
 import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.BackupStatus;
 import nz.co.trineo.salesforce.model.CodeCoverageResult;
@@ -96,6 +103,8 @@ public class SalesforceService implements ConnectedService {
 	private final OrganizationDAO orgDAO;
 	private final AppConfiguration configuration;
 	private final GitService gitService;
+	private final ClientService clientService;
+	private final GitHubService githubService;
 	private final TestRunDAO testRunDAO;
 	private final BackupDAO backupDAO;
 	private final SessionFactory sessionFactory;
@@ -111,7 +120,8 @@ public class SalesforceService implements ConnectedService {
 	 */
 	public SalesforceService(final AccountDAO dao, final OrganizationDAO orgDAO, final AppConfiguration configuration,
 			final GitService gitService, final TestRunDAO testRunDAO, final BackupDAO backupDAO,
-			final SessionFactory sessionFactory) throws IOException {
+			final SessionFactory sessionFactory, final ClientService clientService, final GitHubService githubService)
+			throws IOException {
 		credDAO = dao;
 		this.orgDAO = orgDAO;
 		this.configuration = configuration;
@@ -119,6 +129,8 @@ public class SalesforceService implements ConnectedService {
 		this.testRunDAO = testRunDAO;
 		this.backupDAO = backupDAO;
 		this.sessionFactory = sessionFactory;
+		this.clientService = clientService;
+		this.githubService = githubService;
 		forceMkdir(configuration.getSalesforceDirectory());
 		forceMkdir(configuration.getBackupDirectory());
 		apiVersion = configuration.getApiVersion();
@@ -829,10 +841,56 @@ public class SalesforceService implements ConnectedService {
 		final Backup secondBackup = backupDAO.get(second);
 		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
 		try {
-			return gitService.diff(repoDir, firstBackup.getName(), secondBackup.getName());
+			return gitService.diff(repoDir, firstBackup.getName(), secondBackup.getName(), null);
 		} catch (final GitServiceException e) {
 			throw new SalesforceException(e);
 		}
+	}
+
+	public List<GitDiff> diffBranch(final String id) throws SalesforceException {
+		final Organization org = orgDAO.get(id);
+		final File repoDirA = new File(configuration.getSalesforceDirectory(), id);
+		final Branch branch = org.getBranch();
+		final Repository repo = branch.getRepo();
+		final File repoDirB = new File(configuration.getGithubDirectory(), repo.getName());
+		try {
+			if (!githubService.isRepo(repo.getId())) {
+				githubService.clone(repo.getId());
+			}
+			githubService.checkout(repo.getId(), branch.getName());
+			githubService.pull(repo.getId());
+			final List<String> paths = pathsFromPackage(repoDirB);
+			return gitService.diffReposPath(repoDirA, repoDirB, paths);
+		} catch (final GitServiceException | GitHubServiceException e) {
+			throw new SalesforceException(e);
+		} finally {
+			try {
+				gitService.removeRemote(repoDirA);
+			} catch (final GitServiceException e) {
+				throw new SalesforceException(e);
+			}
+		}
+	}
+
+	private List<String> pathsFromPackage(final File dir) throws SalesforceException {
+		final List<String> paths = new ArrayList<>();
+		final Path path = new File(dir, "src").toPath();
+
+		try {
+			Files.walk(path).filter(p -> {
+				return !p.toString().contains(".git") && Files.isDirectory(p);
+			}).forEach(p -> {
+				final Path relativize = path.relativize(p);
+				final String pp = relativize.toString();
+				if (StringUtils.isNotBlank(pp)) {
+					paths.add(pp);
+				}
+			});
+		} catch (final IOException e) {
+			throw new SalesforceException(e);
+		}
+
+		return paths;
 	}
 
 	/**
@@ -845,15 +903,7 @@ public class SalesforceService implements ConnectedService {
 		final File repoDirA = new File(configuration.getSalesforceDirectory(), orgIdA);
 		final File repoDirB = new File(configuration.getSalesforceDirectory(), orgIdB);
 		try {
-			if (!gitService.isRemote(repoDirA, repoDirB)) {
-				gitService.addRemote(repoDirA, repoDirB);
-			}
-			try {
-				gitService.fetchRemote(repoDirA);
-			} catch (final GitServiceException e) {
-				log.error(e);
-			}
-			return gitService.diffRepos(repoDirA);
+			return gitService.diffRepos(repoDirA, repoDirB);
 		} catch (final GitServiceException e) {
 			throw new SalesforceException(e);
 		} finally {
@@ -1056,7 +1106,22 @@ public class SalesforceService implements ConnectedService {
 
 	public Organization updateOrg(final Organization org) {
 		final Organization organization = orgDAO.get(org.getId());
-		organization.update(org);
+		if (org.getClient() != null) {
+			final Client client = clientService.read(org.getClient().getId());
+			organization.setClient(client);
+			if (!client.getOrganizations().contains(organization)) {
+				client.getOrganizations().add(organization);
+			}
+			clientService.update(client);
+		}
+		if (org.getBranch() != null) {
+			final Branch branch = githubService.readBranch(org.getBranch().getId());
+			organization.setBranch(branch);
+		}
+		if (StringUtils.isNotBlank(org.getNickName())) {
+			organization.setNickName(org.getNickName());
+		}
+		orgDAO.persist(organization);
 		return organization;
 	}
 }

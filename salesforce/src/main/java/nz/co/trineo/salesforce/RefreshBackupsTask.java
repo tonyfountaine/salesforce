@@ -31,7 +31,7 @@ public class RefreshBackupsTask extends Task {
 
 	public RefreshBackupsTask(final OrganizationDAO orgDAO, final GitService gitService,
 			final AppConfiguration configuration, final SessionFactory sessionFactory) {
-		super("refresh backups");
+		super("refreshBackups");
 		this.orgDAO = orgDAO;
 		this.gitService = gitService;
 		this.configuration = configuration;

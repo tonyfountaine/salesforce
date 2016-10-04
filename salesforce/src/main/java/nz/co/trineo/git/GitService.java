@@ -1,14 +1,17 @@
 package nz.co.trineo.git;
 
 import static org.apache.commons.io.FileUtils.forceMkdir;
+import static org.eclipse.jgit.treewalk.filter.PathFilterGroup.createFromStrings;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jgit.api.Git;
@@ -18,7 +21,6 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
-import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
@@ -33,6 +35,8 @@ import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.eclipse.jgit.treewalk.FileTreeIterator;
+import org.eclipse.jgit.treewalk.WorkingTreeOptions;
 
 import nz.co.trineo.common.Service;
 import nz.co.trineo.common.model.Credentals;
@@ -69,26 +73,46 @@ public class GitService implements Service {
 		 * log.error(e); } return repos; */
 	}
 
-	public GitProcess clone(final String name, final String cloneURL, final String username, final String password)
+	public GitProcess clone(final File repoDir, final String cloneURL) throws GitServiceException {
+		return clone(repoDir, cloneURL, null, new char[0]);
+	}
+
+	public GitProcess clone(final File repoDir, final String cloneURL, final String username, final char[] password)
+			throws GitServiceException {
+		final GitProcess process = new GitProcess();
+		processDAO.persist(process);
+		final GitMonitor monitor = new GitMonitor(process, processDAO);
+		if (StringUtils.isNotBlank(username)) {
+			final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
+					username, password == null ? new char[0] : password);
+			try (Git git = Git.cloneRepository().setDirectory(repoDir).setURI(cloneURL).setProgressMonitor(monitor)
+					.setCredentialsProvider(credentialsProvider).call();) {
+				git.getRepository().close();
+			} catch (final GitAPIException e) {
+				throw new GitServiceException(e);
+			}
+		} else {
+			try (Git git = Git.cloneRepository().setDirectory(repoDir).setURI(cloneURL).setProgressMonitor(monitor)
+					.call();) {
+				git.getRepository().close();
+			} catch (final GitAPIException e) {
+				throw new GitServiceException(e);
+			}
+
+		}
+		return process;
+	}
+
+	public GitProcess clone(final String name, final String cloneURL, final String username, final char[] password)
 			throws GitServiceException {
 		final GitRepo gitRepo = new GitRepo();
 		gitRepo.setName(name);
 		gitRepo.setRemote(cloneURL);
 		gitRepo.setCredentals(new Credentals());
-		gitRepo.getCredentals().setPassword(password);
+		gitRepo.getCredentals().setPassword(password == null ? "" : String.valueOf(password));
 		gitRepo.getCredentals().setUsername(username);
-		final GitProcess process = new GitProcess();
-		processDAO.persist(process);
-		final GitMonitor monitor = new GitMonitor(process, processDAO);
-		final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
-				gitRepo.getCredentals().getUsername(), gitRepo.getCredentals().getPassword());
 		final File repoDir = new File(configuration.getGitDirectory(), name);
-		try (Git git = Git.cloneRepository().setDirectory(repoDir).setURI(cloneURL).setProgressMonitor(monitor)
-				.setCredentialsProvider(credentialsProvider).call();) {
-			git.getRepository().close();
-		} catch (final GitAPIException e) {
-			throw new GitServiceException(e);
-		}
+		final GitProcess process = clone(repoDir, cloneURL, username, password);
 		gitRepoDAO.persist(gitRepo);
 		return process;
 	}
@@ -214,20 +238,20 @@ public class GitService implements Service {
 		}
 	}
 
-	public List<GitDiff> diff(final String name, final String firstTag, final String secondTag)
-			throws GitServiceException {
+	public List<GitDiff> diff(final String name, final String firstTag, final String secondTag,
+			final Collection<String> paths) throws GitServiceException {
 		final File repoDir = new File(configuration.getGitDirectory(), name);
-		return diff(repoDir, firstTag, secondTag);
+		return diff(repoDir, firstTag, secondTag, paths);
 	}
 
-	public List<GitDiff> diff(final File repoDir, final String firstTag, final String secondTag)
-			throws GitServiceException {
+	public List<GitDiff> diff(final File repoDir, final String firstTag, final String secondTag,
+			final Collection<String> paths) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir);) {
 			final AbstractTreeIterator oldTreeIter = prepareTreeParser(repository, firstTag);
 			final AbstractTreeIterator newTreeIter = prepareTreeParser(repository, secondTag);
 
-			return diffTrees(repository, oldTreeIter, newTreeIter);
+			return diffTrees(repository, oldTreeIter, newTreeIter, paths);
 		} catch (final IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
@@ -235,21 +259,36 @@ public class GitService implements Service {
 
 	public List<GitDiff> diffRepos(final String name) throws GitServiceException {
 		final File repoDir = new File(configuration.getGitDirectory(), name);
-		return diffRepos(repoDir);
+		final String remote = getRemote(repoDir);
+		final File remoteDir = new File(remote).getParentFile();
+		return diffRepos(repoDir, remoteDir);
 	}
 
-	public List<GitDiff> diffRepos(final File repoDir) throws GitServiceException {
-		final File gitDir = new File(repoDir, ".git");
-		try (Repository repo = FileRepositoryBuilder.create(gitDir);) {
-			final ObjectId fetchHead = repo.resolve("FETCH_HEAD^{tree}");
-			final ObjectId head = repo.resolve("HEAD^{tree}");
-			final ObjectReader reader = repo.newObjectReader();
-			final CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
-			oldTreeIter.reset(reader, fetchHead);
-			final CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
-			newTreeIter.reset(reader, head);
+	public List<GitDiff> diffRepos(final File repoADir, final File repoBDir) throws GitServiceException {
+		final File gitADir = new File(repoADir, ".git");
+		final File gitBDir = new File(repoBDir, ".git");
+		try (Repository repoA = FileRepositoryBuilder.create(gitADir);
+				Repository repoB = FileRepositoryBuilder.create(gitBDir);) {
+			final FileTreeIterator oldTreeIter = new FileTreeIterator(repoA);
+			final FileTreeIterator newTreeIter = new FileTreeIterator(repoB);
 
-			return diffTrees(repo, oldTreeIter, newTreeIter);
+			return diffTrees(repoA, oldTreeIter, newTreeIter, null);
+		} catch (final IOException | GitAPIException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	public List<GitDiff> diffReposPath(final File repoADir, final File repoBDir, final Collection<String> paths)
+			throws GitServiceException {
+		final File gitADir = new File(repoADir, ".git");
+		final File gitBDir = new File(repoBDir, ".git");
+		try (Repository repoA = FileRepositoryBuilder.create(gitADir);
+				Repository repoB = FileRepositoryBuilder.create(gitBDir);) {
+			final FileTreeIterator oldTreeIter = new FileTreeIterator(repoA);
+			final FileTreeIterator newTreeIter = new FileTreeIterator(new File(repoBDir, "src"), repoB.getFS(),
+					repoB.getConfig().get(WorkingTreeOptions.KEY));
+
+			return diffTrees(repoA, oldTreeIter, newTreeIter, paths);
 		} catch (final IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
@@ -359,11 +398,18 @@ public class GitService implements Service {
 	}
 
 	private List<GitDiff> diffTrees(final Repository repository, final AbstractTreeIterator oldTreeIter,
-			final AbstractTreeIterator newTreeIter) throws GitAPIException, IOException {
+			final AbstractTreeIterator newTreeIter, final Collection<String> paths)
+			throws GitAPIException, IOException {
 		try (final Git git = new Git(repository);
 				final ByteArrayOutputStream out = new ByteArrayOutputStream();
 				final GitDiffFormatter df = new GitDiffFormatter(out);) {
-			final List<DiffEntry> list = git.diff().setOldTree(oldTreeIter).setNewTree(newTreeIter).call();
+			final List<DiffEntry> list;
+			if (paths != null && !paths.isEmpty()) {
+				list = git.diff().setPathFilter(createFromStrings(paths)).setOldTree(oldTreeIter)
+						.setNewTree(newTreeIter).call();
+			} else {
+				list = git.diff().setOldTree(oldTreeIter).setNewTree(newTreeIter).call();
+			}
 			df.setRepository(repository);
 			list.forEach(d -> {
 				try {
@@ -375,6 +421,7 @@ public class GitService implements Service {
 					log.error("An error ocurred while processing an entry", e);
 				}
 			});
+
 			return df.getEntries();
 		}
 	}
@@ -441,16 +488,31 @@ public class GitService implements Service {
 
 	public PullResult pull(final File repoDir) throws GitServiceException {
 		final GitRepo gitRepo = gitRepoDAO.getByName(repoDir.getName());
-		final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
-				gitRepo.getCredentals().getUsername(), gitRepo.getCredentals().getPassword());
+		final String password = gitRepo.getCredentals().getPassword();
+		return pull(repoDir, gitRepo.getCredentals().getUsername(),
+				password == null ? new char[0] : password.toCharArray());
+	}
+
+	public PullResult pull(final File repoDir, final String username, final char[] password)
+			throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
-		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
-			final PullResult call = git.pull().setCredentialsProvider(credentialsProvider)
-					.setRemote(gitRepo.getRemote()).call();
-			return call;
-		} catch (final GitAPIException | IOException e) {
-			throw new GitServiceException(e);
+		final PullResult call;
+		if (StringUtils.isNotBlank(username)) {
+			final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
+					username, password == null ? new char[0] : password);
+			try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+				call = git.pull().setCredentialsProvider(credentialsProvider).call();
+			} catch (final GitAPIException | IOException e) {
+				throw new GitServiceException(e);
+			}
+		} else {
+			try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+				call = git.pull().call();
+			} catch (final GitAPIException | IOException e) {
+				throw new GitServiceException(e);
+			}
 		}
+		return call;
 	}
 
 	public Iterable<PushResult> push(final String name) throws GitServiceException {
@@ -460,15 +522,30 @@ public class GitService implements Service {
 
 	public Iterable<PushResult> push(final File repoDir) throws GitServiceException {
 		final GitRepo gitRepo = gitRepoDAO.getByName(repoDir.getName());
-		final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
-				gitRepo.getCredentals().getUsername(), gitRepo.getCredentals().getPassword());
+		final String password = gitRepo.getCredentals().getPassword();
+		return push(repoDir, gitRepo.getCredentals().getUsername(),
+				password == null ? new char[0] : password.toCharArray());
+	}
+
+	public Iterable<PushResult> push(final File repoDir, final String username, final char[] password)
+			throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
-		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
-			final Iterable<PushResult> call = git.push().setCredentialsProvider(credentialsProvider)
-					.setRemote(gitRepo.getRemote()).call();
-			return call;
-		} catch (final GitAPIException | IOException e) {
-			throw new GitServiceException(e);
+		final Iterable<PushResult> call;
+		if (StringUtils.isNotBlank(username)) {
+			final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
+					username, password == null ? new char[0] : password);
+			try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+				call = git.push().setCredentialsProvider(credentialsProvider).call();
+			} catch (final GitAPIException | IOException e) {
+				throw new GitServiceException(e);
+			}
+		} else {
+			try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+				call = git.push().call();
+			} catch (final GitAPIException | IOException e) {
+				throw new GitServiceException(e);
+			}
 		}
+		return call;
 	}
 }

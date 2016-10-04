@@ -165,7 +165,7 @@ public class GitResource {
 	@Path("/repo/{name}/diff/{first}/{second}")
 	public Response diff(final @PathParam("name") String name, final @PathParam("first") String first,
 			final @PathParam("second") String second) throws GitServiceException {
-		final List<GitDiff> list = service.diff(name, first, second);
+		final List<GitDiff> list = service.diff(name, first, second, null);
 		return Response.ok(list).build();
 	}
 
