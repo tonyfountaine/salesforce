@@ -23,12 +23,15 @@ import nz.co.trineo.common.AccountService;
 import nz.co.trineo.common.ClientService;
 import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.github.model.Branch;
 import nz.co.trineo.github.model.Repository;
 import nz.co.trineo.github.model.Tag;
+import nz.co.trineo.github.views.CompareView;
 import nz.co.trineo.github.views.RepoView;
 import nz.co.trineo.github.views.ReposView;
 import nz.co.trineo.salesforce.SalesforceException;
+import nz.co.trineo.salesforce.model.TreeNode;
 
 @Path("/github")
 @Produces(MediaType.APPLICATION_JSON)
@@ -75,6 +78,7 @@ public class GitHubResource {
 	public Response getRepo(final @PathParam("id") int id) throws GitHubServiceException {
 		final Repository repo = ghService.getRepo(id);
 		final List<Branch> branches = repo.getBranches();
+		System.out.println(branches);
 		final List<Tag> tags = repo.getTags();
 		final List<Client> clients = clientService.list();
 		final RepoView view = new RepoView(repo, branches, tags, clients);
@@ -88,6 +92,19 @@ public class GitHubResource {
 	public Response getBranches(final @PathParam("id") int id) throws GitHubServiceException {
 		final List<Branch> branches = ghService.getBranches(id);
 		return Response.ok(branches).build();
+	}
+
+	@GET
+	@Timed
+	@Path("/branches/{id}/compare/{compareId}")
+	@UnitOfWork
+	@Produces(MediaType.TEXT_HTML)
+	public Response compareBranches(final @PathParam("id") long id, final @PathParam("compareId") long compareId)
+			throws GitHubServiceException {
+		final List<GitDiff> list = ghService.diffBranches(id, compareId);
+		final TreeNode diffTree = ghService.getDiffTree(list);
+		final CompareView view = new CompareView(list, diffTree);
+		return Response.ok(view).build();
 	}
 
 	@GET

@@ -15,6 +15,7 @@
                 <li><a href="#branches" aria-controls="branches" data-toggle="pill">Branches</a></li>
                 <li><a href="#tags" aria-controls="tags" data-toggle="pill">Tags</a></li>
                 <li><a href="#commits" aria-controls="commits" data-toggle="pill">Commits</a></li>
+                <li><a href="#compare" aria-controls="compare" data-toggle="pill">Compare</a></li>
             </ul>
             <div class="tab-content">
                 <div class="tab-pane active" id="overview">
@@ -65,24 +66,30 @@
                             <div class="panel-heading">
                                 <h3 class="panel-title">Branches</h3>
                             </div>
-            				<table class="table table-striped table-hover">
+            				<table class="table table-striped table-hover" id="branchesTable">
             					<thead>
             						<tr>
             							<th>Name</th>
             							<th>SHA</th>
             							<th>URL</th>
+            							<th>Org</th>
             							<th>&nbsp;</th>
             						</tr>
             					</thead>
             					<tbody>
             					   <#list branches as branch>
             					       <tr>
-            					           <td>${branch.name}</td>
-            					           <td>${branch.sha!""}</td>
-            					           <td>${branch.url!""}</td>
-            					           <td>
-            					               <button type="button" class="btn btn-default checkout" data-id="${repo.id?string["####"]}" data-branch="${branch.name}">Checkout</button>
-            					           </td>
+                                            <td>${branch.name}</td>
+                                            <td>${branch.sha!""}</td>
+                                            <td>${branch.url!""}</td>
+                                            <td>
+                                                <#if branch.org??>
+                                                    ${branch.org.name}
+                                                </#if>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-default checkout" data-id="${repo.id?string["####"]}" data-branch="${branch.name}">Checkout</button>
+                                            </td>
             					       </tr>
             					   </#list>
             					</tbody>
@@ -96,7 +103,7 @@
                             <div class="panel-heading">
                                 <h3 class="panel-title">Tags</h3>
                             </div>
-                            <table class="table table-striped table-hover">
+                            <table class="table table-striped table-hover" id="tagsTable">
                                 <thead>
                                     <tr>
                                         <th>Name</th>
@@ -115,7 +122,6 @@
                                                <button type="button" class="btn btn-default download" data-id="${tag.tarballUrl}"><i class="fa fa-cloud-download" aria-hidden="true"></i> Tar</button>
                                                <button type="button" class="btn btn-default download" data-id="${tag.zipballUrl}"><i class="fa fa-cloud-download" aria-hidden="true"></i> Zip</button>
                                            </td>
-                                           <td>&nbsp;</td>
                                        </tr>
                                    </#list>
                                 </tbody>
@@ -129,7 +135,7 @@
                             <div class="panel-heading">
                                 <h3 class="panel-title">Commits</h3>
                             </div>
-                            <table class="table table-striped table-hover">
+                            <table class="table table-striped table-hover" id="commitsTable">
                                 <thead>
                                     <tr>
                                         <th>Name</th>
@@ -142,11 +148,83 @@
                         </div>
                     </div>
                 </div>
+                <div class="tab-pane" id="compare">
+                    <div class="row">
+                        <div class="col-xs-5">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">
+                                        Source
+                                        <select class="form-control" id="sourceSelect">
+                                            <#list branches as branch>
+                                                <option value="${branch.id?string["####"]}">${branch.name!''}</option>
+                                            </#list>
+                                        </select>
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-5">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">
+                                        Target
+                                        <select class="form-control" id="targetSelect">
+                                            <#list branches as branch>
+                                                <option value="${branch.id?string["####"]}">${branch.name!''}</option>
+                                            </#list>
+                                        </select>
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-2">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">
+                                        <button class="btn btn-default" id="compareButton">
+                                            Compare
+                                        </button>
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="compareData">
+                    </div>
+                </div>
 			</div>
 		</div>
 <#include "/scripts.ftl">
 		<script>
 $(function () {
+    $("#branchesTable").DataTable({
+        "dom": "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'l><'col-sm-7'p>>",
+        "pagingType": "simple_numbers",
+        "searching": false,
+        "info": false,
+        "columnDefs": [
+            {"targets": -1, "orderable": false}
+        ]
+    });
+    $("#tagsTable").DataTable({
+        "dom": "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'l><'col-sm-7'p>>",
+        "pagingType": "simple_numbers",
+        "searching": false,
+        "info": false,
+        "columnDefs": [
+            {"targets": -1, "orderable": false}
+        ]
+    });
+    $("#commitsTable").DataTable({
+        "dom": "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'l><'col-sm-7'p>>",
+        "pagingType": "simple_numbers",
+        "searching": false,
+        "info": false,
+        "columnDefs": [
+            {"targets": -1, "orderable": false}
+        ]
+    });
     $("#clientName").show();
     $("#clientNameEdit").hide();
     $('body').on('click', '#editClientName', function (e) {
@@ -170,6 +248,20 @@ $(function () {
                 window.location.reload();
             },
             error: function (jqXHR, textStatus, errorThrown) {
+                alert("failure");
+            }
+        });
+    });
+    $('body').on('click', '#compareButton', function (e) {
+        var sourceValue = $('#sourceSelect').val();
+        var targetValue = $('#targetSelect').val();
+        $.ajax({
+            type: "GET",
+            url: "/github/branches/" + sourceValue + "/compare/" + targetValue,
+            success: function(data, textStatus, jqXHR) {
+                $('#compareData').html(data);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
                 alert("failure");
             }
         });

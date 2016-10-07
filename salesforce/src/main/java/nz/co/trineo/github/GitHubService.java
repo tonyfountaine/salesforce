@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -14,6 +15,7 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.egit.github.core.RepositoryBranch;
@@ -34,9 +36,11 @@ import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
+import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.github.model.Branch;
 import nz.co.trineo.github.model.Repository;
 import nz.co.trineo.github.model.Tag;
+import nz.co.trineo.salesforce.model.TreeNode;
 
 public class GitHubService implements ConnectedService {
 	private static final Log log = LogFactory.getLog(GitHubService.class);
@@ -291,7 +295,7 @@ public class GitHubService implements ConnectedService {
 		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
 		try {
 			gitService.clone(repoDir, repository.getCloneURL(), repository.getAccount().getToken().getAccessToken(),
-					null);
+					new char[0]);
 		} catch (final GitServiceException e) {
 			throw new GitHubServiceException(e);
 		}
@@ -311,9 +315,67 @@ public class GitHubService implements ConnectedService {
 		final Repository repository = dao.get(id);
 		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
 		try {
-			gitService.pull(repoDir);
+			gitService.pull(repoDir, repository.getAccount().getToken().getAccessToken(), new char[0]);
 		} catch (final GitServiceException e) {
 			throw new GitHubServiceException(e);
 		}
+	}
+
+	public List<GitDiff> diffBranches(final long id, final long compareId) throws GitHubServiceException {
+		final Branch branch = dao.getBranch(id);
+		final Branch branch2 = dao.getBranch(compareId);
+		final Repository repo = branch.getRepo();
+		final File repoDir = new File(configuration.getGithubDirectory(), repo.getName());
+		if (!isRepo(repo.getId())) {
+			clone(repo.getId());
+		}
+		pull(repo.getId());
+		try {
+			return gitService.diff(repoDir, branch.getName(), branch2.getName(), null);
+		} catch (final GitServiceException e) {
+			throw new GitHubServiceException(e);
+		}
+	}
+
+	public TreeNode getDiffTree(final List<GitDiff> diffs) throws GitHubServiceException {
+		final Map<String, TreeNode> nodeMap = new HashMap<>();
+
+		final TreeNode rootNode = new TreeNode();
+		rootNode.setText("/");
+		rootNode.getState().setExpanded(true);
+
+		nodeMap.put(rootNode.getText(), rootNode);
+
+		diffs.forEach(d -> {
+			final String path = "/dev/null".equals(d.getPathA()) ? d.getPathB() : d.getPathA();
+			final File file = new File(path);
+			final TreeNode node = new TreeNode();
+			node.setText(file.getName());
+			addNode(nodeMap, path, node);
+		});
+
+		return rootNode;
+	}
+
+	private void addNode(final Map<String, TreeNode> nodeMap, final String path, final TreeNode node) {
+		if (nodeMap.containsKey(path)) {
+			return;
+		}
+		String parentPath = new File(path).getParent();
+		if (StringUtils.isBlank(parentPath)) {
+			parentPath = "/";
+		}
+
+		final TreeNode parentNode;
+		if (nodeMap.containsKey(parentPath)) {
+			parentNode = nodeMap.get(parentPath);
+		} else {
+			final File parentFile = new File(parentPath);
+			parentNode = new TreeNode();
+			parentNode.setText(parentFile.getName());
+			addNode(nodeMap, parentPath, parentNode);
+		}
+		parentNode.getNodes().add(node);
+		nodeMap.put(path, node);
 	}
 }

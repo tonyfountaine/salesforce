@@ -17,7 +17,7 @@
                 <li><a href="/clients"><i class="fa fa-cubes " aria-hidden="true"></i> Clients</a></li>
                 <li><a href="/sf/orgs"><i class="fa fa-cloud" aria-hidden="true"></i> Salesforce</a></li>
                 <li><a href="/github/repos"><i class="fa fa-github" aria-hidden="true"></i> GitHub</a></li>
-                <li><a href="/git/repos"><i class="fa fa-git" aria-hidden="true"></i> Git</a></li>
+                <!-- <li><a href="/git/repos"><i class="fa fa-git" aria-hidden="true"></i> Git</a></li> -->
                 <li><a href="/trello"><i class="fa fa-trello" aria-hidden="true"></i> Trello</a></li>
               </ul>
 		      <ul class="nav navbar-nav navbar-right">

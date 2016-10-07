@@ -46,7 +46,7 @@
 				</div>
 			</div>
 			<div class="row">
-				<table class="table table-striped table-hover">
+				<table class="table table-striped table-hover" id="reposTable">
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -75,6 +75,15 @@
 <#include "/scripts.ftl">
 		<script>
 $(function () {
+    $("#reposTable").DataTable({
+        "dom": "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'l><'col-sm-7'p>>",
+        "pagingType": "simple_numbers",
+        "searching": false,
+        "info": false,
+        "columnDefs": [
+            {"targets": -1, "orderable": false}
+        ]
+    });
     $('body').on('click', '#submit', function (e) {
         var values = $('#NewAccountForm').serialize();
         $.ajax({

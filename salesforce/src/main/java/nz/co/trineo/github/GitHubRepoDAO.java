@@ -8,6 +8,8 @@ import java.util.List;
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 
+import com.google.common.base.Objects;
+
 import io.dropwizard.hibernate.AbstractDAO;
 import nz.co.trineo.github.model.Branch;
 import nz.co.trineo.github.model.Repository;
@@ -26,6 +28,10 @@ public class GitHubRepoDAO extends AbstractDAO<Repository> {
 	public Repository persist(final Repository entity) throws HibernateException {
 		entity.getBranches().forEach(b -> {
 			currentSession().persist(b);
+			if (b.getOrg() != null && Objects.equal(b.getOrg().getBranch(), b)) {
+				b.getOrg().setBranch(b);
+				// currentSession().persist(b.getOrg());
+			}
 		});
 		entity.getTags().forEach(t -> {
 			currentSession().persist(t);

@@ -18,6 +18,19 @@ body {
 	padding-top: 70px;
 }
 
+#mainContent {
+	position: absolute;
+	top: 70px;
+	left: 0;
+	right: 0px;
+	bottom: 0px;
+	overflow: auto;
+}
+
+#coverageTable td {
+	overflow: hidden;
+}
+
 a.btn {
 	color: #777;
 }

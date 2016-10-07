@@ -131,7 +131,7 @@
 							<div class="panel-heading">
 								<h3 class="panel-title">Backups</h3>
 							</div>
-							<table class="table table-striped table-hover">
+							<table class="table table-striped table-hover" id="backupsTable">
 								<thead>
 									<tr>
 										<th>Date</th>
@@ -188,7 +188,7 @@
 								<div class="panel-heading">
 									<h3 class="panel-title" id="codeHead">Code Coverage</h3>
 								</div>
-								<table class="table table-striped table-responsive table-hover">
+								<table class="table table-striped table-hover" id="coverageTable">
 									<thead>
 										<tr>
 											<th>Namespace</th>
@@ -297,6 +297,15 @@
 <#include "/scripts.ftl">
 		<script>
 $(function () {
+    $("#backupsTable").DataTable({
+        "dom": "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'l><'col-sm-7'p>>",
+        "pagingType": "simple_numbers",
+        "searching": false,
+        "info": false,
+        "columnDefs": [
+            {"targets": -1, "orderable": false}
+        ]
+    });
     $('body').on('click', '.delete', function (e) {
         var value = $(this).data("id");
         $.ajax({
@@ -351,6 +360,13 @@ $(function () {
 		accepts: "text/html",
 		success: function (data, textStatus, jqXHR) {
 			$('#coverage').html(data);
+            $("#coverageTable").DataTable({
+                "dom": "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'l><'col-sm-7'p>>",
+                "pagingType": "simple_numbers",
+                "searching": false,
+                "pageLength": 25,
+                "info": false
+            });
 		},
 		error: function (jqXHR, textStatus, errorThrown) {
 			alert("failure");

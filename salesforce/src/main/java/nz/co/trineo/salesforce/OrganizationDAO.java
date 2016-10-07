@@ -7,6 +7,8 @@ import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
 
+import com.google.common.base.Objects;
+
 import io.dropwizard.hibernate.AbstractDAO;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.salesforce.model.Organization;
@@ -24,6 +26,10 @@ public class OrganizationDAO extends AbstractDAO<Organization> {
 
 	@Override
 	public Organization persist(final Organization entity) throws HibernateException {
+		if (entity.getBranch() != null && !Objects.equal(entity.getBranch().getOrg(), entity)) {
+			entity.getBranch().setOrg(entity);
+			// currentSession().persist(entity.getBranch());
+		}
 		return super.persist(entity);
 	}
 

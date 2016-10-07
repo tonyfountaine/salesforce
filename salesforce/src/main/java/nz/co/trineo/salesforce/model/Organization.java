@@ -90,97 +90,69 @@ public class Organization {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (account == null ? 0 : account.hashCode());
-		result = prime * result + (backups == null ? 0 : backups.hashCode());
-		result = prime * result + (branch == null ? 0 : branch.hashCode());
-		result = prime * result + (client == null ? 0 : client.hashCode());
-		result = prime * result + (id == null ? 0 : id.hashCode());
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + (nickName == null ? 0 : nickName.hashCode());
-		result = prime * result + (organizationType == null ? 0 : organizationType.hashCode());
+		result = prime * result + ((account == null) ? 0 : account.hashCode());
+		result = prime * result + ((backups == null) ? 0 : backups.hashCode());
+		result = prime * result + ((client == null) ? 0 : client.hashCode());
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((nickName == null) ? 0 : nickName.hashCode());
+		result = prime * result + ((organizationType == null) ? 0 : organizationType.hashCode());
 		result = prime * result + (sandbox ? 1231 : 1237);
-		result = prime * result + (testResults == null ? 0 : testResults.hashCode());
+		result = prime * result + ((testResults == null) ? 0 : testResults.hashCode());
 		return result;
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) {
+	public boolean equals(Object obj) {
+		if (this == obj)
 			return true;
-		}
-		if (obj == null) {
+		if (obj == null)
 			return false;
-		}
-		if (getClass() != obj.getClass()) {
+		if (getClass() != obj.getClass())
 			return false;
-		}
-		final Organization other = (Organization) obj;
+		Organization other = (Organization) obj;
 		if (account == null) {
-			if (other.account != null) {
+			if (other.account != null)
 				return false;
-			}
-		} else if (!account.equals(other.account)) {
+		} else if (!account.equals(other.account))
 			return false;
-		}
 		if (backups == null) {
-			if (other.backups != null) {
+			if (other.backups != null)
 				return false;
-			}
-		} else if (!backups.equals(other.backups)) {
+		} else if (!backups.equals(other.backups))
 			return false;
-		}
-		if (branch == null) {
-			if (other.branch != null) {
-				return false;
-			}
-		} else if (!branch.equals(other.branch)) {
-			return false;
-		}
 		if (client == null) {
-			if (other.client != null) {
+			if (other.client != null)
 				return false;
-			}
-		} else if (!client.equals(other.client)) {
+		} else if (!client.equals(other.client))
 			return false;
-		}
 		if (id == null) {
-			if (other.id != null) {
+			if (other.id != null)
 				return false;
-			}
-		} else if (!id.equals(other.id)) {
+		} else if (!id.equals(other.id))
 			return false;
-		}
 		if (name == null) {
-			if (other.name != null) {
+			if (other.name != null)
 				return false;
-			}
-		} else if (!name.equals(other.name)) {
+		} else if (!name.equals(other.name))
 			return false;
-		}
 		if (nickName == null) {
-			if (other.nickName != null) {
+			if (other.nickName != null)
 				return false;
-			}
-		} else if (!nickName.equals(other.nickName)) {
+		} else if (!nickName.equals(other.nickName))
 			return false;
-		}
 		if (organizationType == null) {
-			if (other.organizationType != null) {
+			if (other.organizationType != null)
 				return false;
-			}
-		} else if (!organizationType.equals(other.organizationType)) {
+		} else if (!organizationType.equals(other.organizationType))
 			return false;
-		}
-		if (sandbox != other.sandbox) {
+		if (sandbox != other.sandbox)
 			return false;
-		}
 		if (testResults == null) {
-			if (other.testResults != null) {
+			if (other.testResults != null)
 				return false;
-			}
-		} else if (!testResults.equals(other.testResults)) {
+		} else if (!testResults.equals(other.testResults))
 			return false;
-		}
 		return true;
 	}
 
