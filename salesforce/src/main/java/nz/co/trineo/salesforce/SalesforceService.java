@@ -903,6 +903,14 @@ public class SalesforceService implements ConnectedService {
 		final File repoDirA = new File(configuration.getSalesforceDirectory(), orgIdA);
 		final File repoDirB = new File(configuration.getSalesforceDirectory(), orgIdB);
 		try {
+			if (!gitService.isRemote(repoDirA, repoDirB)) {
+				gitService.addRemote(repoDirA, repoDirB);
+			}
+			try {
+				gitService.fetchRemote(repoDirA);
+			} catch (final GitServiceException e) {
+				log.error(e);
+			}
 			return gitService.diffRepos(repoDirA, repoDirB);
 		} catch (final GitServiceException e) {
 			throw new SalesforceException(e);

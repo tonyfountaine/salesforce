@@ -100,11 +100,13 @@ public class SalesforceResource {
 		tests.size();
 		final List<Client> clients = clientService.list();
 		final List<Branch> branches = new ArrayList<>();
-		org.getClient().getRepositories().forEach(r -> {
-			r.getBranches().forEach(b -> {
-				branches.add(b);
+		if (org.getClient() != null && org.getClient().getRepositories() != null) {
+			org.getClient().getRepositories().forEach(r -> {
+				r.getBranches().forEach(b -> {
+					branches.add(b);
+				});
 			});
-		});
+		}
 		final SfOrgView view = new SfOrgView(org, backups, tests, clients, branches);
 		return Response.ok(view).build();
 	}

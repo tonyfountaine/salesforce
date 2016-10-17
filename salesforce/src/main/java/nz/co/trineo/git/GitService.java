@@ -269,8 +269,8 @@ public class GitService implements Service {
 		final File gitBDir = new File(repoBDir, ".git");
 		try (Repository repoA = FileRepositoryBuilder.create(gitADir);
 				Repository repoB = FileRepositoryBuilder.create(gitBDir);) {
-			final FileTreeIterator oldTreeIter = new FileTreeIterator(repoA);
-			final FileTreeIterator newTreeIter = new FileTreeIterator(repoB);
+			final FileTreeIterator newTreeIter = new FileTreeIterator(repoA);
+			final FileTreeIterator oldTreeIter = new FileTreeIterator(repoB);
 
 			return diffTrees(repoA, oldTreeIter, newTreeIter, null);
 		} catch (final IOException | GitAPIException e) {
