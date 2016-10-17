@@ -4,7 +4,7 @@
 <#include "/head.ftl">
 	<body>
 <#include "/nav.ftl">
-		<div class="container">
+		<div class="container-fluid">
 			<div class="row">
 				<div class="col-xs-11 col-xs-offset-1">
 					<h1>${title}</h1>
@@ -51,7 +51,7 @@
 					  </div>
 					</div>
 
-					<div class="row">
+					<div>
 						<table class="table table-striped table-hover" id="orgsTable">
 							<thead>
 								<tr>

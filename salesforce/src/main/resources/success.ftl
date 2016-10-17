@@ -3,7 +3,7 @@
 <#assign title="OAuth Success" />
 <#include "/head.ftl">
 	<body>
-		<div class="container">
+		<div class="container-fluid">
 		</div>
 <#include "/scripts.ftl">
 		<script>

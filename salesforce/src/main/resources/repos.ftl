@@ -4,7 +4,7 @@
 <#include "/head.ftl">
 	<body>
 <#include "/nav.ftl">
-		<div class="container">
+		<div class="container-fluid">
             <div class="modal fade" id="NewAccount" tabindex="-1" role="dialog" aria-labelledby="NewAccountLabel">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
