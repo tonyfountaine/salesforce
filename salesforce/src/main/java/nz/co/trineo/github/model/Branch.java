@@ -135,7 +135,7 @@ public class Branch {
 		this.id = id;
 	}
 
-	@JsonProperty
+	@JsonIgnore
 	public Organization getOrg() {
 		return org;
 	}

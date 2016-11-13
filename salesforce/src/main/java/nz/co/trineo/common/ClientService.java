@@ -28,7 +28,7 @@ public class ClientService {
 		return clientDAO.persist(client);
 	}
 
-	public void delete(final int id) {
+	public void delete(final long id) {
 		clientDAO.delete(id);
 	}
 }

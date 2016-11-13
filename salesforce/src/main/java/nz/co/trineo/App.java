@@ -95,6 +95,7 @@ public class App extends Application<AppConfiguration> {
 		bootstrap.addBundle(new ViewBundle<AppConfiguration>());
 		bootstrap.addBundle(new AssetsBundle("/js", "/js", null, "js"));
 		bootstrap.addBundle(new AssetsBundle("/css", "/css", null, "css"));
+		bootstrap.addBundle(new AssetsBundle("/ui", "/ui", "ui.html", "ui"));
 		bootstrap.addBundle(new QuartzBundle(hibernate.getSessionFactory()));
 	}
 
@@ -125,7 +126,7 @@ public class App extends Application<AppConfiguration> {
 		final AccountResource aResource = new AccountResource(aService);
 		final TrelloResource tResource = new TrelloResource(tService);
 		final StaticResource staticResource = new StaticResource();
-		final ServiceResource serviceResource = new ServiceResource();
+		final ServiceResource serviceResource = new ServiceResource(aService);
 		final ClientResource clientResource = new ClientResource(clientService);
 
 		ServiceRegistry.registerService(tService);

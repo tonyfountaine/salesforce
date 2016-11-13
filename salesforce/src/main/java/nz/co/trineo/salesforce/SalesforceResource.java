@@ -2,6 +2,7 @@ package nz.co.trineo.salesforce;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.ws.rs.*;
@@ -21,8 +22,10 @@ import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.github.model.Branch;
+import nz.co.trineo.github.model.Repository;
 import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.CodeCoverageResult;
+import nz.co.trineo.salesforce.model.Environment;
 import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.salesforce.model.RunTestsResult;
 import nz.co.trineo.salesforce.model.TreeNode;
@@ -36,6 +39,84 @@ import nz.co.trineo.salesforce.views.SfOrgsView;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SalesforceResource {
+
+	public static class OrganizationView {
+		public String id;
+		public String name;
+		public String organizationType;
+		public boolean sandbox;
+		public AccountView account;
+		public String nickName;
+		public BranchView branch;
+		public ClientView client;
+
+		public OrganizationView(Organization organization) {
+			id = organization.getId();
+			name = organization.getName();
+			organizationType = organization.getOrganizationType();
+			sandbox = organization.isSandbox();
+			if (organization.getAccount() != null) {
+				account = new AccountView(organization.getAccount());
+			}
+			nickName = organization.getNickName();
+			if (organization.getBranch() != null) {
+				branch = new BranchView(organization.getBranch());
+			}
+			if (organization.getClient() != null) {
+				client = new ClientView(organization.getClient());
+			}
+		}
+	}
+
+	public static class BranchView {
+		public long id;
+		public String sha;
+		public String name;
+		public String url;
+		public RepositoryView repo;
+
+		public BranchView(Branch branch) {
+			id = branch.getId();
+			sha = branch.getSha();
+			name = branch.getName();
+			url = branch.getUrl();
+			repo = new RepositoryView(branch.getRepo());
+		}
+	}
+
+	public static class RepositoryView {
+		public int id;
+		public String name;
+		public String cloneURL;
+
+		public RepositoryView(Repository repository) {
+			id = repository.getId();
+			name = repository.getName();
+			cloneURL = repository.getCloneURL();
+		}
+	}
+
+	public static class ClientView {
+		public long id;
+		public String name;
+
+		public ClientView(Client client) {
+			id = client.getId();
+			name = client.getName();
+		}
+	}
+
+	public static class AccountView {
+		public int id;
+		public String service;
+		public String name;
+
+		public AccountView(ConnectedAccount account) {
+			id = account.getId();
+			service = account.getService();
+			name = account.getName();
+		}
+	}
 
 	private final SalesforceService salesforceService;
 	private final AccountService accountService;
@@ -53,8 +134,22 @@ public class SalesforceResource {
 	@Path("/orgs")
 	@Timed
 	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
 	public Response getOrgs() {
+		final List<Organization> orgs = salesforceService.listOrgs();
+		final List<OrganizationView> views = new ArrayList<>();
+		orgs.forEach(o -> {
+			OrganizationView v = new OrganizationView(o);
+			views.add(v);
+		});
+		return Response.ok(views).build();
+	}
+
+	@GET
+	@Path("/orgs")
+	@Timed
+	@UnitOfWork
+	@Produces(MediaType.TEXT_HTML)
+	public Response getOrgsHTML() {
 		final List<Organization> orgs = salesforceService.listOrgs();
 		final List<ConnectedAccount> accounts = accountService.byService(salesforceService.getName().toLowerCase());
 		final SfOrgsView view = new SfOrgsView(orgs, accounts);
@@ -85,7 +180,17 @@ public class SalesforceResource {
 	@UnitOfWork
 	public Response getOrg(final @PathParam("id") String id) throws SalesforceException {
 		final Organization org = salesforceService.getOrg(id);
-		return Response.ok(org).build();
+		final OrganizationView view = new OrganizationView(org);
+		return Response.ok(view).build();
+	}
+
+	@DELETE
+	@Path("/orgs/{id}")
+	@Timed
+	@UnitOfWork
+	public Response deleteOrg(final @PathParam("id") String id) throws SalesforceException {
+		salesforceService.deleteOrg(id);
+		return Response.noContent().build();
 	}
 
 	@GET
@@ -112,10 +217,18 @@ public class SalesforceResource {
 	}
 
 	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/orgs/{id}/branch")
+	public Response getOrgBranch(final @PathParam("id") String id) throws SalesforceException {
+		final Organization org = salesforceService.getOrg(id);
+		return Response.ok(org.getBranch()).build();
+	}
+
+	@GET
 	@Path("/orgs/{id}/compare/{first}/{second}")
 	@Timed
 	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
 	public Response diffBackups(final @PathParam("id") String id, final @PathParam("first") int first,
 			final @PathParam("second") int second) throws SalesforceException {
 		final List<GitDiff> list = salesforceService.diffBackups(id, first, second);
@@ -127,7 +240,6 @@ public class SalesforceResource {
 	@Path("/orgs/{id}/compareBranch")
 	@Timed
 	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
 	public Response diffBranch(final @PathParam("id") String id) throws SalesforceException {
 		final List<GitDiff> list = salesforceService.diffBranch(id);
 		final CompareView view = new CompareView(list);
@@ -138,23 +250,11 @@ public class SalesforceResource {
 	@Path("/orgs/{idA}/compare/{idB}")
 	@Timed
 	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
 	public Response diffOrgs(final @PathParam("idA") String idA, final @PathParam("idB") String idB)
 			throws SalesforceException {
 		final List<GitDiff> list = salesforceService.diffOrgs(idA, idB);
 		final CompareView view = new CompareView(list);
 		return Response.ok(view).build();
-	}
-
-	@POST
-	@Path("/orgs/{id}/metadata")
-	@Timed
-	@UnitOfWork
-	public Response getMetadata(final @PathParam("id") String id, final @QueryParam("acc") int accId)
-			throws SalesforceException {
-		// salesforceService.downloadAllMetadata(id, accId);
-		// TODO add showing the metadata
-		return Response.ok().build();
 	}
 
 	@GET
@@ -190,7 +290,6 @@ public class SalesforceResource {
 	@Path("/orgs/{id}/metadata/{folder}/{file}")
 	@Timed
 	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
 	public Response getMetadataContentLines(final @PathParam("id") String id, final @PathParam("folder") String folder,
 			final @PathParam("file") String file) throws SalesforceException {
 		final List<String> lines = salesforceService.getMetadataContentLines(id, folder + "/" + file);
@@ -214,6 +313,7 @@ public class SalesforceResource {
 	@UnitOfWork
 	public Response listBackups(final @PathParam("id") String id) throws SalesforceException {
 		final List<Backup> backups = salesforceService.listBackups(id);
+		backups.size();
 		return Response.ok(backups).build();
 	}
 
@@ -297,5 +397,12 @@ public class SalesforceResource {
 		final List<CodeCoverageResult> coverage = salesforceService.getCodeCoverage(id);
 		final CoverageView view = new CoverageView(coverage);
 		return Response.ok(view).build();
+	}
+
+	@GET
+	@Timed
+	@Path("/environments")
+	public Response listEnvironments() {
+		return Response.ok(EnumSet.allOf(Environment.class)).build();
 	}
 }

@@ -13,11 +13,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import nz.co.trineo.common.model.Client;
@@ -26,7 +22,6 @@ import nz.co.trineo.github.model.Branch;
 
 @Entity
 @Table(name = "sforg")
-@JsonInclude(Include.NON_DEFAULT)
 public class Organization {
 	@Id
 	private String id;
@@ -36,7 +31,7 @@ public class Organization {
 	private String organizationType;
 	@Column
 	private boolean sandbox;
-	@OneToOne
+	@OneToOne(cascade = CascadeType.ALL)
 	private ConnectedAccount account;
 	@OneToMany(cascade = CascadeType.ALL)
 	private List<RunTestsResult> testResults = new ArrayList<>();
@@ -201,18 +196,13 @@ public class Organization {
 		this.backups = backups;
 	}
 
-	@JsonProperty
+	@JsonIgnore
 	public Branch getBranch() {
 		return branch;
 	}
 
 	public void setBranch(final Branch branch) {
 		this.branch = branch;
-	}
-
-	@Override
-	public String toString() {
-		return ToStringBuilder.reflectionToString(this);
 	}
 
 	@JsonProperty

@@ -30,7 +30,7 @@ public class TestRunDAO extends AbstractDAO<RunTestsResult> {
 		return super.persist(entity);
 	}
 
-	public void delete(final String id) {
+	public void delete(final int id) {
 		final RunTestsResult org = get(id);
 		currentSession().delete(org);
 	}

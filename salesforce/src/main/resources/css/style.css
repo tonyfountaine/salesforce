@@ -1,19 +1,3 @@
-/*html, body, .tab-pane, .tab-content, .container-fluid, #compareData {
-	height: 100%;
-	max-height: 100%;
-}
-
-html, body {
-	overflow: hidden;
-}
-
-#compareData .col-xs-2, #compareData .col-md-10 {
-	overflow-y: auto;
-	overflow-x: hidden;
-	max-height: 100%;
-	height: 100%;
-}*/
-
 body {
 	padding-top: 70px;
 }
@@ -27,41 +11,37 @@ body {
 	overflow: auto;
 }
 
-#coverageTable td {
-	overflow: hidden;
+.bordered-table {
+	border: 1px solid #ddd;
 }
 
-a.btn {
+.subtabs {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+}
+
+a.edit {
 	color: #777;
 }
 
 .fa-salesforce::before {
-    content: "\f0c2"
+	content: "\f0c2"
 }
 
-.dropdown-menu > li > span {
+.dropdown-menu>li>span {
 	padding: 3px 20px;
 	display: block;
 }
 
-#code, .diffContent {
-	overflow: auto;
-}
-
-#code table, #compareData table, #compareBranchData table {
-	margin-bottom: 0;
-	/*width: 100%;
-	overflow: auto;*/
-}
-
-#code table td, #compareData table td, #compareBranchData table td {
+#code table td, #compareData table td {
 	border-top: none;
 	padding: 0px;
 }
 
-#code table td.num, #compareData table td.num, #compareBranchData table td.num {
+#code table td.num, #compareData table td.num {
 	border: solid #eee;
-	border-width: 0 1 0 0;
+	border-width: 0 1px 0 0;
 	text-align: right;
 	padding-right: 10px;
 	padding-left: 10px;
@@ -69,106 +49,213 @@ a.btn {
 	min-width: 20px;
 }
 
-#code table td.code, #compareData table td.line, #compareBranchData table td.line {
+#code table td.code, #compareData table td.line {
 	padding-right: 10px;
 	padding-left: 10px;
 	word-wrap: normal;
 	white-space: pre;
 }
 
-#compareData table tr.header, #compareBranchData table tr.header {
+#compareTabs, #compareData .tab-content, #metadataTree, #code, #coverageTable, #testTree, #backupsTable, #orgsTable,
+	#diffTree, #diffContent, #clients, #reposTable, #branchesTable, #tagsTable, #commitsTable, #accountsTable {
+	max-height: 100vh;
+	overflow: auto;
+}
+
+#diffTree {
+	overflow-x: hidden;
+}
+
+#code table, #compareData table, #metadataTree ul, #testTree ul, #coverageTable .table, #backupsTable .table, #orgsTable .table,
+	#diffTree ul, #diffContent .panel, #reposTable table, #branchesTable table, #tagsTable table, #commitsTable table, #accountsTable table {
+	margin-bottom: 0;
+}
+
+#coverageTable, #backupsTable, #orgsTable, #reposTable, #branchesTable, #tagsTable, #commitsTable, #accountsTable {
+	margin: -15px;
+}
+
+.tab-content, #compareData {
+	margin-top: 20px;
+}
+
+#compareData table tr.header, #compareData table td.num {
 	background-color: #edf2f9;
 }
 
-#compareData table tr.header td.num, #compareBranchData table tr.header td.num {
+#compareData table tr.header td {
+    border-top: 1px solid #d2dff0;
+	border-bottom: 1px solid #d2dff0;
+}
+
+#compareData table tr.header:first-child td {
+    border-top: none;
+    border-bottom: 1px solid #d2dff0;
+}
+
+#compareData table td.num {
 	border-color: #d2dff0;
 }
 
-#code table tr.notcovered, #compareData table tr.removed, #compareBranchData table tr.removed {
+#code table tr.notcovered, #compareData table tr.removed {
 	background-color: #ffdddd;
 }
 
-#code table tr.notcovered td.num, #compareData table tr.removed td.num, #compareBranchData table tr.removed td.num {
+/*#code table tr.notcovered td.num, #compareData table tr.removed td.num {
 	border-color: #f1c0c0;
-}
+}*/
 
-#compareData table tr.added, #compareBranchData table tr.added {
+#compareData table tr.added {
 	background-color: #dbffdb;
 }
 
-#compareData table tr.added td.num, #compareBranchData table tr.added td.num {
+/*#compareData table tr.added td.num {
 	border-color: #c1e9c1;
-}
+}*/
 
 .xml_plain {
 	color: rgb(0, 0, 0);
 }
+
 .xml_char_data {
 	color: rgb(0, 129, 127);
 }
+
 .xml_tag_symbols {
 	color: rgb(60, 127, 127);
 }
+
 .xml_comment {
 	color: rgb(61, 93, 188);
-	/*background-color: rgb(247,247,247);*/
 }
+
 .xml_attribute_value {
 	color: rgb(42, 0, 251);
 	font-style: italic;
 }
+
 .xml_attribute_name {
 	color: rgb(129, 0, 125);
-	/*font-weight: bold;*/
 }
+
 .xml_processing_instruction {
 	color: rgb(0, 0, 0);
-	/*font-weight: bold;
-	font-style: italic;*/
 }
+
 .xml_tag_name {
 	color: rgb(60, 127, 127);
 }
+
 .xml_rife_tag {
-	color: rgb(0,0,0);
-	background-color: rgb(228,230,160);
-}		
+	color: rgb(0, 0, 0);
+	background-color: rgb(228, 230, 160);
+}
+
 .xml_rife_name {
-	color: rgb(0,0,196);
-	background-color: rgb(228,230,160);
+	color: rgb(0, 0, 196);
+	background-color: rgb(228, 230, 160);
 }
 
 .apex_plain {
-	color: rgb(0, 0, 0);	
-}			
+	color: rgb(0, 0, 0);
+}
+
 .apex_keyword {
-	color: rgb(129, 0, 83);	
-	/*font-weight: bold;*/	
-}			
+	color: rgb(129, 0, 83);
+}
+
 .apex_type {
-	color: rgb(0, 0, 0);	
-}			
+	color: rgb(0, 0, 0);
+}
+
 .apex_operator {
-	color: rgb(0, 0, 0);	
-}			
+	color: rgb(0, 0, 0);
+}
+
 .apex_separator {
-	color: rgb(0, 0, 0);	
-}			
+	color: rgb(0, 0, 0);
+}
+
 .apex_literal {
-	color: rgb(42, 0, 251);	
-}			
+	color: rgb(42, 0, 251);
+}
+
 .apex_comment {
 	color: rgb(61, 127, 96);
-	/*background-color: rgb(247,247,247);*/	
-}			
+}
+
 .apex_apexdoc_comment {
 	color: rgb(61, 127, 96);
-	/*background-color: rgb(247,247,247);	
-	font-style: italic;*/	
-}			
+}
+
 .apex_apexdoc_tag {
-	color: rgb(61, 93, 188);	
-	/*background-color: rgb(247,247,247);	
-	font-style: italic;*/	
+	color: rgb(61, 93, 188);
 	font-weight: bold;
+}
+
+.compare-breadcrumb div:not(:last-child ):after {
+	content: " ";
+	display: block;
+	width: 0;
+	height: 0;
+	border-top: 25px solid transparent;
+	border-bottom: 25px solid transparent;
+	border-left: 15px solid white;
+	position: absolute;
+	top: 50%;
+	margin-top: -25px;
+	left: 100%;
+	z-index: 3;
+}
+
+.compare-breadcrumb div:not(:last-child ):before {
+	content: " ";
+	display: block;
+	width: 0;
+	height: 0;
+	border-top: 25px solid transparent;
+	border-bottom: 25px solid transparent;
+	border-left: 15px solid rgb(173, 173, 173);
+	position: absolute;
+	top: 50%;
+	margin-top: -25px;
+	margin-left: 1px;
+	left: 100%;
+	z-index: 3;
+}
+
+.compare-breadcrumb div {
+	border: 1px solid transparent;
+	padding: 6px 12px 6px 24px;
+}
+
+.compare-breadcrumb div:first-child {
+	padding: 6px 6px 6px 15px;
+	border-bottom-left-radius: 4px;
+	border-top-left-radius: 4px;
+}
+
+.compare-breadcrumb div:last-child {
+	padding: 6px 18px 6px 24px;
+}
+
+.compare-breadcrumb div {
+	border-color: #ccc;
+	height: 48px;
+	vertical-align: middle;
+}
+
+.compare-breadcrumb div:not(:last-child ):after {
+	border-left: 15px solid #fff;
+}
+
+.compare-breadcrumb div:not(:last-child ):before {
+	border-left: 15px solid #ccc;
+}
+
+.compare-breadcrumb button {
+	height: 48px;
+	padding: 6px 18px 6px 24px;
+	border-bottom-left-radius: 0px;
+	border-top-left-radius: 0px;
 }

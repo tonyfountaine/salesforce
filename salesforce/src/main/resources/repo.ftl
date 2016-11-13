@@ -29,7 +29,7 @@
                                         ${repo.client.name!""}
                                         </#if>
                                     </span>
-                                    <a class="btn" id="editClientName">
+                                    <a class="btn edit" id="editClientName">
                                         <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
                                     </a>
                                 </div>

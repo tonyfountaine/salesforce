@@ -13,6 +13,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.logging.Log;
@@ -23,6 +24,8 @@ import com.codahale.metrics.annotation.Timed;
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.views.ClientsView;
+import nz.co.trineo.github.model.Repository;
+import nz.co.trineo.salesforce.model.Organization;
 
 @Path("/clients")
 @Produces(MediaType.APPLICATION_JSON)
@@ -43,8 +46,9 @@ public class ClientResource {
 	@GET
 	@Timed
 	@UnitOfWork
-	public List<Client> listAccounts() {
-		return clientService.list();
+	public Response listAccounts() {
+		List<Client> list = clientService.list();
+		return Response.ok(list).build();
 	}
 
 	@GET
@@ -85,7 +89,27 @@ public class ClientResource {
 	@Timed
 	@UnitOfWork
 	@Path("/{id}")
-	public void delete(final @PathParam("id") int id) {
+	public void delete(final @PathParam("id") long id) {
 		clientService.delete(id);
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/{id}/organizations")
+	public Response getOrganizations(final @PathParam("id") long id) {
+		List<Organization> organizations = clientService.read(id).getOrganizations();
+		organizations.size();
+		return Response.ok(organizations).build();
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/{id}/repos")
+	public Response getRepos(final @PathParam("id") long id) {
+		List<Repository> repositories = clientService.read(id).getRepositories();
+		repositories.size();
+		return Response.ok(repositories).build();
 	}
 }

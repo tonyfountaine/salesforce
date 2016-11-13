@@ -1132,4 +1132,18 @@ public class SalesforceService implements ConnectedService {
 		orgDAO.persist(organization);
 		return organization;
 	}
+
+	public void deleteOrg(final String id) {
+		final Organization organization = orgDAO.get(id);
+		organization.setClient(null);
+		organization.setBranch(null);
+		organization.getTestResults().forEach(r -> {
+			testRunDAO.delete(r.getId());
+		});
+		organization.getBackups().forEach(b -> {
+			backupDAO.delete(b.getId());
+		});
+		credDAO.delete(organization.getAccount().getId());
+		orgDAO.delete(id);
+	}
 }

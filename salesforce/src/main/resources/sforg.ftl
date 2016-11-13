@@ -10,7 +10,7 @@
 					<div id="orgName">
 						<h1>
 							<span>${title}</span>
-							<a class="small btn" id="editOrgName">
+							<a class="small btn edit" id="editOrgName">
 								<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
 							</a>
 							<small>${org.id}</small>
@@ -50,7 +50,7 @@
                                             ${org.client.name!""}
                                             </#if>
                                         </span>
-                                        <a class="btn" id="editClientName">
+                                        <a class="btn edit" id="editClientName">
                                             <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
                                         </a>
                                     </div>
@@ -86,7 +86,7 @@
                                             ${org.branch.repo.name!""}/${org.branch.name!""}
                                             </#if>
                                         </span>
-                                        <a class="btn" id="editBranchName">
+                                        <a class="btn edit" id="editBranchName">
                                             <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
                                         </a>
                                     </div>

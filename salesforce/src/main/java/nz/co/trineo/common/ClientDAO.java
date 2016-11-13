@@ -28,7 +28,7 @@ public class ClientDAO extends AbstractDAO<Client> {
 		return list(currentSession().createCriteria(getEntityClass()));
 	}
 
-	public void delete(final int id) {
+	public void delete(final long id) {
 		final Client account = get(id);
 		currentSession().delete(account);
 	}

@@ -53,8 +53,7 @@ public class GitHubResource {
 	@Timed
 	@Path("/repos")
 	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
-	public Response getHTMLRepos() throws GitHubServiceException {
+	public Response getRepos() throws GitHubServiceException {
 		final List<Repository> list = ghService.getRepos();
 		final List<ConnectedAccount> accounts = accountService.byService(ghService.getName().toLowerCase());
 		final ReposView view = new ReposView(list, accounts);
@@ -74,7 +73,6 @@ public class GitHubResource {
 	@Timed
 	@Path("/repos/{id}")
 	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
 	public Response getRepo(final @PathParam("id") int id) throws GitHubServiceException {
 		final Repository repo = ghService.getRepo(id);
 		final List<Branch> branches = repo.getBranches();
@@ -98,7 +96,6 @@ public class GitHubResource {
 	@Timed
 	@Path("/branches/{id}/compare/{compareId}")
 	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
 	public Response compareBranches(final @PathParam("id") long id, final @PathParam("compareId") long compareId)
 			throws GitHubServiceException {
 		final List<GitDiff> list = ghService.diffBranches(id, compareId);

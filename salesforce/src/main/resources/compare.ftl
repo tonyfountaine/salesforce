@@ -1,14 +1,14 @@
 <#-- @ftlvariable name="" type="nz.co.trineo.salesforce.views.CompareView" -->
 <#assign keys = diffMap?keys />
-<div class="col-xs-2">
-	<ul class="nav nav-pills nav-stacked" id="CompareTabs">
+<div class="col-xs-2 panel panel-default" id="compareTabs">
+	<ul class="nav nav-pills nav-stacked">
 		<#list keys as key>
 			<li><a href="#${key}" aria-controls="${key}" data-toggle="pill">${key?cap_first}</a></li>
 		</#list>
 	</ul>
 </div>
 <div class="col-md-10">
-	<div class="tab-content">
+	<div class="tab-content panel panel-default">
 		<#list keys as key>
 			<div class="tab-pane" id="${key}">
 				<#list diffMap[key] as diff>
