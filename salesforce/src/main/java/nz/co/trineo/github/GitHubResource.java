@@ -1,5 +1,6 @@
 package nz.co.trineo.github;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ws.rs.Consumes;
@@ -31,12 +32,65 @@ import nz.co.trineo.github.views.CompareView;
 import nz.co.trineo.github.views.RepoView;
 import nz.co.trineo.github.views.ReposView;
 import nz.co.trineo.salesforce.SalesforceException;
+import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.salesforce.model.TreeNode;
 
 @Path("/github")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class GitHubResource {
+
+	public static class RepositoryView {
+		public int id;
+		public String name;
+		public String cloneURL;
+		public List<BranchView> branches;
+
+		public RepositoryView(final Repository repository) {
+			id = repository.getId();
+			name = repository.getName();
+			cloneURL = repository.getCloneURL();
+			branches = new ArrayList<>();
+			repository.getBranches().forEach(b -> {
+				final BranchView bv = new BranchView(b);
+				branches.add(bv);
+			});
+		}
+	}
+
+	public static class BranchView {
+		public long id;
+		public String sha;
+		public String name;
+		public String url;
+		public OrganizationView org;
+
+		public BranchView(final Branch branch) {
+			id = branch.getId();
+			sha = branch.getSha();
+			name = branch.getName();
+			url = branch.getUrl();
+			if (branch.getOrg() != null) {
+				org = new OrganizationView(branch.getOrg());
+			}
+		}
+	}
+
+	public static class OrganizationView {
+		public String id;
+		public String name;
+		public String organizationType;
+		public boolean sandbox;
+		public String nickName;
+
+		public OrganizationView(final Organization organization) {
+			id = organization.getId();
+			name = organization.getName();
+			organizationType = organization.getOrganizationType();
+			sandbox = organization.isSandbox();
+			nickName = organization.getNickName();
+		}
+	}
 
 	private final GitHubService ghService;
 	private final AccountService accountService;
@@ -89,7 +143,11 @@ public class GitHubResource {
 	@UnitOfWork
 	public Response getBranches(final @PathParam("id") int id) throws GitHubServiceException {
 		final List<Branch> branches = ghService.getBranches(id);
-		return Response.ok(branches).build();
+		final List<BranchView> list = new ArrayList<>();
+		branches.forEach(b -> {
+			list.add(new BranchView(b));
+		});
+		return Response.ok(list).build();
 	}
 
 	@GET

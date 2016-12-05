@@ -47,7 +47,7 @@ public class ClientResource {
 	@Timed
 	@UnitOfWork
 	public Response listAccounts() {
-		List<Client> list = clientService.list();
+		final List<Client> list = clientService.list();
 		return Response.ok(list).build();
 	}
 
@@ -98,7 +98,7 @@ public class ClientResource {
 	@UnitOfWork
 	@Path("/{id}/organizations")
 	public Response getOrganizations(final @PathParam("id") long id) {
-		List<Organization> organizations = clientService.read(id).getOrganizations();
+		final List<Organization> organizations = clientService.read(id).getOrganizations();
 		organizations.size();
 		return Response.ok(organizations).build();
 	}
@@ -108,7 +108,7 @@ public class ClientResource {
 	@UnitOfWork
 	@Path("/{id}/repos")
 	public Response getRepos(final @PathParam("id") long id) {
-		List<Repository> repositories = clientService.read(id).getRepositories();
+		final List<Repository> repositories = clientService.read(id).getRepositories();
 		repositories.size();
 		return Response.ok(repositories).build();
 	}

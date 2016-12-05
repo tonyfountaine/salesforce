@@ -95,6 +95,15 @@ public class AccountResource {
 		accountService.delete(id);
 	}
 
+	@POST
+	@Timed
+	@UnitOfWork
+	@Path("/{id}/verify")
+	public Response verify(final @PathParam("id") int id) {
+		final boolean verify = accountService.verify(id);
+		return verify ? Response.ok().build() : Response.serverError().build();
+	}
+
 	@GET
 	@Timed
 	@UnitOfWork

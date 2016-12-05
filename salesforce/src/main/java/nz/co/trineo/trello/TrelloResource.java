@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -12,11 +13,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
-import com.julienvey.trello.domain.Board;
 import com.julienvey.trello.domain.Card;
 import com.julienvey.trello.domain.Member;
+import com.julienvey.trello.domain.TList;
 
 import io.dropwizard.hibernate.UnitOfWork;
+import nz.co.trineo.trello.model.Board;
 
 @Path("/trello")
 @Produces(MediaType.APPLICATION_JSON)
@@ -41,8 +43,17 @@ public class TrelloResource {
 	@Timed
 	@Path("/boards")
 	@UnitOfWork
+	public Response listBoards() {
+		final List<Board> list = service.listBoards();
+		return Response.ok(list).build();
+	}
+
+	@POST
+	@Timed
+	@Path("/boards")
+	@UnitOfWork
 	public Response listBoards(final @QueryParam("acc") int accId) {
-		final List<String> list = service.listBoards(accId);
+		final List<Board> list = service.listBoards(accId);
 		return Response.ok(list).build();
 	}
 
@@ -50,8 +61,8 @@ public class TrelloResource {
 	@Timed
 	@Path("/boards/{id}")
 	@UnitOfWork
-	public Response getBoard(final @PathParam("id") String id, final @QueryParam("acc") int accId) {
-		final Board board = service.getBoard(id, accId);
+	public Response getBoard(final @PathParam("id") String id) {
+		final Board board = service.getBoard(id);
 		return Response.ok(board).build();
 	}
 
@@ -59,9 +70,18 @@ public class TrelloResource {
 	@Timed
 	@Path("/boards/{id}/cards")
 	@UnitOfWork
-	public Response getCards(final @PathParam("id") String id, final @QueryParam("acc") int accId) {
-		final List<Card> cards = service.getCards(id, accId);
+	public Response getCards(final @PathParam("id") String id, final @QueryParam("list") String list) {
+		final List<Card> cards = service.getCards(id, list);
 		return Response.ok(cards).build();
+	}
+
+	@GET
+	@Timed
+	@Path("/boards/{id}/lists")
+	@UnitOfWork
+	public Response getListss(final @PathParam("id") String id) {
+		final List<TList> lists = service.getLists(id);
+		return Response.ok(lists).build();
 	}
 
 	@GET

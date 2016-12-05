@@ -45,6 +45,12 @@ public class AccountService {
 		return accountDAO.listByService(service);
 	}
 
+	public boolean verify(final int id) {
+		final ConnectedAccount account = accountDAO.get(id);
+		final ConnectedService service = (ConnectedService) ServiceRegistry.getService(account.getService());
+		return service.verify(account);
+	}
+
 	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri,
 			final Map<String, Object> additional) {
 		final String state = HashCode.fromLong(System.currentTimeMillis()).toString();

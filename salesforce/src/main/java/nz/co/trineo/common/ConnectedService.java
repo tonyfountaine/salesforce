@@ -11,4 +11,6 @@ public interface ConnectedService extends Service {
 			Map<String, Object> additional);
 
 	AccountToken getAccessToken(String code, String state, URI redirectUri, Map<String, Object> additional);
+
+	boolean verify(ConnectedAccount account);
 }

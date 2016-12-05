@@ -50,7 +50,7 @@ public class SalesforceResource {
 		public BranchView branch;
 		public ClientView client;
 
-		public OrganizationView(Organization organization) {
+		public OrganizationView(final Organization organization) {
 			id = organization.getId();
 			name = organization.getName();
 			organizationType = organization.getOrganizationType();
@@ -75,7 +75,7 @@ public class SalesforceResource {
 		public String url;
 		public RepositoryView repo;
 
-		public BranchView(Branch branch) {
+		public BranchView(final Branch branch) {
 			id = branch.getId();
 			sha = branch.getSha();
 			name = branch.getName();
@@ -89,7 +89,7 @@ public class SalesforceResource {
 		public String name;
 		public String cloneURL;
 
-		public RepositoryView(Repository repository) {
+		public RepositoryView(final Repository repository) {
 			id = repository.getId();
 			name = repository.getName();
 			cloneURL = repository.getCloneURL();
@@ -100,7 +100,7 @@ public class SalesforceResource {
 		public long id;
 		public String name;
 
-		public ClientView(Client client) {
+		public ClientView(final Client client) {
 			id = client.getId();
 			name = client.getName();
 		}
@@ -111,7 +111,7 @@ public class SalesforceResource {
 		public String service;
 		public String name;
 
-		public AccountView(ConnectedAccount account) {
+		public AccountView(final ConnectedAccount account) {
 			id = account.getId();
 			service = account.getService();
 			name = account.getName();
@@ -138,7 +138,7 @@ public class SalesforceResource {
 		final List<Organization> orgs = salesforceService.listOrgs();
 		final List<OrganizationView> views = new ArrayList<>();
 		orgs.forEach(o -> {
-			OrganizationView v = new OrganizationView(o);
+			final OrganizationView v = new OrganizationView(o);
 			views.add(v);
 		});
 		return Response.ok(views).build();

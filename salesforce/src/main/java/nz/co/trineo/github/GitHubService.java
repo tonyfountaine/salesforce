@@ -280,6 +280,19 @@ public class GitHubService implements ConnectedService {
 		return tokenResponse;
 	}
 
+	@Override
+	public boolean verify(final ConnectedAccount account) {
+		final RepositoryService service = new RepositoryService();
+		service.getClient().setOAuth2Token(account.getToken().getAccessToken());
+		try {
+			service.getRepositories();
+		} catch (final IOException e) {
+			log.error("Unable to verify github account", e);
+			return false;
+		}
+		return true;
+	}
+
 	public boolean isRepo(final int id) throws GitHubServiceException {
 		final Repository repository = dao.get(id);
 		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());

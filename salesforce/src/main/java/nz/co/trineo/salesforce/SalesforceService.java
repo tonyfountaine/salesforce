@@ -1078,11 +1078,29 @@ public class SalesforceService implements ConnectedService {
 		return tokenResponse;
 	}
 
-	/* @Override public URI verify(final ConnectedAccount account) { try { PartnerConnection connection =
-	 * getPartnerConnection(account); String organizationId; organizationId =
-	 * connection.getUserInfo().getOrganizationId(); } catch (final ConnectionException | SalesforceException e) {
-	 *
-	 * } return null; } */
+	@Override
+	public boolean verify(final ConnectedAccount account) {
+		try {
+			PartnerConnection connection = getPartnerConnection(account);
+			try {
+				connection.getUserInfo().getOrganizationId();
+			} catch (final ConnectionException e) {
+				if (isInvalidSessionException(e)) {
+					refreshToken(account);
+					connection = getPartnerConnection(account);
+					try {
+						connection.getUserInfo().getOrganizationId();
+					} catch (final ConnectionException e1) {
+						throw new SalesforceException(e1);
+					}
+				}
+			}
+		} catch (final SalesforceException e) {
+			log.error("Unable to verify salesforce account", e);
+			return false;
+		}
+		return true;
+	}
 
 	/**
 	 * @param account

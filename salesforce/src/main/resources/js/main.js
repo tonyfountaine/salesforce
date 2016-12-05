@@ -14,6 +14,7 @@ function ClientModel(client) {
 	this.id = client.id;
 	this.organizations = ko.observableArray(client.organizations);
 	this.repositories = ko.observableArray(client.repositories);
+	this.boards = ko.observableArray(client.boards);
 };
 
 function OrgModel(org) {
@@ -208,6 +209,35 @@ function BranchModel(branch) {
 	};
 }
 
+function BoardModel(board) {
+	var self = this;
+	self.name = board.name;
+	self.id = board.id;
+	if (board.account != null) {
+		self.accountName = board.account.name;
+		self.accountId = board.account.id;
+	}
+	if (board.client != null) {
+		self.clientId = board.client.id;
+		self.clientName = ko.editable(board.client.name);
+	} else {
+		self.clientName = ko.editable();
+	}
+	self.deleteBoard = function(board) {
+		$.ajax({
+			method: "DELETE",
+			url: "/trello/boards/" + board.id
+		}).done(function() {
+        	mainModel.getBoards();
+        });
+	};
+};
+
+function ListModel(list) {
+	var self = this;
+	self.name = list.name;
+	self.id = list.id;
+};
 function formatGitHeader(header) {
 	if (header != undefined) {
 		switch (header.end) {
@@ -283,6 +313,13 @@ function TrineoViewModel() {
 	self.tags = ko.observableArray([]);
 	self.commits = ko.observableArray([]);
 
+	self.boards = ko.observableArray([]);
+	self.board = ko.observable();
+	self.newBoardModalVisible = ko.observable(false);
+	self.newBoardAccount = ko.observable();
+	self.newBoardName = ko.observable();
+	self.cards = ko.observableArray([]);
+
 	self.gotoSection = function(section) {
 		location.hash = section;
 	};
@@ -304,12 +341,17 @@ function TrineoViewModel() {
 
 	self.verifyAccount = function(account, event) {
 		alert('verify: ' + account.id, event);
+        $.ajax({
+            method: "POST",
+            url: "accounts/" + account.id + '/verify'
+        }).done(function() {
+        	self.getAccounts();
+        });
 	};
 	self.renameAccount = function(account, event) {
 		alert('rename: ' + account.id);
 	};
 	self.deleteAccount = function(account, event) {
-		alert('delete: ' + account.id);
         $.ajax({
             method: "DELETE",
             url: "accounts/" + account.id
@@ -320,7 +362,12 @@ function TrineoViewModel() {
 	self.addAccount = function() {
 		self.hideNewAccountModal()
 		var model = self.newAccount;
-		var values = "name=" + model.name() + "&service=" + model.service() + "&environment=" + model.environment();
+		var values;
+		if (model.service() == 'salesforce') {
+			var values = "name=" + model.name() + "&service=" + model.service() + "&environment=" + model.environment();
+		} else {
+			var values = "name=" + model.name() + "&service=" + model.service();
+		}
 		window.open("/accounts/oauth?" + values, "oauth", "width=600,height=600,scrollbars=yes")
 	};
 	self.showNewAccountModal = function() {
@@ -512,7 +559,47 @@ function TrineoViewModel() {
 			self.commits(data);
 		});
 	};
-	
+
+	self.getBoards = function() {
+		$.getJSON("/trello/boards/", function (data) {
+			var mapped = $.map(data, function(item) {
+				return new BoardModel(item)
+			});
+			self.boards(mapped);
+		});
+	};
+	self.showNewBoardModal = function() {
+		self.newBoardModalVisible(true);
+	};
+	self.hideNewBoardModal = function() {
+		self.newBoardModalVisible(false);
+	};
+	self.addBoard = function() {
+		self.hideNewBoardModal();
+        alert(self.newBoardAccount());
+        $.post("/trello/boards/?acc=" + self.newBoardAccount(), function() {
+        	self.getBoards();
+        });
+	};
+	self.getBoard = function(id) {
+		$.getJSON("/trello/boards/" + id, function (data) {
+			self.board(new BoardModel(data));
+		});
+	};
+	self.getLists = function(id) {
+		$.getJSON("/trello/boards/" + id + '/lists', function (data) {
+			var mapped = $.map(data, function(item) {
+				return new ListModel(item);
+			});
+			self.subSections(mapped);
+		});
+	};
+	self.getCards = function(id, list) {
+		$.getJSON("/trello/boards/" + id + '/cards?list=' + list, function (data) {
+			self.cards(data);
+		});
+	};
+
 	Sammy(function() {
 		this.get("#:section", function() {
 			var section = this.params.section;
@@ -531,15 +618,25 @@ function TrineoViewModel() {
 				self.getRepos();
 				self.getServiceAccounts("github");
 				self.repo(null);
+			} else if (section == 'Trello') {
+				self.getBoards();
+				self.getServiceAccounts("trello");
+				self.board(null);
 			}
 		});
 		this.get("#:section/:id", function() {
 			var section = this.params.section;
 			var id = this.params.id;
-			if (section == "Salesforce") {
-				this.app.runRoute('get', '#Salesforce/' + id + '/Overview');
-			} else if (section == "GitHub") {
-				this.app.runRoute("get", "#GitHub/" + id + "/Overview");
+			if (section == "Salesforce" || section == "GitHub") {
+				this.app.runRoute('get', '#' + section + '/' + id + '/Overview');
+			} else if (section == 'Trello') {
+				self.chosenSection(section);
+				self.orgs([]);
+				self.repos([]);
+				self.boards([]);
+				self.getBoard(id);
+				self.getLists(id);
+				self.getClients();
 			}
 		});
 		this.get("#:section/:id/:subsection", function() {
@@ -549,6 +646,7 @@ function TrineoViewModel() {
 			self.chosenSection(section);
 			self.orgs([]);
 			self.repos([]);
+			self.boards([]);
 			if (section == "Salesforce") {
 				self.getOrg(id);
 				self.subSections(["Overview", "Backups", "Metadata", "Tests", "Compare", "Compare Branch", "Compare Orgs"])
@@ -584,6 +682,12 @@ function TrineoViewModel() {
 				} else if (subsection == "Compare") {
 					self.getBranches(id);
 				}
+			} else if (section == "Trello") {
+				self.chosenSubsection(subsection);
+				self.getBoard(id);
+				self.getLists(id);
+				self.getClients();
+				self.getCards(id, subsection);
 			}
 		});
 

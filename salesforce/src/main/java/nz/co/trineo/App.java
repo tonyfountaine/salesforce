@@ -52,8 +52,10 @@ import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.salesforce.model.RunTestFailure;
 import nz.co.trineo.salesforce.model.RunTestSuccess;
 import nz.co.trineo.salesforce.model.RunTestsResult;
+import nz.co.trineo.trello.BoardDAO;
 import nz.co.trineo.trello.TrelloResource;
 import nz.co.trineo.trello.TrelloService;
+import nz.co.trineo.trello.model.Board;
 
 /**
  * Hello world!
@@ -65,7 +67,7 @@ public class App extends Application<AppConfiguration> {
 			AccountToken.class, Client.class, ConnectedAccount.class, Credentals.class, GitProcess.class, GitRepo.class,
 			GitTask.class, Backup.class, CodeCoverageResult.class, CodeCoverageWarning.class, CodeLocation.class,
 			Organization.class, RunTestFailure.class, RunTestsResult.class, RunTestSuccess.class, Repository.class,
-			Branch.class, Tag.class) {
+			Branch.class, Tag.class, Board.class) {
 		@Override
 		public DataSourceFactory getDataSourceFactory(final AppConfiguration configuration) {
 			return configuration.getDataSourceFactory();
@@ -110,6 +112,7 @@ public class App extends Application<AppConfiguration> {
 		final GitRepoDAO gitRepoDAO = new GitRepoDAO(sessionFactory);
 		final GitHubRepoDAO gitHubRepoDAO = new GitHubRepoDAO(sessionFactory);
 		final ClientDAO clientDAO = new ClientDAO(sessionFactory);
+		final BoardDAO boardDAO = new BoardDAO(sessionFactory);
 
 		final GitService gService = new GitService(configuration, processDAO, gitRepoDAO);
 		final ClientService clientService = new ClientService(clientDAO);
@@ -118,7 +121,7 @@ public class App extends Application<AppConfiguration> {
 		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService,
 				testRunDAO, backupDAO, sessionFactory, clientService, ghService);
 		final AccountService aService = new AccountService(accountDAO);
-		final TrelloService tService = new TrelloService(configuration, accountDAO);
+		final TrelloService tService = new TrelloService(configuration, accountDAO, boardDAO);
 
 		final GitResource gResource = new GitResource(gService);
 		final GitHubResource ghResource = new GitHubResource(ghService, aService, clientService);
