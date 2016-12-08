@@ -225,7 +225,9 @@
                     <artifactId>jflex-maven-plugin</artifactId>
                     <version>1.6.1</version>
                     <configuration>
-                        <lexDefinitions>${project.basedir}/src/main/java/nz/co/trineo/salesforce</lexDefinitions>
+                        <lexDefinitions>
+                        	<lexDefinition>${project.basedir}\src\main\java\nz\co\trineo\salesforce</lexDefinition>
+                        </lexDefinitions>
                         <backup>false</backup>
                     </configuration>
                 </plugin>

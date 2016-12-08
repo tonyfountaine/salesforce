@@ -81,6 +81,7 @@ public class GitHubService implements ConnectedService {
 	}
 
 	public Repository createRepo(final String repoURL, final int accId) throws GitHubServiceException {
+		log.info("repoURL: "+repoURL+", accId: " + accId);
 		final Repository repository = new Repository();
 		final ConnectedAccount account = credDAO.get(accId);
 

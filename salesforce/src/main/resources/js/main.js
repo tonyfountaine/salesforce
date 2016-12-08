@@ -534,7 +534,7 @@ function TrineoViewModel() {
 	self.addRepo = function() {
 		self.hideNewRepoModal();
         alert(self.newRepoAccount());
-        $.post("/github/repos/?acc=" + self.newRepoAccount(), function() {
+        $.post("/github/repos/?acc=" + self.newRepoAccount() + "&url=" + self.cloneURL(), function() {
         	self.getRepos();
         });
 	};
