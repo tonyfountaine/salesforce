@@ -14,6 +14,7 @@ import org.scribe.model.Verifier;
 import org.scribe.oauth.OAuthService;
 
 import com.julienvey.trello.Trello;
+import com.julienvey.trello.domain.Action;
 import com.julienvey.trello.domain.Argument;
 import com.julienvey.trello.domain.Board;
 import com.julienvey.trello.domain.Card;
@@ -110,16 +111,25 @@ public class TrelloService implements ConnectedService {
 		return boardCards;
 	}
 
+	public Card getCard(final String boardId, final String cardId) {
+		nz.co.trineo.trello.model.Board board = boardDAO.get(boardId);
+		final Trello trello = getTrello(board.getAccount());
+		final Card card = trello.getCard(cardId,
+				new Argument("fields", "name,idList,url,desc,labels,badges,shortLink,shortUrl"));
+		return card;
+	}
+
 	public List<TList> getLists(final String id) {
 		nz.co.trineo.trello.model.Board board = boardDAO.get(id);
 		final Trello trello = getTrello(board.getAccount());
 		return trello.getBoardLists(id);
 	}
 
-	public Card getCard(final String id, final int accId) {
-		final ConnectedAccount account = credDAO.get(accId);
-		final Trello trello = getTrello(account);
-		return trello.getCard(id);
+	public List<Action> getCardComments(final String boardId, final String cardId) {
+		nz.co.trineo.trello.model.Board board = boardDAO.get(boardId);
+		final Trello trello = getTrello(board.getAccount());
+		List<Action> cardActions = trello.getCardActions(cardId, new Argument("filter", "commentCard"));
+		return cardActions;
 	}
 
 	public String getClientId() {

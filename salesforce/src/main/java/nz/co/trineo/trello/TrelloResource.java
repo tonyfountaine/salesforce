@@ -13,6 +13,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
+import com.julienvey.trello.domain.Action;
 import com.julienvey.trello.domain.Card;
 import com.julienvey.trello.domain.Member;
 import com.julienvey.trello.domain.TList;
@@ -86,10 +87,19 @@ public class TrelloResource {
 
 	@GET
 	@Timed
-	@Path("/cards/{id}")
+	@Path("/boards/{boardId}/cards/{cardId}")
 	@UnitOfWork
-	public Response getCard(final @PathParam("id") String id, final @QueryParam("acc") int accId) {
-		final Card card = service.getCard(id, accId);
+	public Response getCard(final @PathParam("boardId") String id, final @PathParam("cardId") String cardId) {
+		final Card card = service.getCard(id, cardId);
 		return Response.ok(card).build();
+	}
+
+	@GET
+	@Timed
+	@Path("/boards/{boardId}/cards/{cardId}/comments")
+	@UnitOfWork
+	public Response getCardComments(final @PathParam("boardId") String id, final @PathParam("cardId") String cardId) {
+		final List<Action> cardComments = service.getCardComments(id, cardId);
+		return Response.ok(cardComments).build();
 	}
 }

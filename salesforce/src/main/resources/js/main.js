@@ -319,6 +319,8 @@ function TrineoViewModel() {
 	self.newBoardAccount = ko.observable();
 	self.newBoardName = ko.observable();
 	self.cards = ko.observableArray([]);
+	self.card = ko.observable();
+	self.cardComments = ko.observableArray([]);
 
 	self.gotoSection = function(section) {
 		location.hash = section;
@@ -599,6 +601,12 @@ function TrineoViewModel() {
 			self.cards(data);
 		});
 	};
+	self.chooseCard = function(data) {
+		self.card(data);
+		$.getJSON("/trello/boards/" + self.board().id + '/cards/' + data.id + '/comments', function (data) {
+			self.cardComments(data);
+		});
+	}
 
 	Sammy(function() {
 		this.get("#:section", function() {
@@ -688,6 +696,8 @@ function TrineoViewModel() {
 				self.getLists(id);
 				self.getClients();
 				self.getCards(id, subsection);
+				self.card(null);
+				self.cardComments([]);
 			}
 		});
 

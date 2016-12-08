@@ -259,3 +259,8 @@ a.edit {
 	border-bottom-left-radius: 0px;
 	border-top-left-radius: 0px;
 }
+
+.member-avatar {
+	height: 30px;
+	width: 30px;
+}
