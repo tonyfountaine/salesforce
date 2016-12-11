@@ -63,6 +63,10 @@ import nz.co.trineo.trello.model.Board;
  */
 public class App extends Application<AppConfiguration> {
 
+	public static void main(final String[] args) throws Exception {
+		new App().run(args);
+	}
+
 	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(
 			AccountToken.class, Client.class, ConnectedAccount.class, Credentals.class, GitProcess.class, GitRepo.class,
 			GitTask.class, Backup.class, CodeCoverageResult.class, CodeCoverageWarning.class, CodeLocation.class,
@@ -73,10 +77,6 @@ public class App extends Application<AppConfiguration> {
 			return configuration.getDataSourceFactory();
 		}
 	};
-
-	public static void main(final String[] args) throws Exception {
-		new App().run(args);
-	}
 
 	@Override
 	public String getName() {
@@ -121,7 +121,7 @@ public class App extends Application<AppConfiguration> {
 		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService,
 				testRunDAO, backupDAO, sessionFactory, clientService, ghService);
 		final AccountService aService = new AccountService(accountDAO);
-		final TrelloService tService = new TrelloService(configuration, accountDAO, boardDAO);
+		final TrelloService tService = new TrelloService(configuration, accountDAO, boardDAO, clientService);
 
 		final GitResource gResource = new GitResource(gService);
 		final GitHubResource ghResource = new GitHubResource(ghService, aService, clientService);

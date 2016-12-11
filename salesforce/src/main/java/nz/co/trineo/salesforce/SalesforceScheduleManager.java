@@ -34,12 +34,8 @@ public class SalesforceScheduleManager implements Managed {
 		this.salesforceService = salesforceService;
 	}
 
-	@Override
-	public void start() throws Exception {
-		scheduler = StdSchedulerFactory.getDefaultScheduler();
-		scheduler.start();
-		scheduleBackupJobs();
-		scheduleTestJobs();
+	private void scheduleBackupJob(final String orgId) throws SchedulerException {
+		scheduleJob(orgId, BackupJob.class);
 	}
 
 	private void scheduleBackupJobs() {
@@ -66,6 +62,25 @@ public class SalesforceScheduleManager implements Managed {
 		}
 	}
 
+	private <J extends Job> void scheduleJob(final String orgId, final Class<J> jobClass) throws SchedulerException {
+		final Schedule annotation = jobClass.getAnnotation(Schedule.class);
+		final String cron = annotation.cron();
+		final CronScheduleBuilder scheduleBuilder = CronScheduleBuilder.cronSchedule(cron);
+		final Trigger trigger = TriggerBuilder.newTrigger().withSchedule(scheduleBuilder).build();
+		final JobDataMap jdm = new JobDataMap();
+		jdm.put("sessionFactory", sessionFactory);
+		jdm.put("salesforceService", salesforceService);
+		jdm.put("orgId", orgId);
+		final JobBuilder jobBuilder = JobBuilder.newJob(jobClass).setJobData(jdm);
+		scheduler.scheduleJob(jobBuilder.build(), trigger);
+
+		log.info(String.format("    %-21s %s", cron, jobClass.getCanonicalName()));
+	}
+
+	private void scheduleTestJob(final String orgId) throws SchedulerException {
+		scheduleJob(orgId, TestsJob.class);
+	}
+
 	private void scheduleTestJobs() {
 		final Session session = sessionFactory.openSession();
 		try {
@@ -90,27 +105,12 @@ public class SalesforceScheduleManager implements Managed {
 		}
 	}
 
-	private void scheduleBackupJob(final String orgId) throws SchedulerException {
-		scheduleJob(orgId, BackupJob.class);
-	}
-
-	private void scheduleTestJob(final String orgId) throws SchedulerException {
-		scheduleJob(orgId, TestsJob.class);
-	}
-
-	private <J extends Job> void scheduleJob(final String orgId, final Class<J> jobClass) throws SchedulerException {
-		final Schedule annotation = jobClass.getAnnotation(Schedule.class);
-		final String cron = annotation.cron();
-		final CronScheduleBuilder scheduleBuilder = CronScheduleBuilder.cronSchedule(cron);
-		final Trigger trigger = TriggerBuilder.newTrigger().withSchedule(scheduleBuilder).build();
-		final JobDataMap jdm = new JobDataMap();
-		jdm.put("sessionFactory", sessionFactory);
-		jdm.put("salesforceService", salesforceService);
-		jdm.put("orgId", orgId);
-		final JobBuilder jobBuilder = JobBuilder.newJob(jobClass).setJobData(jdm);
-		scheduler.scheduleJob(jobBuilder.build(), trigger);
-
-		log.info(String.format("    %-21s %s", cron, jobClass.getCanonicalName()));
+	@Override
+	public void start() throws Exception {
+		scheduler = StdSchedulerFactory.getDefaultScheduler();
+		scheduler.start();
+		scheduleBackupJobs();
+		scheduleTestJobs();
 	}
 
 	@Override

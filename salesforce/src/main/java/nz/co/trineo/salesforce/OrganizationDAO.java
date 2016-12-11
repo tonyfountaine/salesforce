@@ -18,10 +18,23 @@ public class OrganizationDAO extends AbstractDAO<Organization> {
 		super(sessionFactory);
 	}
 
+	public void delete(final String id) {
+		final Organization org = get(id);
+		currentSession().delete(org);
+	}
+
+	public Organization findOrganization(final ConnectedAccount account) {
+		return uniqueResult(currentSession().createCriteria(getEntityClass()).add(Restrictions.eq("account", account)));
+	}
+
 	@Override
 	public Organization get(final Serializable id) {
 		final Organization organization = super.get(id);
 		return organization;
+	}
+
+	public List<Organization> listAll() {
+		return list(currentSession().createCriteria(getEntityClass()));
 	}
 
 	@Override
@@ -31,18 +44,5 @@ public class OrganizationDAO extends AbstractDAO<Organization> {
 			// currentSession().persist(entity.getBranch());
 		}
 		return super.persist(entity);
-	}
-
-	public void delete(final String id) {
-		final Organization org = get(id);
-		currentSession().delete(org);
-	}
-
-	public List<Organization> listAll() {
-		return list(currentSession().createCriteria(getEntityClass()));
-	}
-
-	public Organization findOrganization(final ConnectedAccount account) {
-		return uniqueResult(currentSession().createCriteria(getEntityClass()).add(Restrictions.eq("account", account)));
 	}
 }

@@ -45,58 +45,6 @@ public class Organization {
 	@JoinColumn(name = "CLIENT_ID")
 	private Client client;
 
-	@JsonProperty
-	public String getId() {
-		return id;
-	}
-
-	public void setId(final String id) {
-		this.id = id;
-	}
-
-	@JsonProperty
-	public String getName() {
-		return name;
-	}
-
-	public void setName(final String name) {
-		this.name = name;
-	}
-
-	@JsonProperty
-	public String getOrganizationType() {
-		return organizationType;
-	}
-
-	public void setOrganizationType(final String organizationType) {
-		this.organizationType = organizationType;
-	}
-
-	@JsonProperty
-	public boolean isSandbox() {
-		return sandbox;
-	}
-
-	public void setSandbox(final boolean sandbox) {
-		this.sandbox = sandbox;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (account == null ? 0 : account.hashCode());
-		result = prime * result + (backups == null ? 0 : backups.hashCode());
-		result = prime * result + (client == null ? 0 : client.hashCode());
-		result = prime * result + (id == null ? 0 : id.hashCode());
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + (nickName == null ? 0 : nickName.hashCode());
-		result = prime * result + (organizationType == null ? 0 : organizationType.hashCode());
-		result = prime * result + (sandbox ? 1231 : 1237);
-		result = prime * result + (testResults == null ? 0 : testResults.hashCode());
-		return result;
-	}
-
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj) {
@@ -176,17 +124,29 @@ public class Organization {
 		return account;
 	}
 
-	public void setAccount(final ConnectedAccount account) {
-		this.account = account;
+	@JsonIgnore
+	public List<Backup> getBackups() {
+		return backups;
 	}
 
 	@JsonIgnore
-	public List<RunTestsResult> getTestResults() {
-		return testResults;
+	public Branch getBranch() {
+		return branch;
 	}
 
-	public void setTestResults(final List<RunTestsResult> testResults) {
-		this.testResults = testResults;
+	@JsonProperty
+	public Client getClient() {
+		return client;
+	}
+
+	@JsonProperty
+	public String getId() {
+		return id;
+	}
+
+	@JsonProperty
+	public String getName() {
+		return name;
 	}
 
 	@JsonProperty
@@ -194,8 +154,75 @@ public class Organization {
 		return nickName;
 	}
 
+	@JsonProperty
+	public String getOrganizationType() {
+		return organizationType;
+	}
+
+	@JsonIgnore
+	public List<RunTestsResult> getTestResults() {
+		return testResults;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (account == null ? 0 : account.hashCode());
+		result = prime * result + (backups == null ? 0 : backups.hashCode());
+		result = prime * result + (client == null ? 0 : client.hashCode());
+		result = prime * result + (id == null ? 0 : id.hashCode());
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (nickName == null ? 0 : nickName.hashCode());
+		result = prime * result + (organizationType == null ? 0 : organizationType.hashCode());
+		result = prime * result + (sandbox ? 1231 : 1237);
+		result = prime * result + (testResults == null ? 0 : testResults.hashCode());
+		return result;
+	}
+
+	@JsonProperty
+	public boolean isSandbox() {
+		return sandbox;
+	}
+
+	public void setAccount(final ConnectedAccount account) {
+		this.account = account;
+	}
+
+	public void setBackups(final List<Backup> backups) {
+		this.backups = backups;
+	}
+
+	public void setBranch(final Branch branch) {
+		this.branch = branch;
+	}
+
+	public void setClient(final Client client) {
+		this.client = client;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
 	public void setNickName(final String nickName) {
 		this.nickName = nickName;
+	}
+
+	public void setOrganizationType(final String organizationType) {
+		this.organizationType = organizationType;
+	}
+
+	public void setSandbox(final boolean sandbox) {
+		this.sandbox = sandbox;
+	}
+
+	public void setTestResults(final List<RunTestsResult> testResults) {
+		this.testResults = testResults;
 	}
 
 	public void update(final Organization that) {
@@ -205,32 +232,5 @@ public class Organization {
 		if (that.client != null) {
 			client = that.client;
 		}
-	}
-
-	@JsonIgnore
-	public List<Backup> getBackups() {
-		return backups;
-	}
-
-	public void setBackups(final List<Backup> backups) {
-		this.backups = backups;
-	}
-
-	@JsonIgnore
-	public Branch getBranch() {
-		return branch;
-	}
-
-	public void setBranch(final Branch branch) {
-		this.branch = branch;
-	}
-
-	@JsonProperty
-	public Client getClient() {
-		return client;
-	}
-
-	public void setClient(final Client client) {
-		this.client = client;
 	}
 }

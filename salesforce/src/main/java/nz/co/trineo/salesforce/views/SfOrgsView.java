@@ -16,11 +16,11 @@ public class SfOrgsView extends View {
 		this.accounts = accounts;
 	}
 
-	public List<Organization> getOrgs() {
-		return orgs;
-	}
-
 	public List<ConnectedAccount> getAccounts() {
 		return accounts;
+	}
+
+	public List<Organization> getOrgs() {
+		return orgs;
 	}
 }

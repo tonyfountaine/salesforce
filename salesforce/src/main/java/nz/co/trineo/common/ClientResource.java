@@ -26,6 +26,7 @@ import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.views.ClientsView;
 import nz.co.trineo.github.model.Repository;
 import nz.co.trineo.salesforce.model.Organization;
+import nz.co.trineo.trello.model.Board;
 
 @Path("/clients")
 @Produces(MediaType.APPLICATION_JSON)
@@ -43,24 +44,6 @@ public class ClientResource {
 		this.clientService = clientService;
 	}
 
-	@GET
-	@Timed
-	@UnitOfWork
-	public Response listAccounts() {
-		final List<Client> list = clientService.list();
-		return Response.ok(list).build();
-	}
-
-	@GET
-	@Timed
-	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
-	public ClientsView listHTML() {
-		final List<Client> clients = clientService.list();
-		log.debug(clients);
-		return new ClientsView(clients);
-	}
-
 	@POST
 	@Timed
 	@UnitOfWork
@@ -70,27 +53,22 @@ public class ClientResource {
 		return clientService.create(client);
 	}
 
-	@GET
-	@Timed
-	@UnitOfWork
-	@Path("/{id}")
-	public Client read(final @PathParam("id") int id) {
-		return clientService.read(id);
-	}
-
-	@PUT
-	@Timed
-	@UnitOfWork
-	public Client update(final Client account) {
-		return clientService.update(account);
-	}
-
 	@DELETE
 	@Timed
 	@UnitOfWork
 	@Path("/{id}")
 	public void delete(final @PathParam("id") long id) {
 		clientService.delete(id);
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/{id}/boards")
+	public Response getBoards(final @PathParam("id") long id) {
+		final List<Board> boards = clientService.read(id).getBoards();
+		boards.size();
+		return Response.ok(boards).build();
 	}
 
 	@GET
@@ -111,5 +89,38 @@ public class ClientResource {
 		final List<Repository> repositories = clientService.read(id).getRepositories();
 		repositories.size();
 		return Response.ok(repositories).build();
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	public Response listAccounts() {
+		final List<Client> list = clientService.list();
+		return Response.ok(list).build();
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Produces(MediaType.TEXT_HTML)
+	public ClientsView listHTML() {
+		final List<Client> clients = clientService.list();
+		log.debug(clients);
+		return new ClientsView(clients);
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/{id}")
+	public Client read(final @PathParam("id") int id) {
+		return clientService.read(id);
+	}
+
+	@PUT
+	@Timed
+	@UnitOfWork
+	public Client update(final Client account) {
+		return clientService.update(account);
 	}
 }

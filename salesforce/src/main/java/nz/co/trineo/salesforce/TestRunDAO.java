@@ -15,10 +15,9 @@ public class TestRunDAO extends AbstractDAO<RunTestsResult> {
 		super(sessionFactory);
 	}
 
-	@Override
-	public RunTestsResult get(final Serializable id) {
-		final RunTestsResult organization = super.get(id);
-		return organization;
+	public void delete(final int id) {
+		final RunTestsResult org = get(id);
+		currentSession().delete(org);
 	}
 
 	public RunTestsResult find(final String runId) {
@@ -26,16 +25,17 @@ public class TestRunDAO extends AbstractDAO<RunTestsResult> {
 	}
 
 	@Override
-	public RunTestsResult persist(final RunTestsResult entity) throws HibernateException {
-		return super.persist(entity);
-	}
-
-	public void delete(final int id) {
-		final RunTestsResult org = get(id);
-		currentSession().delete(org);
+	public RunTestsResult get(final Serializable id) {
+		final RunTestsResult organization = super.get(id);
+		return organization;
 	}
 
 	public List<RunTestsResult> listAll() {
 		return list(currentSession().createCriteria(getEntityClass()));
+	}
+
+	@Override
+	public RunTestsResult persist(final RunTestsResult entity) throws HibernateException {
+		return super.persist(entity);
 	}
 }

@@ -23,35 +23,35 @@ public class GitProcess {
 	@Column
 	private int completedTasks;
 
+	public int getCompletedTasks() {
+		return completedTasks;
+	}
+
 	public int getId() {
 		return id;
-	}
-
-	public void setId(final int id) {
-		this.id = id;
-	}
-
-	public int getTotalTasks() {
-		return totalTasks;
-	}
-
-	public void setTotalTasks(final int totalTasks) {
-		this.totalTasks = totalTasks;
 	}
 
 	public GitTask getTask() {
 		return task;
 	}
 
-	public void setTask(final GitTask task) {
-		this.task = task;
-	}
-
-	public int getCompletedTasks() {
-		return completedTasks;
+	public int getTotalTasks() {
+		return totalTasks;
 	}
 
 	public void setCompletedTasks(final int completedTasks) {
 		this.completedTasks = completedTasks;
+	}
+
+	public void setId(final int id) {
+		this.id = id;
+	}
+
+	public void setTask(final GitTask task) {
+		this.task = task;
+	}
+
+	public void setTotalTasks(final int totalTasks) {
+		this.totalTasks = totalTasks;
 	}
 }

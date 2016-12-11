@@ -24,22 +24,22 @@ public class RunTestFailure extends RunTestMessage {
 		return message;
 	}
 
-	public void setMessage(final String message) {
-		this.message = message;
-	}
-
 	@JsonProperty
 	public String getStackTrace() {
 		return stackTrace;
 	}
 
-	public void setStackTrace(final String stackTrace) {
-		this.stackTrace = stackTrace;
-	}
-
 	@JsonProperty
 	public String getType() {
 		return type;
+	}
+
+	public void setMessage(final String message) {
+		this.message = message;
+	}
+
+	public void setStackTrace(final String stackTrace) {
+		this.stackTrace = stackTrace;
 	}
 
 	public void setType(final String type) {

@@ -5,7 +5,16 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -40,6 +49,44 @@ import nz.co.trineo.salesforce.views.SfOrgsView;
 @Consumes(MediaType.APPLICATION_JSON)
 public class SalesforceResource {
 
+	public static class AccountView {
+		public int id;
+		public String service;
+		public String name;
+
+		public AccountView(final ConnectedAccount account) {
+			id = account.getId();
+			service = account.getService();
+			name = account.getName();
+		}
+	}
+
+	public static class BranchView {
+		public long id;
+		public String sha;
+		public String name;
+		public String url;
+		public RepositoryView repo;
+
+		public BranchView(final Branch branch) {
+			id = branch.getId();
+			sha = branch.getSha();
+			name = branch.getName();
+			url = branch.getUrl();
+			repo = new RepositoryView(branch.getRepo());
+		}
+	}
+
+	public static class ClientView {
+		public long id;
+		public String name;
+
+		public ClientView(final Client client) {
+			id = client.getId();
+			name = client.getName();
+		}
+	}
+
 	public static class OrganizationView {
 		public String id;
 		public String name;
@@ -68,22 +115,6 @@ public class SalesforceResource {
 		}
 	}
 
-	public static class BranchView {
-		public long id;
-		public String sha;
-		public String name;
-		public String url;
-		public RepositoryView repo;
-
-		public BranchView(final Branch branch) {
-			id = branch.getId();
-			sha = branch.getSha();
-			name = branch.getName();
-			url = branch.getUrl();
-			repo = new RepositoryView(branch.getRepo());
-		}
-	}
-
 	public static class RepositoryView {
 		public int id;
 		public String name;
@@ -93,28 +124,6 @@ public class SalesforceResource {
 			id = repository.getId();
 			name = repository.getName();
 			cloneURL = repository.getCloneURL();
-		}
-	}
-
-	public static class ClientView {
-		public long id;
-		public String name;
-
-		public ClientView(final Client client) {
-			id = client.getId();
-			name = client.getName();
-		}
-	}
-
-	public static class AccountView {
-		public int id;
-		public String service;
-		public String name;
-
-		public AccountView(final ConnectedAccount account) {
-			id = account.getId();
-			service = account.getService();
-			name = account.getName();
 		}
 	}
 
@@ -130,32 +139,6 @@ public class SalesforceResource {
 		this.clientService = clientService;
 	}
 
-	@GET
-	@Path("/orgs")
-	@Timed
-	@UnitOfWork
-	public Response getOrgs() {
-		final List<Organization> orgs = salesforceService.listOrgs();
-		final List<OrganizationView> views = new ArrayList<>();
-		orgs.forEach(o -> {
-			final OrganizationView v = new OrganizationView(o);
-			views.add(v);
-		});
-		return Response.ok(views).build();
-	}
-
-	@GET
-	@Path("/orgs")
-	@Timed
-	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
-	public Response getOrgsHTML() {
-		final List<Organization> orgs = salesforceService.listOrgs();
-		final List<ConnectedAccount> accounts = accountService.byService(salesforceService.getName().toLowerCase());
-		final SfOrgsView view = new SfOrgsView(orgs, accounts);
-		return Response.ok(view).build();
-	}
-
 	@POST
 	@Path("/orgs")
 	@Timed
@@ -165,23 +148,23 @@ public class SalesforceResource {
 		return Response.created(UriBuilder.fromMethod(getClass(), "getOrg").build(org.getId())).entity(org).build();
 	}
 
-	@PUT
-	@Path("/orgs")
+	@POST
+	@Path("/orgs/{id}/backups")
 	@Timed
 	@UnitOfWork
-	public Response updateOrg(final Organization org) throws SalesforceException {
-		final Organization updatedOrg = salesforceService.updateOrg(org);
-		return Response.ok(updatedOrg).build();
+	public Response createBackup(final @PathParam("id") String id) throws SalesforceException {
+		final Backup backup = salesforceService.createBackup(id);
+		return Response.ok(backup).build();
 	}
 
-	@GET
-	@Path("/orgs/{id}")
+	@DELETE
+	@Path("/orgs/{id}/backups/{backupId}")
 	@Timed
 	@UnitOfWork
-	public Response getOrg(final @PathParam("id") String id) throws SalesforceException {
-		final Organization org = salesforceService.getOrg(id);
-		final OrganizationView view = new OrganizationView(org);
-		return Response.ok(view).build();
+	public Response deleteBackup(final @PathParam("id") String id, final @PathParam("backupId") int backupId)
+			throws SalesforceException {
+		salesforceService.deleteBackup(id, backupId);
+		return Response.noContent().build();
 	}
 
 	@DELETE
@@ -191,38 +174,6 @@ public class SalesforceResource {
 	public Response deleteOrg(final @PathParam("id") String id) throws SalesforceException {
 		salesforceService.deleteOrg(id);
 		return Response.noContent().build();
-	}
-
-	@GET
-	@Path("/orgs/{id}")
-	@Timed
-	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
-	public Response getOrgHtml(final @PathParam("id") String id) throws SalesforceException {
-		final Organization org = salesforceService.getOrg(id);
-		final List<Backup> backups = org.getBackups();
-		final List<RunTestsResult> tests = org.getTestResults();
-		tests.size();
-		final List<Client> clients = clientService.list();
-		final List<Branch> branches = new ArrayList<>();
-		if (org.getClient() != null && org.getClient().getRepositories() != null) {
-			org.getClient().getRepositories().forEach(r -> {
-				r.getBranches().forEach(b -> {
-					branches.add(b);
-				});
-			});
-		}
-		final SfOrgView view = new SfOrgView(org, backups, tests, clients, branches);
-		return Response.ok(view).build();
-	}
-
-	@GET
-	@Timed
-	@UnitOfWork
-	@Path("/orgs/{id}/branch")
-	public Response getOrgBranch(final @PathParam("id") String id) throws SalesforceException {
-		final Organization org = salesforceService.getOrg(id);
-		return Response.ok(org.getBranch()).build();
 	}
 
 	@GET
@@ -258,12 +209,45 @@ public class SalesforceResource {
 	}
 
 	@GET
-	@Path("/orgs/{id}/metadata")
+	@Path("/orgs/{id}/backups/{backupId}")
 	@Timed
 	@UnitOfWork
-	public Response getMetadataTree(final @PathParam("id") String id) throws SalesforceException {
-		final TreeNode metadataNode = salesforceService.getMetadataTree(id);
-		return Response.ok(metadataNode).build();
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public Response downloadBackup(final @PathParam("id") String id, final @PathParam("backupId") int backupId)
+			throws SalesforceException {
+		final Backup b = salesforceService.getBackup(backupId);
+		final InputStream in = salesforceService.downloadBackup(id, backupId);
+		final StreamingOutput stream = output -> {
+			try {
+				IOUtils.copy(in, output);
+			} catch (final Exception e) {
+				throw new WebApplicationException(e);
+			}
+		};
+
+		return Response.ok(stream).header("content-disposition", "attachment; filename = " + b.getName() + ".zip")
+				.build();
+	}
+
+	@GET
+	@Path("/orgs/{id}/backups/{backupId}")
+	@Timed
+	@UnitOfWork
+	public Response getBackup(final @PathParam("id") String id, final @PathParam("backupId") int backupId)
+			throws SalesforceException {
+		final Backup b = salesforceService.getBackup(backupId);
+		return Response.ok(b).build();
+	}
+
+	@GET
+	@Path("/orgs/{id}/coverage")
+	@Timed
+	@UnitOfWork
+	@Produces({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
+	public Response getCodeCoverage(final @PathParam("id") String id) throws SalesforceException {
+		final List<CodeCoverageResult> coverage = salesforceService.getCodeCoverage(id);
+		final CoverageView view = new CoverageView(coverage);
+		return Response.ok(view).build();
 	}
 
 	@GET
@@ -298,13 +282,90 @@ public class SalesforceResource {
 		return Response.ok(view).build();
 	}
 
-	@POST
-	@Path("/orgs/{id}/backups")
+	@GET
+	@Path("/orgs/{id}/metadata")
 	@Timed
 	@UnitOfWork
-	public Response createBackup(final @PathParam("id") String id) throws SalesforceException {
-		final Backup backup = salesforceService.createBackup(id);
-		return Response.ok(backup).build();
+	public Response getMetadataTree(final @PathParam("id") String id) throws SalesforceException {
+		final TreeNode metadataNode = salesforceService.getMetadataTree(id);
+		return Response.ok(metadataNode).build();
+	}
+
+	@GET
+	@Path("/orgs/{id}")
+	@Timed
+	@UnitOfWork
+	public Response getOrg(final @PathParam("id") String id) throws SalesforceException {
+		final Organization org = salesforceService.getOrg(id);
+		final OrganizationView view = new OrganizationView(org);
+		return Response.ok(view).build();
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/orgs/{id}/branch")
+	public Response getOrgBranch(final @PathParam("id") String id) throws SalesforceException {
+		final Organization org = salesforceService.getOrg(id);
+		return Response.ok(org.getBranch()).build();
+	}
+
+	@GET
+	@Path("/orgs/{id}")
+	@Timed
+	@UnitOfWork
+	@Produces(MediaType.TEXT_HTML)
+	public Response getOrgHtml(final @PathParam("id") String id) throws SalesforceException {
+		final Organization org = salesforceService.getOrg(id);
+		final List<Backup> backups = org.getBackups();
+		final List<RunTestsResult> tests = org.getTestResults();
+		tests.size();
+		final List<Client> clients = clientService.list();
+		final List<Branch> branches = new ArrayList<>();
+		if (org.getClient() != null && org.getClient().getRepositories() != null) {
+			org.getClient().getRepositories().forEach(r -> {
+				r.getBranches().forEach(b -> {
+					branches.add(b);
+				});
+			});
+		}
+		final SfOrgView view = new SfOrgView(org, backups, tests, clients, branches);
+		return Response.ok(view).build();
+	}
+
+	@GET
+	@Path("/orgs")
+	@Timed
+	@UnitOfWork
+	public Response getOrgs() {
+		final List<Organization> orgs = salesforceService.listOrgs();
+		final List<OrganizationView> views = new ArrayList<>();
+		orgs.forEach(o -> {
+			final OrganizationView v = new OrganizationView(o);
+			views.add(v);
+		});
+		return Response.ok(views).build();
+	}
+
+	@GET
+	@Path("/orgs")
+	@Timed
+	@UnitOfWork
+	@Produces(MediaType.TEXT_HTML)
+	public Response getOrgsHTML() {
+		final List<Organization> orgs = salesforceService.listOrgs();
+		final List<ConnectedAccount> accounts = accountService.byService(salesforceService.getName().toLowerCase());
+		final SfOrgsView view = new SfOrgsView(orgs, accounts);
+		return Response.ok(view).build();
+	}
+
+	@GET
+	@Path("/orgs/{id}/tests")
+	@Timed
+	@UnitOfWork
+	public Response getTestTree(final @PathParam("id") String id) throws SalesforceException {
+		final TreeNode metadataNode = salesforceService.getTestTree(id);
+		return Response.ok(metadataNode).build();
 	}
 
 	@GET
@@ -318,53 +379,10 @@ public class SalesforceResource {
 	}
 
 	@GET
-	@Path("/orgs/{id}/backups/{backupId}")
 	@Timed
-	@UnitOfWork
-	public Response getBackup(final @PathParam("id") String id, final @PathParam("backupId") int backupId)
-			throws SalesforceException {
-		final Backup b = salesforceService.getBackup(backupId);
-		return Response.ok(b).build();
-	}
-
-	@GET
-	@Path("/orgs/{id}/backups/{backupId}")
-	@Timed
-	@UnitOfWork
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public Response downloadBackup(final @PathParam("id") String id, final @PathParam("backupId") int backupId)
-			throws SalesforceException {
-		final Backup b = salesforceService.getBackup(backupId);
-		final InputStream in = salesforceService.downloadBackup(id, backupId);
-		final StreamingOutput stream = output -> {
-			try {
-				IOUtils.copy(in, output);
-			} catch (final Exception e) {
-				throw new WebApplicationException(e);
-			}
-		};
-
-		return Response.ok(stream).header("content-disposition", "attachment; filename = " + b.getName() + ".zip")
-				.build();
-	}
-
-	@DELETE
-	@Path("/orgs/{id}/backups/{backupId}")
-	@Timed
-	@UnitOfWork
-	public Response deleteBackup(final @PathParam("id") String id, final @PathParam("backupId") int backupId)
-			throws SalesforceException {
-		salesforceService.deleteBackup(id, backupId);
-		return Response.noContent().build();
-	}
-
-	@GET
-	@Path("/orgs/{id}/tests")
-	@Timed
-	@UnitOfWork
-	public Response getTestTree(final @PathParam("id") String id) throws SalesforceException {
-		final TreeNode metadataNode = salesforceService.getTestTree(id);
-		return Response.ok(metadataNode).build();
+	@Path("/environments")
+	public Response listEnvironments() {
+		return Response.ok(EnumSet.allOf(Environment.class)).build();
 	}
 
 	@POST
@@ -388,21 +406,12 @@ public class SalesforceResource {
 		return Response.ok(runTests).build();
 	}
 
-	@GET
-	@Path("/orgs/{id}/coverage")
+	@PUT
+	@Path("/orgs")
 	@Timed
 	@UnitOfWork
-	@Produces({ MediaType.TEXT_HTML, MediaType.APPLICATION_JSON })
-	public Response getCodeCoverage(final @PathParam("id") String id) throws SalesforceException {
-		final List<CodeCoverageResult> coverage = salesforceService.getCodeCoverage(id);
-		final CoverageView view = new CoverageView(coverage);
-		return Response.ok(view).build();
-	}
-
-	@GET
-	@Timed
-	@Path("/environments")
-	public Response listEnvironments() {
-		return Response.ok(EnumSet.allOf(Environment.class)).build();
+	public Response updateOrg(final Organization org) throws SalesforceException {
+		final Organization updatedOrg = salesforceService.updateOrg(org);
+		return Response.ok(updatedOrg).build();
 	}
 }

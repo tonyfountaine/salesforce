@@ -31,17 +31,9 @@ public class CodeLocation {
 		return column;
 	}
 
-	public void setColumn(final int column) {
-		this.column = column;
-	}
-
 	@JsonProperty
 	public int getLine() {
 		return line;
-	}
-
-	public void setLine(final int line) {
-		this.line = line;
 	}
 
 	@JsonProperty
@@ -49,13 +41,21 @@ public class CodeLocation {
 		return numExecutions;
 	}
 
-	public void setNumExecutions(final int numExecutions) {
-		this.numExecutions = numExecutions;
-	}
-
 	@JsonProperty
 	public double getTime() {
 		return time;
+	}
+
+	public void setColumn(final int column) {
+		this.column = column;
+	}
+
+	public void setLine(final int line) {
+		this.line = line;
+	}
+
+	public void setNumExecutions(final int numExecutions) {
+		this.numExecutions = numExecutions;
 	}
 
 	public void setTime(final double time) {

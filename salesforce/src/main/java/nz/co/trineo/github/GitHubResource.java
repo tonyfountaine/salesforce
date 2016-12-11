@@ -40,24 +40,6 @@ import nz.co.trineo.salesforce.model.TreeNode;
 @Consumes(MediaType.APPLICATION_JSON)
 public class GitHubResource {
 
-	public static class RepositoryView {
-		public int id;
-		public String name;
-		public String cloneURL;
-		public List<BranchView> branches;
-
-		public RepositoryView(final Repository repository) {
-			id = repository.getId();
-			name = repository.getName();
-			cloneURL = repository.getCloneURL();
-			branches = new ArrayList<>();
-			repository.getBranches().forEach(b -> {
-				final BranchView bv = new BranchView(b);
-				branches.add(bv);
-			});
-		}
-	}
-
 	public static class BranchView {
 		public long id;
 		public String sha;
@@ -92,6 +74,24 @@ public class GitHubResource {
 		}
 	}
 
+	public static class RepositoryView {
+		public int id;
+		public String name;
+		public String cloneURL;
+		public List<BranchView> branches;
+
+		public RepositoryView(final Repository repository) {
+			id = repository.getId();
+			name = repository.getName();
+			cloneURL = repository.getCloneURL();
+			branches = new ArrayList<>();
+			repository.getBranches().forEach(b -> {
+				final BranchView bv = new BranchView(b);
+				branches.add(bv);
+			});
+		}
+	}
+
 	private final GitHubService ghService;
 	private final AccountService accountService;
 	private final ClientService clientService;
@@ -103,24 +103,66 @@ public class GitHubResource {
 		this.clientService = clientService;
 	}
 
-	@GET
+	@POST
 	@Timed
 	@Path("/repos")
 	@UnitOfWork
-	public Response getRepos() throws GitHubServiceException {
-		final List<Repository> list = ghService.getRepos();
-		final List<ConnectedAccount> accounts = accountService.byService(ghService.getName().toLowerCase());
-		final ReposView view = new ReposView(list, accounts);
+	public Response cloneRepo(final @QueryParam("acc") int accId, final @QueryParam("url") String url)
+			throws GitHubServiceException {
+		final Repository repo = ghService.createRepo(url, accId);
+		return Response.ok(repo).build();
+	}
+
+	@GET
+	@Timed
+	@Path("/branches/{id}/compare/{compareId}")
+	@UnitOfWork
+	public Response compareBranches(final @PathParam("id") long id, final @PathParam("compareId") long compareId)
+			throws GitHubServiceException {
+		final List<GitDiff> list = ghService.diffBranches(id, compareId);
+		final TreeNode diffTree = ghService.getDiffTree(list);
+		final CompareView view = new CompareView(list, diffTree);
 		return Response.ok(view).build();
 	}
 
-	@PUT
-	@Path("/repos")
+	@DELETE
 	@Timed
+	@Path("/repos/{id}")
 	@UnitOfWork
-	public Response updateRepo(final Repository repo) throws SalesforceException {
-		final Repository updatedRepo = ghService.updateRepo(repo);
-		return Response.ok(updatedRepo).build();
+	public void deleteRepo(final @PathParam("id") int id) {
+		ghService.deleteRepo(id);
+	}
+
+	@GET
+	@Timed
+	@Path("/repos/{id}/branches")
+	@UnitOfWork
+	public Response getBranches(final @PathParam("id") int id) throws GitHubServiceException {
+		final List<Branch> branches = ghService.getBranches(id);
+		final List<BranchView> list = new ArrayList<>();
+		branches.forEach(b -> {
+			list.add(new BranchView(b));
+		});
+		return Response.ok(list).build();
+	}
+
+	@GET
+	@Timed
+	@Path("/repos/{id}/commits/{sha1}")
+	@UnitOfWork
+	public Response getCommit(final @PathParam("id") int id, final @PathParam("sha1") String sha1)
+			throws GitHubServiceException {
+		final RepositoryCommit commit = ghService.getCommit(id, sha1);
+		return Response.ok(commit).build();
+	}
+
+	@GET
+	@Timed
+	@Path("/repos/{id}/commits")
+	@UnitOfWork
+	public Response getCommits(final @PathParam("id") int id) throws GitHubServiceException {
+		final List<String> commits = ghService.getCommits(id);
+		return Response.ok(commits).build();
 	}
 
 	@GET
@@ -139,26 +181,12 @@ public class GitHubResource {
 
 	@GET
 	@Timed
-	@Path("/repos/{id}/branches")
+	@Path("/repos")
 	@UnitOfWork
-	public Response getBranches(final @PathParam("id") int id) throws GitHubServiceException {
-		final List<Branch> branches = ghService.getBranches(id);
-		final List<BranchView> list = new ArrayList<>();
-		branches.forEach(b -> {
-			list.add(new BranchView(b));
-		});
-		return Response.ok(list).build();
-	}
-
-	@GET
-	@Timed
-	@Path("/branches/{id}/compare/{compareId}")
-	@UnitOfWork
-	public Response compareBranches(final @PathParam("id") long id, final @PathParam("compareId") long compareId)
-			throws GitHubServiceException {
-		final List<GitDiff> list = ghService.diffBranches(id, compareId);
-		final TreeNode diffTree = ghService.getDiffTree(list);
-		final CompareView view = new CompareView(list, diffTree);
+	public Response getRepos() throws GitHubServiceException {
+		final List<Repository> list = ghService.getRepos();
+		final List<ConnectedAccount> accounts = accountService.byService(ghService.getName().toLowerCase());
+		final ReposView view = new ReposView(list, accounts);
 		return Response.ok(view).build();
 	}
 
@@ -171,40 +199,12 @@ public class GitHubResource {
 		return Response.ok(tags).build();
 	}
 
-	@GET
-	@Timed
-	@Path("/repos/{id}/commits")
-	@UnitOfWork
-	public Response getCommits(final @PathParam("id") int id) throws GitHubServiceException {
-		final List<String> commits = ghService.getCommits(id);
-		return Response.ok(commits).build();
-	}
-
-	@GET
-	@Timed
-	@Path("/repos/{id}/commits/{sha1}")
-	@UnitOfWork
-	public Response getCommit(final @PathParam("id") int id, final @PathParam("sha1") String sha1)
-			throws GitHubServiceException {
-		final RepositoryCommit commit = ghService.getCommit(id, sha1);
-		return Response.ok(commit).build();
-	}
-
-	@POST
-	@Timed
+	@PUT
 	@Path("/repos")
-	@UnitOfWork
-	public Response cloneRepo(final @QueryParam("acc") int accId, final @QueryParam("url") String url)
-			throws GitHubServiceException {
-		final Repository repo = ghService.createRepo(url, accId);
-		return Response.ok(repo).build();
-	}
-
-	@DELETE
 	@Timed
-	@Path("/repos/{id}")
 	@UnitOfWork
-	public void deleteRepo(final @PathParam("id") int id) {
-		ghService.deleteRepo(id);
+	public Response updateRepo(final Repository repo) throws SalesforceException {
+		final Repository updatedRepo = ghService.updateRepo(repo);
+		return Response.ok(updatedRepo).build();
 	}
 }

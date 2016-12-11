@@ -191,6 +191,22 @@ function RepoModel(repo) {
         	self.diffData(temp2);
         });
 	};
+	self.updateClientName = function() {
+        var clients = ko.unwrap(mainModel.clients());
+        clients.forEach(function(c) {
+        	if (c.name == self.clientName()) {
+        		self.clientId = c.id;
+        	}
+        });
+        var data = JSON.stringify({id: self.id, client: {id: self.clientId}});
+        $.ajax({
+            data: data,
+            method: "PUT",
+            url: "/github/repos/",
+            contentType: "application/json",
+            dataType: "json"
+        });
+	};
 };
 
 function BranchModel(branch) {
@@ -231,6 +247,22 @@ function BoardModel(board) {
         	mainModel.getBoards();
         });
 	};
+	self.updateClientName = function() {
+        var clients = ko.unwrap(mainModel.clients());
+        clients.forEach(function(c) {
+        	if (c.name == self.clientName()) {
+        		self.clientId = c.id;
+        	}
+        });
+        var data = JSON.stringify({id: self.id, client: {id: self.clientId}});
+        $.ajax({
+            data: data,
+            method: "PUT",
+            url: "/trello/boards/",
+            contentType: "application/json",
+            dataType: "json"
+        });
+	};
 };
 
 function ListModel(list) {
@@ -238,6 +270,42 @@ function ListModel(list) {
 	self.name = list.name;
 	self.id = list.id;
 };
+
+function CardModel(org) {
+	var self = this;
+	self.id = org.id;
+	self.desc = org.desc;
+	self.labels = org.labels;
+	var labelEx = /\{(.+)\}/g;
+	var pointsEx = /\((\d+)\)/;
+    while (m = labelEx.exec(org.name)) {
+        self.labels.push({ name: m[1], color: 'blue' });
+    }
+    if (m = pointsEx.exec(org.name)) {
+        self.points = m[1];
+    } else {
+    	self.points = null;
+    }
+	self.name = org.name.replace(labelEx, '').replace(pointsEx, '');
+	if (org.branch != null) {
+		self.branchName = org.branch.name;
+		self.branchId = ko.editable(org.branch.id);
+		self.branchRepoName = org.branch.repo.name;
+	} else {
+		self.branchId = ko.editable();
+	}
+	self.updateBranchName = function() {
+/*        var data = JSON.stringify({id: self.id, branch: {id: self.branchId()}});
+        $.ajax({
+            data: data,
+            method: "PUT",
+            url: "/sf/orgs/",
+            contentType: "application/json",
+            dataType: "json"
+        });*/
+	};
+};
+
 function formatGitHeader(header) {
 	if (header != undefined) {
 		switch (header.end) {
@@ -263,6 +331,14 @@ function getTreeFilename(tree, selectedNodes) {
 	}
 	return filename;
 };
+
+function extension(name) {
+	var i = name.lastIndexOf('.');
+	if (i > 0) {
+		return name.substring(i + 1);
+	}
+	return name;
+}
 
 function TrineoViewModel() {
 	var self = this;
@@ -321,6 +397,7 @@ function TrineoViewModel() {
 	self.cards = ko.observableArray([]);
 	self.card = ko.observable();
 	self.cardComments = ko.observableArray([]);
+	self.cardAttachments = ko.observableArray([]);
 
 	self.gotoSection = function(section) {
 		location.hash = section;
@@ -394,6 +471,9 @@ function TrineoViewModel() {
 				});
 				$.getJSON("/clients/" + c.id + "/repos", function(data) {
 					c.repositories(data);
+				});
+				$.getJSON("/clients/" + c.id + "/boards", function(data) {
+					c.boards(data);
 				});
 			});
 		});
@@ -586,6 +666,7 @@ function TrineoViewModel() {
 	self.getBoard = function(id) {
 		$.getJSON("/trello/boards/" + id, function (data) {
 			self.board(new BoardModel(data));
+			self.getClientBranches(self.board().clientId);
 		});
 	};
 	self.getLists = function(id) {
@@ -598,13 +679,19 @@ function TrineoViewModel() {
 	};
 	self.getCards = function(id, list) {
 		$.getJSON("/trello/boards/" + id + '/cards?list=' + list, function (data) {
-			self.cards(data);
+			var mapped = $.map(data, function(item) {
+				return new CardModel(item)
+			});
+			self.cards(mapped);
 		});
 	};
 	self.chooseCard = function(data) {
 		self.card(data);
 		$.getJSON("/trello/boards/" + self.board().id + '/cards/' + data.id + '/comments', function (data) {
 			self.cardComments(data);
+		});
+		$.getJSON("/trello/boards/" + self.board().id + '/cards/' + data.id + '/attachments', function (data) {
+			self.cardAttachments(data);
 		});
 	}
 
@@ -635,16 +722,8 @@ function TrineoViewModel() {
 		this.get("#:section/:id", function() {
 			var section = this.params.section;
 			var id = this.params.id;
-			if (section == "Salesforce" || section == "GitHub") {
+			if (section == "Salesforce" || section == "GitHub" || section == "Trello") {
 				this.app.runRoute('get', '#' + section + '/' + id + '/Overview');
-			} else if (section == 'Trello') {
-				self.chosenSection(section);
-				self.orgs([]);
-				self.repos([]);
-				self.boards([]);
-				self.getBoard(id);
-				self.getLists(id);
-				self.getClients();
 			}
 		});
 		this.get("#:section/:id/:subsection", function() {
@@ -695,7 +774,9 @@ function TrineoViewModel() {
 				self.getBoard(id);
 				self.getLists(id);
 				self.getClients();
-				self.getCards(id, subsection);
+				if (subsection != "Overview") {
+					self.getCards(id, subsection);
+				}
 				self.card(null);
 				self.cardComments([]);
 			}

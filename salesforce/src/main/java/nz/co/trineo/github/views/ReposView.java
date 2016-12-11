@@ -16,11 +16,11 @@ public class ReposView extends View {
 		this.accounts = accounts;
 	}
 
-	public List<Repository> getRepos() {
-		return repos;
-	}
-
 	public List<ConnectedAccount> getAccounts() {
 		return accounts;
+	}
+
+	public List<Repository> getRepos() {
+		return repos;
 	}
 }

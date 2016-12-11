@@ -48,31 +48,9 @@ public class AppConfiguration extends Configuration {
 	private String githubClientId;
 	private String githubClientSecret;
 
-	@JsonProperty("database")
-	public DataSourceFactory getDataSourceFactory() {
-		return database;
-	}
-
-	public void setDataSourceFactory(final DataSourceFactory factory) {
-		database = factory;
-	}
-
 	@JsonProperty
-	public File getGitDirectory() {
-		return gitDirectory;
-	}
-
-	public void setGitDirectory(final File gitDirectory) {
-		this.gitDirectory = gitDirectory;
-	}
-
-	@JsonProperty
-	public File getSalesforceDirectory() {
-		return salesforceDirectory;
-	}
-
-	public void setSalesforceDirectory(final File salesforceDirectory) {
-		this.salesforceDirectory = salesforceDirectory;
+	public String getApiVersion() {
+		return apiVersion;
 	}
 
 	@JsonProperty
@@ -80,17 +58,9 @@ public class AppConfiguration extends Configuration {
 		return backupDirectory;
 	}
 
-	public void setBackupDirectory(final File backupDirectory) {
-		this.backupDirectory = backupDirectory;
-	}
-
 	@JsonProperty
 	public String getClientKey() {
 		return clientKey;
-	}
-
-	public void setClientKey(final String clientKey) {
-		this.clientKey = clientKey;
 	}
 
 	@JsonProperty
@@ -98,17 +68,34 @@ public class AppConfiguration extends Configuration {
 		return clientSecret;
 	}
 
-	public void setClientSecret(final String clientSecret) {
-		this.clientSecret = clientSecret;
+	@JsonProperty("database")
+	public DataSourceFactory getDataSourceFactory() {
+		return database;
 	}
 
 	@JsonProperty
-	public String getApiVersion() {
-		return apiVersion;
+	public File getGitDirectory() {
+		return gitDirectory;
 	}
 
-	public void setApiVersion(final String apiVersion) {
-		this.apiVersion = apiVersion;
+	@JsonProperty
+	public String getGithubClientId() {
+		return githubClientId;
+	}
+
+	@JsonProperty
+	public String getGithubClientSecret() {
+		return githubClientSecret;
+	}
+
+	@JsonProperty
+	public File getGithubDirectory() {
+		return githubDirectory;
+	}
+
+	@JsonProperty
+	public File getSalesforceDirectory() {
+		return salesforceDirectory;
 	}
 
 	@JsonProperty
@@ -116,17 +103,33 @@ public class AppConfiguration extends Configuration {
 		return trelloKey;
 	}
 
-	public void setTrelloKey(final String trelloKey) {
-		this.trelloKey = trelloKey;
-	}
-
 	@JsonProperty
 	public String getTrelloSecret() {
 		return trelloSecret;
 	}
 
-	public void setTrelloSecret(final String trelloSecret) {
-		this.trelloSecret = trelloSecret;
+	public void setApiVersion(final String apiVersion) {
+		this.apiVersion = apiVersion;
+	}
+
+	public void setBackupDirectory(final File backupDirectory) {
+		this.backupDirectory = backupDirectory;
+	}
+
+	public void setClientKey(final String clientKey) {
+		this.clientKey = clientKey;
+	}
+
+	public void setClientSecret(final String clientSecret) {
+		this.clientSecret = clientSecret;
+	}
+
+	public void setDataSourceFactory(final DataSourceFactory factory) {
+		database = factory;
+	}
+
+	public void setGitDirectory(final File gitDirectory) {
+		this.gitDirectory = gitDirectory;
 	}
 
 	// @JsonProperty
@@ -138,30 +141,27 @@ public class AppConfiguration extends Configuration {
 	// this.trelloToken = trelloToken;
 	// }
 
-	@JsonProperty
-	public String getGithubClientId() {
-		return githubClientId;
-	}
-
 	public void setGithubClientId(final String githubClientId) {
 		this.githubClientId = githubClientId;
-	}
-
-	@JsonProperty
-	public String getGithubClientSecret() {
-		return githubClientSecret;
 	}
 
 	public void setGithubClientSecret(final String githubClientSecret) {
 		this.githubClientSecret = githubClientSecret;
 	}
 
-	@JsonProperty
-	public File getGithubDirectory() {
-		return githubDirectory;
-	}
-
 	public void setGithubDirectory(final File githubDirectory) {
 		this.githubDirectory = githubDirectory;
+	}
+
+	public void setSalesforceDirectory(final File salesforceDirectory) {
+		this.salesforceDirectory = salesforceDirectory;
+	}
+
+	public void setTrelloKey(final String trelloKey) {
+		this.trelloKey = trelloKey;
+	}
+
+	public void setTrelloSecret(final String trelloSecret) {
+		this.trelloSecret = trelloSecret;
 	}
 }

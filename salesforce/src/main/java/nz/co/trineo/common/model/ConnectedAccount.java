@@ -27,63 +27,6 @@ public class ConnectedAccount {
 	@Embedded
 	private AccountToken token;
 
-	@JsonProperty
-	public int getId() {
-		return id;
-	}
-
-	public void setId(final int id) {
-		this.id = id;
-	}
-
-	@JsonProperty
-	public String getService() {
-		return service;
-	}
-
-	public void setService(final String service) {
-		this.service = service;
-	}
-
-	@JsonProperty
-	public Credentals getCredentals() {
-		return credentals;
-	}
-
-	public void setCredentals(final Credentals credentals) {
-		this.credentals = credentals;
-	}
-
-	@JsonProperty
-	public AccountToken getToken() {
-		return token;
-	}
-
-	public void setToken(final AccountToken accessToken) {
-		token = accessToken;
-	}
-
-	@JsonProperty
-	public String getName() {
-		return name;
-	}
-
-	public void setName(final String name) {
-		this.name = name;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (credentals == null ? 0 : credentals.hashCode());
-		result = prime * result + id;
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + (service == null ? 0 : service.hashCode());
-		result = prime * result + (token == null ? 0 : token.hashCode());
-		return result;
-	}
-
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj) {
@@ -128,6 +71,63 @@ public class ConnectedAccount {
 			return false;
 		}
 		return true;
+	}
+
+	@JsonProperty
+	public Credentals getCredentals() {
+		return credentals;
+	}
+
+	@JsonProperty
+	public int getId() {
+		return id;
+	}
+
+	@JsonProperty
+	public String getName() {
+		return name;
+	}
+
+	@JsonProperty
+	public String getService() {
+		return service;
+	}
+
+	@JsonProperty
+	public AccountToken getToken() {
+		return token;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (credentals == null ? 0 : credentals.hashCode());
+		result = prime * result + id;
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (service == null ? 0 : service.hashCode());
+		result = prime * result + (token == null ? 0 : token.hashCode());
+		return result;
+	}
+
+	public void setCredentals(final Credentals credentals) {
+		this.credentals = credentals;
+	}
+
+	public void setId(final int id) {
+		this.id = id;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
+	public void setService(final String service) {
+		this.service = service;
+	}
+
+	public void setToken(final AccountToken accessToken) {
+		token = accessToken;
 	}
 
 	@Override

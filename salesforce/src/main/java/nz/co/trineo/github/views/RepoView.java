@@ -23,19 +23,19 @@ public class RepoView extends View {
 		this.clients = clients;
 	}
 
-	public Repository getRepo() {
-		return repo;
-	}
-
 	public List<Branch> getBranches() {
 		return branches;
 	}
 
-	public List<Tag> getTags() {
-		return tags;
-	}
-
 	public List<Client> getClients() {
 		return clients;
+	}
+
+	public Repository getRepo() {
+		return repo;
+	}
+
+	public List<Tag> getTags() {
+		return tags;
 	}
 }

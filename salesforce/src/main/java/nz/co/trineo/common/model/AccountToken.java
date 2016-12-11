@@ -32,67 +32,6 @@ public class AccountToken {
 	// "signature":"0/1Ldval/TIPf2tTgTKUAxRy44VwEJ7ffsFLMWFcNoA=",
 	// }
 
-	@JsonProperty("access_token")
-	public String getAccessToken() {
-		return accessToken;
-	}
-
-	@JsonProperty("access_token")
-	public void setAccessToken(final String access_token) {
-		accessToken = access_token;
-	}
-
-	@JsonProperty
-	public String getScpoe() {
-		return scpoe;
-	}
-
-	public void setScpoe(final String scpoe) {
-		this.scpoe = scpoe;
-	}
-
-	@JsonProperty("token_type")
-	public String getTokenType() {
-		return tokenType;
-	}
-
-	@JsonProperty("token_type")
-	public void setTokenType(final String token_type) {
-		tokenType = token_type;
-	}
-
-	@JsonProperty("refresh_token")
-	public String getRefreshToken() {
-		return refreshToken;
-	}
-
-	@JsonProperty("refresh_token")
-	public void setRefreshToken(final String refresh_token) {
-		refreshToken = refresh_token;
-	}
-
-	@JsonProperty("instance_url")
-	public String getInstanceUrl() {
-		return instanceUrl;
-	}
-
-	@JsonProperty("instance_url")
-	public void setInstanceUrl(final String instanceUrl) {
-		this.instanceUrl = instanceUrl;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (accessToken == null ? 0 : accessToken.hashCode());
-		result = prime * result + (instanceUrl == null ? 0 : instanceUrl.hashCode());
-		result = prime * result + (refreshToken == null ? 0 : refreshToken.hashCode());
-		result = prime * result + (scpoe == null ? 0 : scpoe.hashCode());
-		result = prime * result + (tokenType == null ? 0 : tokenType.hashCode());
-		return result;
-	}
-
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj) {
@@ -141,6 +80,67 @@ public class AccountToken {
 			return false;
 		}
 		return true;
+	}
+
+	@JsonProperty("access_token")
+	public String getAccessToken() {
+		return accessToken;
+	}
+
+	@JsonProperty("instance_url")
+	public String getInstanceUrl() {
+		return instanceUrl;
+	}
+
+	@JsonProperty("refresh_token")
+	public String getRefreshToken() {
+		return refreshToken;
+	}
+
+	@JsonProperty
+	public String getScpoe() {
+		return scpoe;
+	}
+
+	@JsonProperty("token_type")
+	public String getTokenType() {
+		return tokenType;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (accessToken == null ? 0 : accessToken.hashCode());
+		result = prime * result + (instanceUrl == null ? 0 : instanceUrl.hashCode());
+		result = prime * result + (refreshToken == null ? 0 : refreshToken.hashCode());
+		result = prime * result + (scpoe == null ? 0 : scpoe.hashCode());
+		result = prime * result + (tokenType == null ? 0 : tokenType.hashCode());
+		return result;
+	}
+
+	@JsonProperty("access_token")
+	public void setAccessToken(final String access_token) {
+		accessToken = access_token;
+	}
+
+	@JsonProperty("instance_url")
+	public void setInstanceUrl(final String instanceUrl) {
+		this.instanceUrl = instanceUrl;
+	}
+
+	@JsonProperty("refresh_token")
+	public void setRefreshToken(final String refresh_token) {
+		refreshToken = refresh_token;
+	}
+
+	public void setScpoe(final String scpoe) {
+		this.scpoe = scpoe;
+	}
+
+	@JsonProperty("token_type")
+	public void setTokenType(final String token_type) {
+		tokenType = token_type;
 	}
 
 	@Override

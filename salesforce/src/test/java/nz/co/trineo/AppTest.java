@@ -29,6 +29,13 @@ public class AppTest {
 	private final LifecycleEnvironment lifecycle = mock(LifecycleEnvironment.class);
 	private final HealthCheckRegistry registry = mock(HealthCheckRegistry.class);
 
+	@Test
+	public void buildsAThingResource() throws Exception {
+		application.run(config, environment);
+
+		verify(jersey).register(isA(GitHubResource.class));
+	}
+
 	@Before
 	public void setup() throws Exception {
 		config.setDataSourceFactory(factory);
@@ -38,12 +45,5 @@ public class AppTest {
 		when(environment.jersey()).thenReturn(jersey);
 		when(environment.lifecycle()).thenReturn(lifecycle);
 		when(environment.healthChecks()).thenReturn(registry);
-	}
-
-	@Test
-	public void buildsAThingResource() throws Exception {
-		application.run(config, environment);
-
-		verify(jersey).register(isA(GitHubResource.class));
 	}
 }

@@ -14,35 +14,35 @@ public class GitDiff {
 		return headerA;
 	}
 
-	public void setHeaderA(final GitDiffHeader aHeader) {
-		headerA = aHeader;
-	}
-
 	public GitDiffHeader getHeaderB() {
 		return headerB;
 	}
 
-	public void setHeaderB(final GitDiffHeader bHeader) {
-		headerB = bHeader;
+	public List<GitDiffLine> getLines() {
+		return lines;
 	}
 
 	public String getPathA() {
 		return pathA;
 	}
 
-	public void setPathA(final String pathA) {
-		this.pathA = pathA;
-	}
-
 	public String getPathB() {
 		return pathB;
 	}
 
-	public void setPathB(final String pathB) {
-		this.pathB = pathB;
+	public void setHeaderA(final GitDiffHeader aHeader) {
+		headerA = aHeader;
 	}
 
-	public List<GitDiffLine> getLines() {
-		return lines;
+	public void setHeaderB(final GitDiffHeader bHeader) {
+		headerB = bHeader;
+	}
+
+	public void setPathA(final String pathA) {
+		this.pathA = pathA;
+	}
+
+	public void setPathB(final String pathB) {
+		this.pathB = pathB;
 	}
 }

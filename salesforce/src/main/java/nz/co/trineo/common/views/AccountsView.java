@@ -25,11 +25,11 @@ public class AccountsView extends View {
 		return accounts;
 	}
 
-	public List<String> getServices() {
-		return services;
-	}
-
 	public EnumSet<Environment> getEnvironments() {
 		return environments;
+	}
+
+	public List<String> getServices() {
+		return services;
 	}
 }

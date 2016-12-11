@@ -8,17 +8,17 @@ public class GitServiceException extends Exception {
 		super();
 	}
 
-	public GitServiceException(final String message, final Throwable cause, final boolean enableSuppression,
-			final boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
+	public GitServiceException(final String message) {
+		super(message);
 	}
 
 	public GitServiceException(final String message, final Throwable cause) {
 		super(message, cause);
 	}
 
-	public GitServiceException(final String message) {
-		super(message);
+	public GitServiceException(final String message, final Throwable cause, final boolean enableSuppression,
+			final boolean writableStackTrace) {
+		super(message, cause, enableSuppression, writableStackTrace);
 	}
 
 	public GitServiceException(final Throwable cause) {

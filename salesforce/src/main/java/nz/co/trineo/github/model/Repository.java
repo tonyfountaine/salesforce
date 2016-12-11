@@ -44,56 +44,6 @@ public class Repository {
 	@JoinColumn(name = "CLIENT_ID")
 	private Client client;
 
-	@JsonProperty
-	public int getId() {
-		return id;
-	}
-
-	public void setId(final int id) {
-		this.id = id;
-	}
-
-	@JsonProperty
-	public String getName() {
-		return name;
-	}
-
-	public void setName(final String name) {
-		this.name = name;
-	}
-
-	@JsonProperty
-	public String getCloneURL() {
-		return cloneURL;
-	}
-
-	public void setCloneURL(final String cloneURL) {
-		this.cloneURL = cloneURL;
-	}
-
-	@JsonProperty
-	public ConnectedAccount getAccount() {
-		return account;
-	}
-
-	public void setAccount(final ConnectedAccount account) {
-		this.account = account;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (account == null ? 0 : account.hashCode());
-		result = prime * result + (branches == null ? 0 : branches.hashCode());
-		result = prime * result + (client == null ? 0 : client.hashCode());
-		result = prime * result + (cloneURL == null ? 0 : cloneURL.hashCode());
-		result = prime * result + id;
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + (tags == null ? 0 : tags.hashCode());
-		return result;
-	}
-
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj) {
@@ -154,10 +104,9 @@ public class Repository {
 		return true;
 	}
 
-	@Override
-	public String toString() {
-		return new ReflectionToStringBuilder(this, ToStringStyle.JSON_STYLE).setExcludeFieldNames("batches.org")
-				.build();
+	@JsonProperty
+	public ConnectedAccount getAccount() {
+		return account;
 	}
 
 	@JsonIgnore
@@ -165,8 +114,24 @@ public class Repository {
 		return branches;
 	}
 
-	public void setBranches(final List<Branch> branches) {
-		this.branches = branches;
+	@JsonProperty
+	public Client getClient() {
+		return client;
+	}
+
+	@JsonProperty
+	public String getCloneURL() {
+		return cloneURL;
+	}
+
+	@JsonProperty
+	public int getId() {
+		return id;
+	}
+
+	@JsonProperty
+	public String getName() {
+		return name;
 	}
 
 	@JsonIgnore
@@ -174,16 +139,51 @@ public class Repository {
 		return tags;
 	}
 
-	public void setTags(final List<Tag> tags) {
-		this.tags = tags;
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (account == null ? 0 : account.hashCode());
+		result = prime * result + (branches == null ? 0 : branches.hashCode());
+		result = prime * result + (client == null ? 0 : client.hashCode());
+		result = prime * result + (cloneURL == null ? 0 : cloneURL.hashCode());
+		result = prime * result + id;
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (tags == null ? 0 : tags.hashCode());
+		return result;
 	}
 
-	@JsonProperty
-	public Client getClient() {
-		return client;
+	public void setAccount(final ConnectedAccount account) {
+		this.account = account;
+	}
+
+	public void setBranches(final List<Branch> branches) {
+		this.branches = branches;
 	}
 
 	public void setClient(final Client client) {
 		this.client = client;
+	}
+
+	public void setCloneURL(final String cloneURL) {
+		this.cloneURL = cloneURL;
+	}
+
+	public void setId(final int id) {
+		this.id = id;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
+	public void setTags(final List<Tag> tags) {
+		this.tags = tags;
+	}
+
+	@Override
+	public String toString() {
+		return new ReflectionToStringBuilder(this, ToStringStyle.JSON_STYLE).setExcludeFieldNames("batches.org")
+				.build();
 	}
 }

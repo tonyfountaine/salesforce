@@ -53,17 +53,9 @@ public class RunTestsResult {
 		return apexLogId;
 	}
 
-	public void setApexLogId(final String apexLogId) {
-		this.apexLogId = apexLogId;
-	}
-
 	@JsonProperty
 	public List<CodeCoverageResult> getCodeCoverage() {
 		return codeCoverage;
-	}
-
-	public void setCodeCoverage(final List<CodeCoverageResult> codeCoverage) {
-		this.codeCoverage = codeCoverage;
 	}
 
 	@JsonProperty
@@ -71,17 +63,13 @@ public class RunTestsResult {
 		return codeCoverageWarnings;
 	}
 
-	public void setCodeCoverageWarnings(final List<CodeCoverageWarning> codeCoverageWarnings) {
-		this.codeCoverageWarnings = codeCoverageWarnings;
-	}
-
 	@JsonProperty
 	public List<RunTestFailure> getFailures() {
 		return failures;
 	}
 
-	public void setFailures(final List<RunTestFailure> failures) {
-		this.failures = failures;
+	public int getId() {
+		return dbId;
 	}
 
 	@JsonProperty
@@ -89,17 +77,9 @@ public class RunTestsResult {
 		return numFailures;
 	}
 
-	public void setNumFailures(final int numFailures) {
-		this.numFailures = numFailures;
-	}
-
 	@JsonProperty
 	public int getNumTestsRun() {
 		return numTestsRun;
-	}
-
-	public void setNumTestsRun(final int numTestsRun) {
-		this.numTestsRun = numTestsRun;
 	}
 
 	@JsonProperty
@@ -107,20 +87,40 @@ public class RunTestsResult {
 		return successes;
 	}
 
-	public void setSuccesses(final List<RunTestSuccess> successes) {
-		this.successes = successes;
-	}
-
 	@JsonProperty
 	public double getTotalTime() {
 		return totalTime;
 	}
 
-	public void setTotalTime(final double totalTime) {
-		this.totalTime = totalTime;
+	public void setApexLogId(final String apexLogId) {
+		this.apexLogId = apexLogId;
 	}
 
-	public int getId() {
-		return dbId;
+	public void setCodeCoverage(final List<CodeCoverageResult> codeCoverage) {
+		this.codeCoverage = codeCoverage;
+	}
+
+	public void setCodeCoverageWarnings(final List<CodeCoverageWarning> codeCoverageWarnings) {
+		this.codeCoverageWarnings = codeCoverageWarnings;
+	}
+
+	public void setFailures(final List<RunTestFailure> failures) {
+		this.failures = failures;
+	}
+
+	public void setNumFailures(final int numFailures) {
+		this.numFailures = numFailures;
+	}
+
+	public void setNumTestsRun(final int numTestsRun) {
+		this.numTestsRun = numTestsRun;
+	}
+
+	public void setSuccesses(final List<RunTestSuccess> successes) {
+		this.successes = successes;
+	}
+
+	public void setTotalTime(final double totalTime) {
+		this.totalTime = totalTime;
 	}
 }

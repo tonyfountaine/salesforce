@@ -21,19 +21,11 @@ public class AccountService {
 		this.accountDAO = accountDAO;
 	}
 
-	public List<ConnectedAccount> list() {
-		return accountDAO.listAll();
+	public List<ConnectedAccount> byService(final String service) {
+		return accountDAO.listByService(service);
 	}
 
 	public ConnectedAccount create(final ConnectedAccount account) {
-		return accountDAO.persist(account);
-	}
-
-	public ConnectedAccount read(final int id) {
-		return accountDAO.get(id);
-	}
-
-	public ConnectedAccount update(final ConnectedAccount account) {
 		return accountDAO.persist(account);
 	}
 
@@ -41,14 +33,15 @@ public class AccountService {
 		accountDAO.delete(id);
 	}
 
-	public List<ConnectedAccount> byService(final String service) {
-		return accountDAO.listByService(service);
-	}
-
-	public boolean verify(final int id) {
-		final ConnectedAccount account = accountDAO.get(id);
+	public void getAccessToken(final String code, final String state, final URI redirectUri) {
+		final ConnectedAccount account = states.get(state);
+		final Map<String, Object> additional = additionalMap.get(state);
 		final ConnectedService service = (ConnectedService) ServiceRegistry.getService(account.getService());
-		return service.verify(account);
+
+		final AccountToken tokenResponse = service.getAccessToken(code, state, redirectUri, additional);
+
+		account.setToken(tokenResponse);
+		create(account);
 	}
 
 	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri,
@@ -62,14 +55,21 @@ public class AccountService {
 		return service.getAuthorizeURIForService(account, redirectUri, state, additional);
 	}
 
-	public void getAccessToken(final String code, final String state, final URI redirectUri) {
-		final ConnectedAccount account = states.get(state);
-		final Map<String, Object> additional = additionalMap.get(state);
+	public List<ConnectedAccount> list() {
+		return accountDAO.listAll();
+	}
+
+	public ConnectedAccount read(final int id) {
+		return accountDAO.get(id);
+	}
+
+	public ConnectedAccount update(final ConnectedAccount account) {
+		return accountDAO.persist(account);
+	}
+
+	public boolean verify(final int id) {
+		final ConnectedAccount account = accountDAO.get(id);
 		final ConnectedService service = (ConnectedService) ServiceRegistry.getService(account.getService());
-
-		final AccountToken tokenResponse = service.getAccessToken(code, state, redirectUri, additional);
-
-		account.setToken(tokenResponse);
-		create(account);
+		return service.verify(account);
 	}
 }

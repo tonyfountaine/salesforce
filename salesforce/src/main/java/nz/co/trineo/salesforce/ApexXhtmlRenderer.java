@@ -42,11 +42,6 @@ public class ApexXhtmlRenderer extends XhtmlRenderer {
 	};
 
 	@Override
-	protected Map<String, String> getDefaultCssStyles() {
-		return DEFAULT_CSS;
-	}
-
-	@Override
 	protected String getCssClass(final int style) {
 		switch (style) {
 		case ApexHighlighter.PLAIN_STYLE:
@@ -70,6 +65,11 @@ public class ApexXhtmlRenderer extends XhtmlRenderer {
 		}
 
 		return null;
+	}
+
+	@Override
+	protected Map<String, String> getDefaultCssStyles() {
+		return DEFAULT_CSS;
 	}
 
 	@Override

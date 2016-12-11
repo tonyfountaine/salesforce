@@ -23,17 +23,9 @@ public class TreeNode {
 			return checked;
 		}
 
-		public void setChecked(final boolean checked) {
-			this.checked = checked;
-		}
-
 		@JsonProperty
 		public boolean isDisabled() {
 			return disabled;
-		}
-
-		public void setDisabled(final boolean disabled) {
-			this.disabled = disabled;
 		}
 
 		@JsonProperty
@@ -41,13 +33,21 @@ public class TreeNode {
 			return expanded;
 		}
 
-		public void setExpanded(final boolean expanded) {
-			this.expanded = expanded;
-		}
-
 		@JsonProperty
 		public boolean isSelected() {
 			return selected;
+		}
+
+		public void setChecked(final boolean checked) {
+			this.checked = checked;
+		}
+
+		public void setDisabled(final boolean disabled) {
+			this.disabled = disabled;
+		}
+
+		public void setExpanded(final boolean expanded) {
+			this.expanded = expanded;
 		}
 
 		public void setSelected(final boolean selected) {
@@ -67,30 +67,8 @@ public class TreeNode {
 	private List<TreeNode> nodes = new ArrayList<>();
 
 	@JsonProperty
-	public String getText() {
-		return text;
-	}
-
-	public void setText(final String text) {
-		this.text = text;
-	}
-
-	@JsonProperty
-	public String getIcon() {
-		return icon;
-	}
-
-	public void setIcon(final String icon) {
-		this.icon = icon;
-	}
-
-	@JsonProperty
-	public String getSelectedIcon() {
-		return selectedIcon;
-	}
-
-	public void setSelectedIcon(final String selectedIcon) {
-		this.selectedIcon = selectedIcon;
+	public String getBackColor() {
+		return backColor;
 	}
 
 	@JsonProperty
@@ -98,35 +76,23 @@ public class TreeNode {
 		return color;
 	}
 
-	public void setColor(final String color) {
-		this.color = color;
-	}
-
-	@JsonProperty
-	public String getBackColor() {
-		return backColor;
-	}
-
-	public void setBackColor(final String backColor) {
-		this.backColor = backColor;
-	}
-
 	@JsonProperty
 	public String getHref() {
 		return href;
 	}
 
-	public void setHref(final String href) {
-		this.href = href;
+	@JsonProperty
+	public String getIcon() {
+		return icon;
+	}
+
+	public List<TreeNode> getNodes() {
+		return nodes;
 	}
 
 	@JsonProperty
-	public boolean isSelectable() {
-		return selectable;
-	}
-
-	public void setSelectable(final boolean selectable) {
-		this.selectable = selectable;
+	public String getSelectedIcon() {
+		return selectedIcon;
 	}
 
 	@JsonProperty
@@ -134,24 +100,58 @@ public class TreeNode {
 		return state;
 	}
 
-	public void setState(final NodeState state) {
-		this.state = state;
-	}
-
 	@JsonProperty
 	public Set<String> getTags() {
 		return tags;
+	}
+
+	@JsonProperty
+	public String getText() {
+		return text;
+	}
+
+	@JsonProperty
+	public boolean isSelectable() {
+		return selectable;
+	}
+
+	public void setBackColor(final String backColor) {
+		this.backColor = backColor;
+	}
+
+	public void setColor(final String color) {
+		this.color = color;
+	}
+
+	public void setHref(final String href) {
+		this.href = href;
+	}
+
+	public void setIcon(final String icon) {
+		this.icon = icon;
+	}
+
+	public void setNodes(final List<TreeNode> nodes) {
+		this.nodes = nodes;
+	}
+
+	public void setSelectable(final boolean selectable) {
+		this.selectable = selectable;
+	}
+
+	public void setSelectedIcon(final String selectedIcon) {
+		this.selectedIcon = selectedIcon;
+	}
+
+	public void setState(final NodeState state) {
+		this.state = state;
 	}
 
 	public void setTags(final Set<String> tags) {
 		this.tags = tags;
 	}
 
-	public List<TreeNode> getNodes() {
-		return nodes;
-	}
-
-	public void setNodes(final List<TreeNode> nodes) {
-		this.nodes = nodes;
+	public void setText(final String text) {
+		this.text = text;
 	}
 }

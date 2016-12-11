@@ -53,22 +53,127 @@ public class Board {
 	@JoinColumn(name = "CLIENT_ID")
 	private Client client;
 
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final Board other = (Board) obj;
+		if (account == null) {
+			if (other.account != null) {
+				return false;
+			}
+		} else if (!account.equals(other.account)) {
+			return false;
+		}
+		if (client == null) {
+			if (other.client != null) {
+				return false;
+			}
+		} else if (!client.equals(other.client)) {
+			return false;
+		}
+		if (closed != other.closed) {
+			return false;
+		}
+		if (dateLastActivity == null) {
+			if (other.dateLastActivity != null) {
+				return false;
+			}
+		} else if (!dateLastActivity.equals(other.dateLastActivity)) {
+			return false;
+		}
+		if (dateLastView == null) {
+			if (other.dateLastView != null) {
+				return false;
+			}
+		} else if (!dateLastView.equals(other.dateLastView)) {
+			return false;
+		}
+		if (desc == null) {
+			if (other.desc != null) {
+				return false;
+			}
+		} else if (!desc.equals(other.desc)) {
+			return false;
+		}
+		if (id == null) {
+			if (other.id != null) {
+				return false;
+			}
+		} else if (!id.equals(other.id)) {
+			return false;
+		}
+		if (idOrganization == null) {
+			if (other.idOrganization != null) {
+				return false;
+			}
+		} else if (!idOrganization.equals(other.idOrganization)) {
+			return false;
+		}
+		// if (labelNames == null) {
+		// if (other.labelNames != null)
+		// return false;
+		// } else if (!labelNames.equals(other.labelNames))
+		// return false;
+		if (name == null) {
+			if (other.name != null) {
+				return false;
+			}
+		} else if (!name.equals(other.name)) {
+			return false;
+		}
+		if (shortLink == null) {
+			if (other.shortLink != null) {
+				return false;
+			}
+		} else if (!shortLink.equals(other.shortLink)) {
+			return false;
+		}
+		if (shortUrl == null) {
+			if (other.shortUrl != null) {
+				return false;
+			}
+		} else if (!shortUrl.equals(other.shortUrl)) {
+			return false;
+		}
+		if (subscribed != other.subscribed) {
+			return false;
+		}
+		if (url == null) {
+			if (other.url != null) {
+				return false;
+			}
+		} else if (!url.equals(other.url)) {
+			return false;
+		}
+		return true;
+	}
+
 	@JsonProperty
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
+	public ConnectedAccount getAccount() {
+		return account;
 	}
 
 	@JsonProperty
-	public String getName() {
-		return name;
+	public Client getClient() {
+		return client;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	@JsonProperty
+	public Date getDateLastActivity() {
+		return dateLastActivity;
+	}
+
+	@JsonProperty
+	public Date getDateLastView() {
+		return dateLastView;
 	}
 
 	@JsonProperty
@@ -76,17 +181,9 @@ public class Board {
 		return desc;
 	}
 
-	public void setDesc(String desc) {
-		this.desc = desc;
-	}
-
 	@JsonProperty
-	public boolean isClosed() {
-		return closed;
-	}
-
-	public void setClosed(boolean closed) {
-		this.closed = closed;
+	public String getId() {
+		return id;
 	}
 
 	@JsonProperty
@@ -94,17 +191,24 @@ public class Board {
 		return idOrganization;
 	}
 
-	public void setIdOrganization(String idOrganization) {
-		this.idOrganization = idOrganization;
+	@JsonProperty
+	public String getName() {
+		return name;
+	}
+
+	@JsonProperty
+	public String getShortLink() {
+		return shortLink;
+	}
+
+	@JsonProperty
+	public String getShortUrl() {
+		return shortUrl;
 	}
 
 	@JsonProperty
 	public String getUrl() {
 		return url;
-	}
-
-	public void setUrl(String url) {
-		this.url = url;
 	}
 
 	// @JsonProperty
@@ -116,13 +220,31 @@ public class Board {
 	// this.labelNames = labelNames;
 	// }
 
-	@JsonProperty
-	public String getShortUrl() {
-		return shortUrl;
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (account == null ? 0 : account.hashCode());
+		result = prime * result + (client == null ? 0 : client.hashCode());
+		result = prime * result + (closed ? 1231 : 1237);
+		result = prime * result + (dateLastActivity == null ? 0 : dateLastActivity.hashCode());
+		result = prime * result + (dateLastView == null ? 0 : dateLastView.hashCode());
+		result = prime * result + (desc == null ? 0 : desc.hashCode());
+		result = prime * result + (id == null ? 0 : id.hashCode());
+		result = prime * result + (idOrganization == null ? 0 : idOrganization.hashCode());
+		// result = prime * result + ((labelNames == null) ? 0 :
+		// labelNames.hashCode());
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (shortLink == null ? 0 : shortLink.hashCode());
+		result = prime * result + (shortUrl == null ? 0 : shortUrl.hashCode());
+		result = prime * result + (subscribed ? 1231 : 1237);
+		result = prime * result + (url == null ? 0 : url.hashCode());
+		return result;
 	}
 
-	public void setShortUrl(String shortUrl) {
-		this.shortUrl = shortUrl;
+	@JsonProperty
+	public boolean isClosed() {
+		return closed;
 	}
 
 	@JsonProperty
@@ -130,150 +252,56 @@ public class Board {
 		return subscribed;
 	}
 
-	public void setSubscribed(boolean subscribed) {
-		this.subscribed = subscribed;
-	}
-
-	@JsonProperty
-	public Date getDateLastActivity() {
-		return dateLastActivity;
-	}
-
-	public void setDateLastActivity(Date dateLastActivity) {
-		this.dateLastActivity = dateLastActivity;
-	}
-
-	@JsonProperty
-	public Date getDateLastView() {
-		return dateLastView;
-	}
-
-	public void setDateLastView(Date dateLastView) {
-		this.dateLastView = dateLastView;
-	}
-
-	@JsonProperty
-	public String getShortLink() {
-		return shortLink;
-	}
-
-	public void setShortLink(String shortLink) {
-		this.shortLink = shortLink;
-	}
-
-	@JsonProperty
-	public ConnectedAccount getAccount() {
-		return account;
-	}
-
-	public void setAccount(ConnectedAccount account) {
+	public void setAccount(final ConnectedAccount account) {
 		this.account = account;
 	}
 
-	@JsonProperty
-	public Client getClient() {
-		return client;
-	}
-
-	public void setClient(Client client) {
+	public void setClient(final Client client) {
 		this.client = client;
 	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((account == null) ? 0 : account.hashCode());
-		result = prime * result + ((client == null) ? 0 : client.hashCode());
-		result = prime * result + (closed ? 1231 : 1237);
-		result = prime * result + ((dateLastActivity == null) ? 0 : dateLastActivity.hashCode());
-		result = prime * result + ((dateLastView == null) ? 0 : dateLastView.hashCode());
-		result = prime * result + ((desc == null) ? 0 : desc.hashCode());
-		result = prime * result + ((id == null) ? 0 : id.hashCode());
-		result = prime * result + ((idOrganization == null) ? 0 : idOrganization.hashCode());
-		// result = prime * result + ((labelNames == null) ? 0 : labelNames.hashCode());
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((shortLink == null) ? 0 : shortLink.hashCode());
-		result = prime * result + ((shortUrl == null) ? 0 : shortUrl.hashCode());
-		result = prime * result + (subscribed ? 1231 : 1237);
-		result = prime * result + ((url == null) ? 0 : url.hashCode());
-		return result;
+	public void setClosed(final boolean closed) {
+		this.closed = closed;
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Board other = (Board) obj;
-		if (account == null) {
-			if (other.account != null)
-				return false;
-		} else if (!account.equals(other.account))
-			return false;
-		if (client == null) {
-			if (other.client != null)
-				return false;
-		} else if (!client.equals(other.client))
-			return false;
-		if (closed != other.closed)
-			return false;
-		if (dateLastActivity == null) {
-			if (other.dateLastActivity != null)
-				return false;
-		} else if (!dateLastActivity.equals(other.dateLastActivity))
-			return false;
-		if (dateLastView == null) {
-			if (other.dateLastView != null)
-				return false;
-		} else if (!dateLastView.equals(other.dateLastView))
-			return false;
-		if (desc == null) {
-			if (other.desc != null)
-				return false;
-		} else if (!desc.equals(other.desc))
-			return false;
-		if (id == null) {
-			if (other.id != null)
-				return false;
-		} else if (!id.equals(other.id))
-			return false;
-		if (idOrganization == null) {
-			if (other.idOrganization != null)
-				return false;
-		} else if (!idOrganization.equals(other.idOrganization))
-			return false;
-		// if (labelNames == null) {
-		// if (other.labelNames != null)
-		// return false;
-		// } else if (!labelNames.equals(other.labelNames))
-		// return false;
-		if (name == null) {
-			if (other.name != null)
-				return false;
-		} else if (!name.equals(other.name))
-			return false;
-		if (shortLink == null) {
-			if (other.shortLink != null)
-				return false;
-		} else if (!shortLink.equals(other.shortLink))
-			return false;
-		if (shortUrl == null) {
-			if (other.shortUrl != null)
-				return false;
-		} else if (!shortUrl.equals(other.shortUrl))
-			return false;
-		if (subscribed != other.subscribed)
-			return false;
-		if (url == null) {
-			if (other.url != null)
-				return false;
-		} else if (!url.equals(other.url))
-			return false;
-		return true;
+	public void setDateLastActivity(final Date dateLastActivity) {
+		this.dateLastActivity = dateLastActivity;
+	}
+
+	public void setDateLastView(final Date dateLastView) {
+		this.dateLastView = dateLastView;
+	}
+
+	public void setDesc(final String desc) {
+		this.desc = desc;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public void setIdOrganization(final String idOrganization) {
+		this.idOrganization = idOrganization;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
+	public void setShortLink(final String shortLink) {
+		this.shortLink = shortLink;
+	}
+
+	public void setShortUrl(final String shortUrl) {
+		this.shortUrl = shortUrl;
+	}
+
+	public void setSubscribed(final boolean subscribed) {
+		this.subscribed = subscribed;
+	}
+
+	public void setUrl(final String url) {
+		this.url = url;
 	}
 
 	@Override

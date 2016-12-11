@@ -14,23 +14,23 @@ public class BackupDAO extends AbstractDAO<Backup> {
 		super(sessionFactory);
 	}
 
+	public void delete(final Serializable id) {
+		final Backup org = get(id);
+		currentSession().delete(org);
+	}
+
 	@Override
 	public Backup get(final Serializable id) {
 		final Backup organization = super.get(id);
 		return organization;
 	}
 
+	public List<Backup> listAll() {
+		return list(currentSession().createCriteria(getEntityClass()));
+	}
+
 	@Override
 	public Backup persist(final Backup entity) throws HibernateException {
 		return super.persist(entity);
-	}
-
-	public void delete(final Serializable id) {
-		final Backup org = get(id);
-		currentSession().delete(org);
-	}
-
-	public List<Backup> listAll() {
-		return list(currentSession().createCriteria(getEntityClass()));
 	}
 }

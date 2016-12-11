@@ -49,42 +49,11 @@ public class AccountResource {
 		this.accountService = accountService;
 	}
 
-	@GET
-	@Timed
-	@UnitOfWork
-	public List<ConnectedAccount> listAccounts() {
-		return accountService.list();
-	}
-
-	@GET
-	@Timed
-	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
-	public AccountsView listHTML() {
-		final List<ConnectedAccount> accounts = accountService.list();
-		return new AccountsView(accounts, ServiceRegistry.listRegistedServices());
-	}
-
 	@POST
 	@Timed
 	@UnitOfWork
 	public ConnectedAccount create(final ConnectedAccount account) {
 		return accountService.create(account);
-	}
-
-	@GET
-	@Timed
-	@UnitOfWork
-	@Path("/{id}")
-	public ConnectedAccount read(final @PathParam("id") int id) {
-		return accountService.read(id);
-	}
-
-	@PUT
-	@Timed
-	@UnitOfWork
-	public ConnectedAccount update(final ConnectedAccount account) {
-		return accountService.update(account);
 	}
 
 	@DELETE
@@ -95,36 +64,12 @@ public class AccountResource {
 		accountService.delete(id);
 	}
 
-	@POST
-	@Timed
-	@UnitOfWork
-	@Path("/{id}/verify")
-	public Response verify(final @PathParam("id") int id) {
-		final boolean verify = accountService.verify(id);
-		return verify ? Response.ok().build() : Response.serverError().build();
-	}
-
-	@GET
-	@Timed
-	@UnitOfWork
-	@Path("/oauth")
-	@Produces(MediaType.TEXT_HTML)
-	public Response startConnect(final @QueryParam("service") String serviceName, final @QueryParam("name") String name,
-			final @QueryParam("environment") Environment env) {
+	private SuccessView extracted(final String serviceName, final String code, final String state) throws IOException {
 		final URI uri = getRedirectUri(serviceName);
-		final ConnectedAccount account = new ConnectedAccount();
-		account.setName(name);
-		account.setService(serviceName);
-		accountService.create(account);
-		final Map<String, Object> additional = new HashMap<>();
-		additional.put("environment", env);
-		final URI url = accountService.getAuthorizeURIForService(account, uri, additional);
-		log.info(url);
-		return Response.temporaryRedirect(url).build();
-	}
 
-	private URI getRedirectUri(final String serviceName) {
-		return uriInfo.resolve(fromResource(getClass()).path(getClass(), "finishConnect").build(serviceName));
+		accountService.getAccessToken(code, state, uri);
+
+		return new SuccessView();
 	}
 
 	@POST
@@ -150,14 +95,6 @@ public class AccountResource {
 		return extracted(serviceName, verifier, state);
 	}
 
-	private SuccessView extracted(final String serviceName, final String code, final String state) throws IOException {
-		final URI uri = getRedirectUri(serviceName);
-
-		accountService.getAccessToken(code, state, uri);
-
-		return new SuccessView();
-	}
-
 	@GET
 	@Timed
 	@UnitOfWork
@@ -181,5 +118,68 @@ public class AccountResource {
 		log.info("processing state get");
 		log.info(uriInfo.getAbsolutePath() + ", " + uriInfo.getQueryParameters());
 		return extracted(serviceName, verifier, state);
+	}
+
+	private URI getRedirectUri(final String serviceName) {
+		return uriInfo.resolve(fromResource(getClass()).path(getClass(), "finishConnect").build(serviceName));
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	public List<ConnectedAccount> listAccounts() {
+		return accountService.list();
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Produces(MediaType.TEXT_HTML)
+	public AccountsView listHTML() {
+		final List<ConnectedAccount> accounts = accountService.list();
+		return new AccountsView(accounts, ServiceRegistry.listRegistedServices());
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/{id}")
+	public ConnectedAccount read(final @PathParam("id") int id) {
+		return accountService.read(id);
+	}
+
+	@GET
+	@Timed
+	@UnitOfWork
+	@Path("/oauth")
+	@Produces(MediaType.TEXT_HTML)
+	public Response startConnect(final @QueryParam("service") String serviceName, final @QueryParam("name") String name,
+			final @QueryParam("environment") Environment env) {
+		final URI uri = getRedirectUri(serviceName);
+		final ConnectedAccount account = new ConnectedAccount();
+		account.setName(name);
+		account.setService(serviceName);
+		accountService.create(account);
+		final Map<String, Object> additional = new HashMap<>();
+		additional.put("environment", env);
+		final URI url = accountService.getAuthorizeURIForService(account, uri, additional);
+		log.info(url);
+		return Response.temporaryRedirect(url).build();
+	}
+
+	@PUT
+	@Timed
+	@UnitOfWork
+	public ConnectedAccount update(final ConnectedAccount account) {
+		return accountService.update(account);
+	}
+
+	@POST
+	@Timed
+	@UnitOfWork
+	@Path("/{id}/verify")
+	public Response verify(final @PathParam("id") int id) {
+		final boolean verify = accountService.verify(id);
+		return verify ? Response.ok().build() : Response.serverError().build();
 	}
 }

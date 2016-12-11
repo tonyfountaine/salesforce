@@ -36,77 +36,6 @@ public class CodeCoverageResult implements Comparable<CodeCoverageResult> {
 	@Column
 	private String type;
 
-	@JsonProperty
-	public String getId() {
-		return id;
-	}
-
-	public void setId(final String id) {
-		this.id = id;
-	}
-
-	@JsonProperty
-	public List<CodeLocation> getLocationsNotCovered() {
-		return locationsNotCovered;
-	}
-
-	public void setLocationsNotCovered(final List<CodeLocation> locationsNotCovered) {
-		this.locationsNotCovered = locationsNotCovered;
-	}
-
-	@JsonProperty
-	public String getName() {
-		return name;
-	}
-
-	public void setName(final String name) {
-		this.name = name;
-	}
-
-	@JsonProperty
-	public String getNamespace() {
-		return namespace;
-	}
-
-	public void setNamespace(final String namespace) {
-		this.namespace = namespace;
-	}
-
-	@JsonProperty
-	public int getNumLocations() {
-		return numLocations;
-	}
-
-	public void setNumLocations(final int numLocations) {
-		this.numLocations = numLocations;
-	}
-
-	@JsonProperty
-	public int getNumLocationsNotCovered() {
-		return numLocationsNotCovered;
-	}
-
-	public void setNumLocationsNotCovered(final int numLocationsNotCovered) {
-		this.numLocationsNotCovered = numLocationsNotCovered;
-	}
-
-	@JsonProperty
-	public String getType() {
-		return type;
-	}
-
-	public void setType(final String type) {
-		this.type = type;
-	}
-
-	@JsonProperty
-	public float getPercent() {
-		if (numLocations == 0) {
-			return 100;
-		}
-		return (float) (numLocations - numLocationsNotCovered) / numLocations * 100;
-	}
-
 	@Override
 	public int compareTo(final CodeCoverageResult that) {
 		int compare;
@@ -126,5 +55,76 @@ public class CodeCoverageResult implements Comparable<CodeCoverageResult> {
 			compare = name.compareTo(that.name);
 		}
 		return compare;
+	}
+
+	@JsonProperty
+	public String getId() {
+		return id;
+	}
+
+	@JsonProperty
+	public List<CodeLocation> getLocationsNotCovered() {
+		return locationsNotCovered;
+	}
+
+	@JsonProperty
+	public String getName() {
+		return name;
+	}
+
+	@JsonProperty
+	public String getNamespace() {
+		return namespace;
+	}
+
+	@JsonProperty
+	public int getNumLocations() {
+		return numLocations;
+	}
+
+	@JsonProperty
+	public int getNumLocationsNotCovered() {
+		return numLocationsNotCovered;
+	}
+
+	@JsonProperty
+	public float getPercent() {
+		if (numLocations == 0) {
+			return 100;
+		}
+		return (float) (numLocations - numLocationsNotCovered) / numLocations * 100;
+	}
+
+	@JsonProperty
+	public String getType() {
+		return type;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public void setLocationsNotCovered(final List<CodeLocation> locationsNotCovered) {
+		this.locationsNotCovered = locationsNotCovered;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
+	public void setNamespace(final String namespace) {
+		this.namespace = namespace;
+	}
+
+	public void setNumLocations(final int numLocations) {
+		this.numLocations = numLocations;
+	}
+
+	public void setNumLocationsNotCovered(final int numLocationsNotCovered) {
+		this.numLocationsNotCovered = numLocationsNotCovered;
+	}
+
+	public void setType(final String type) {
+		this.type = type;
 	}
 }

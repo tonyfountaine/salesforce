@@ -27,35 +27,35 @@ public class GitTask {
 		this.totalWork = totalWork;
 	}
 
-	public int getId() {
-		return id;
+	public int getCurrentWork() {
+		return currentWork;
 	}
 
-	public void setId(final int id) {
-		this.id = id;
+	public int getId() {
+		return id;
 	}
 
 	public String getTitle() {
 		return title;
 	}
 
-	public void setTitle(final String title) {
-		this.title = title;
-	}
-
 	public int getTotalWork() {
 		return totalWork;
 	}
 
-	public void setTotalWork(final int totalWork) {
-		this.totalWork = totalWork;
-	}
-
-	public int getCurrentWork() {
-		return currentWork;
-	}
-
 	public void setCurrentWork(final int currentWork) {
 		this.currentWork = currentWork;
+	}
+
+	public void setId(final int id) {
+		this.id = id;
+	}
+
+	public void setTitle(final String title) {
+		this.title = title;
+	}
+
+	public void setTotalWork(final int totalWork) {
+		this.totalWork = totalWork;
 	}
 }

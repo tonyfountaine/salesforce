@@ -5,7 +5,19 @@ import static com.sforce.soap.metadata.RetrieveStatus.Succeeded;
 import static java.text.MessageFormat.format;
 import static org.apache.commons.io.FileUtils.forceMkdir;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -136,39 +148,40 @@ public class SalesforceService implements ConnectedService {
 		apiVersion = configuration.getApiVersion();
 	}
 
-	/* (non-Javadoc)
-	 *
-	 * @see nz.co.trineo.common.ConnectedService#getName() */
-	@Override
-	public String getName() {
-		return "Salesforce";
-	}
-
-	public Backup startBackup(final String orgId) throws SalesforceException {
-		final Organization org = orgDAO.get(orgId);
-		final ConnectedAccount account = org.getAccount();
-
-		final DescribeMetadataObject[] metadata = describeMetadata(account);
-		final MetadataConnection metadataConnection = getMetadataConnection(account);
-
-		final RetrieveRequest request = createRequest(metadata);
-		final AsyncResult asyncResult;
+	/**
+	 * @param accId
+	 * @return
+	 * @throws SalesforceException
+	 */
+	public Organization addOrg(final int accId) throws SalesforceException {
 		try {
-			asyncResult = metadataConnection.retrieve(request);
-		} catch (final ConnectionException e) {
+			final ConnectedAccount account = credDAO.get(accId);
+			final String organizationId = getOrganizationId(account);
+
+			Organization organization = orgDAO.get(organizationId);
+			if (organization == null) {
+				organization = getOrganization(account, organizationId);
+			}
+			organization.setAccount(account);
+			final File repoDir = new File(configuration.getSalesforceDirectory(), organizationId);
+			if (!gitService.isRepo(repoDir)) {
+				gitService.createRepo(repoDir);
+			}
+			orgDAO.persist(organization);
+			return organization;
+		} catch (final SalesforceException e) {
+			throw e;
+		} catch (final GitServiceException e) {
 			throw new SalesforceException(e);
 		}
+	}
 
-		final Backup backup = new Backup();
-		final DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-		final String date = format.format(new Date());
-		backup.setName(date);
-		backup.setRetrieveId(asyncResult.getId());
-		backup.setStatus(BackupStatus.IN_PROGRESS);
-		org.getBackups().add(backup);
-		backupDAO.persist(backup);
-		orgDAO.persist(org);
-		return backup;
+	/**
+	 * @param object
+	 * @return
+	 */
+	public String authorizeURL(final String baseurl) {
+		return baseurl + "/services/oauth2/authorize";
 	}
 
 	public Backup checkBackupStatus(final String orgId, final int backupId) throws SalesforceException {
@@ -184,6 +197,34 @@ public class SalesforceService implements ConnectedService {
 		}
 		backupDAO.persist(b);
 		return b;
+	}
+
+	private RetrieveResult checkRetrieveStatus(final ConnectedAccount account, final String asyncResultId,
+			final boolean includeZip) throws SalesforceException {
+		RetrieveResult result = null;
+		MetadataConnection metadataConnection = getMetadataConnection(account);
+		try {
+			result = metadataConnection.checkRetrieveStatus(asyncResultId, includeZip);
+		} catch (final ConnectionException e) {
+			if (isInvalidSessionException(e)) {
+				refreshToken(account);
+				metadataConnection = getMetadataConnection(account);
+				try {
+					result = metadataConnection.checkRetrieveStatus(asyncResultId, includeZip);
+				} catch (final ConnectionException e1) {
+					throw new SalesforceException(e1);
+				}
+			}
+		}
+		return result;
+	}
+
+	private void cleanDirectory(final File repoDir) throws IOException {
+		final File[] files = repoDir.listFiles((FilenameFilter) (dir, name) -> !name.startsWith("."));
+		log.info(files);
+		for (final File file : files) {
+			FileUtils.forceDelete(file);
+		}
 	}
 
 	/**
@@ -238,63 +279,51 @@ public class SalesforceService implements ConnectedService {
 	}
 
 	/**
-	 * @param connection
-	 * @param asyncResult
+	 * @param orgURL
 	 * @return
-	 * @throws InterruptedException
-	 * @throws SalesforceException
-	 * @throws ConnectionException
+	 * @throws FileNotFoundException
 	 */
-	private RetrieveResult waitForRetrieveCompletion(final Organization org, final String asyncResultId)
-			throws SalesforceException, InterruptedException, ConnectionException {
-		final ConnectedAccount account = org.getAccount();
-
-		// Wait for the retrieve to complete
-		int poll = 0;
-		long waitTimeMilliSecs = ONE_SECOND;
-		RetrieveResult result = null;
-		do {
-			Thread.sleep(waitTimeMilliSecs);
-			// Double the wait time for the next iteration
-			waitTimeMilliSecs *= 2;
-			if (poll++ > MAX_NUM_POLL_REQUESTS) {
-				throw new SalesforceException("Request timed out.  If this is a large set "
-						+ "of metadata components, check that the time allowed "
-						+ "by MAX_NUM_POLL_REQUESTS is sufficient.");
-			}
-			result = checkRetrieveStatus(account, asyncResultId, true);
-			log.info("Retrieve Status: " + result.getStatus());
-		} while (!result.isDone());
-
-		return result;
+	private ConnectorConfig createConfig(final String orgURL) throws FileNotFoundException {
+		final ConnectorConfig config = new ConnectorConfig();
+		final String endpoint = orgURL + "/services/Soap/u/" + apiVersion;
+		config.setAuthEndpoint(endpoint);
+		config.setServiceEndpoint(endpoint);
+		config.setTraceFile("trace.log");
+		config.setTraceMessage(true);
+		config.setPrettyPrintXml(true);
+		config.setManualLogin(false);
+		config.setCompression(true);
+		return config;
 	}
 
-	private RetrieveResult checkRetrieveStatus(final ConnectedAccount account, final String asyncResultId,
-			final boolean includeZip) throws SalesforceException {
-		RetrieveResult result = null;
-		MetadataConnection metadataConnection = getMetadataConnection(account);
-		try {
-			result = metadataConnection.checkRetrieveStatus(asyncResultId, includeZip);
-		} catch (final ConnectionException e) {
-			if (isInvalidSessionException(e)) {
-				refreshToken(account);
-				metadataConnection = getMetadataConnection(account);
-				try {
-					result = metadataConnection.checkRetrieveStatus(asyncResultId, includeZip);
-				} catch (final ConnectionException e1) {
-					throw new SalesforceException(e1);
-				}
-			}
+	/**
+	 * @param metadata
+	 * @return
+	 */
+	private Package createPackage(final DescribeMetadataObject[] metadata) {
+		final List<PackageTypeMembers> types = new ArrayList<>();
+		for (final DescribeMetadataObject describeMetadataObject : metadata) {
+			final PackageTypeMembers members = new PackageTypeMembers();
+			members.setName(describeMetadataObject.getXmlName());
+			members.setMembers(new String[] { "*" });
+
+			types.add(members);
 		}
-		return result;
+		final Package pkg = new Package();
+		pkg.setTypes(types.toArray(new PackageTypeMembers[0]));
+		pkg.setVersion(apiVersion);
+		return pkg;
 	}
 
-	private void cleanDirectory(final File repoDir) throws IOException {
-		final File[] files = repoDir.listFiles((FilenameFilter) (dir, name) -> !name.startsWith("."));
-		log.info(files);
-		for (final File file : files) {
-			FileUtils.forceDelete(file);
-		}
+	/**
+	 * @param metadata
+	 * @return
+	 */
+	private RetrieveRequest createRequest(final DescribeMetadataObject[] metadata) {
+		final RetrieveRequest request = new RetrieveRequest();
+		request.setApiVersion(Double.valueOf(apiVersion));
+		request.setUnpackaged(createPackage(metadata));
+		return request;
 	}
 
 	/**
@@ -303,74 +332,32 @@ public class SalesforceService implements ConnectedService {
 	 * @return
 	 * @throws SalesforceException
 	 */
-	public InputStream downloadBackup(final String id, final int backupId) throws SalesforceException {
+	public void deleteBackup(final String id, final int backupId) throws SalesforceException {
 		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
+		final Organization organization = orgDAO.get(id);
+		final Backup b = backupDAO.get(backupId);
+		organization.getBackups().remove(b);
 		try {
-			final Backup backup = backupDAO.get(backupId);
-			gitService.checkout(repoDir, backup.getName());
-			final File zipFile = new File(configuration.getBackupDirectory(), backup.getName() + ".zip");
-			if (zipFile.exists()) {
-				FileUtils.forceDelete(zipFile);
-			}
-			pack(repoDir, zipFile);
-			gitService.checkout(repoDir, "master");
-			return new FileInputStream(zipFile);
-		} catch (GitServiceException | IOException e) {
+			gitService.removeTag(repoDir, b.getName());
+			orgDAO.persist(organization);
+			backupDAO.delete(backupId);
+		} catch (final GitServiceException e) {
 			throw new SalesforceException(e);
 		}
 	}
 
-	/**
-	 * @param folder
-	 * @param zipFile
-	 * @throws SalesforceException
-	 */
-	private void pack(final File folder, final File zipFile) throws SalesforceException {
-		try {
-			final Path p = Files.createFile(zipFile.toPath());
-			try (ZipOutputStream zs = new ZipOutputStream(Files.newOutputStream(p));) {
-				final Path pp = folder.toPath();
-				Files.walk(pp)
-						.filter(path -> !Files.isDirectory(path) && !path.toAbsolutePath().toString().contains(".git"))
-						.forEach(path -> {
-							final String sp = path.toAbsolutePath().toString()
-									.replace(pp.toAbsolutePath().toString(), "unpackaged")
-									.replace(path.getFileName().toString(), "");
-							final ZipEntry zipEntry = new ZipEntry(sp + "/" + path.getFileName().toString());
-							try {
-								zs.putNextEntry(zipEntry);
-								zs.write(Files.readAllBytes(path));
-								zs.closeEntry();
-							} catch (final Exception e) {
-								log.error("An error ocurred packing the zip file", e);
-							}
-						});
-			}
-		} catch (final IOException e) {
-			throw new SalesforceException(e);
-		}
-	}
-
-	/**
-	 * @param dir
-	 * @param zipIn
-	 * @throws IOException
-	 * @throws FileNotFoundException
-	 * @throws ArchiveException
-	 */
-	private void extractMetadataZip(final File dir, final InputStream zipIn)
-			throws IOException, FileNotFoundException, ArchiveException {
-		try (ArchiveInputStream in = new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.ZIP,
-				zipIn);) {
-			ZipArchiveEntry entry;
-			while ((entry = (ZipArchiveEntry) in.getNextEntry()) != null) {
-				final File destFile = new File(dir, entry.getName().replaceAll("unpackaged[/\\\\]", ""));
-				FileUtils.forceMkdir(destFile.getParentFile());
-				try (OutputStream out = new FileOutputStream(destFile);) {
-					IOUtils.copy(in, out);
-				}
-			}
-		}
+	public void deleteOrg(final String id) {
+		final Organization organization = orgDAO.get(id);
+		organization.setClient(null);
+		organization.setBranch(null);
+		organization.getTestResults().forEach(r -> {
+			testRunDAO.delete(r.getId());
+		});
+		organization.getBackups().forEach(b -> {
+			backupDAO.delete(b.getId());
+		});
+		credDAO.delete(organization.getAccount().getId());
+		orgDAO.delete(id);
 	}
 
 	/**
@@ -399,434 +386,6 @@ public class SalesforceService implements ConnectedService {
 			}
 		}
 		return metadata;
-	}
-
-	/**
-	 * @param metadata
-	 * @return
-	 */
-	private RetrieveRequest createRequest(final DescribeMetadataObject[] metadata) {
-		final RetrieveRequest request = new RetrieveRequest();
-		request.setApiVersion(Double.valueOf(apiVersion));
-		request.setUnpackaged(createPackage(metadata));
-		return request;
-	}
-
-	/**
-	 * @param orgURL
-	 * @return
-	 * @throws FileNotFoundException
-	 */
-	private ConnectorConfig createConfig(final String orgURL) throws FileNotFoundException {
-		final ConnectorConfig config = new ConnectorConfig();
-		final String endpoint = orgURL + "/services/Soap/u/" + apiVersion;
-		config.setAuthEndpoint(endpoint);
-		config.setServiceEndpoint(endpoint);
-		config.setTraceFile("trace.log");
-		config.setTraceMessage(true);
-		config.setPrettyPrintXml(true);
-		config.setManualLogin(false);
-		config.setCompression(true);
-		return config;
-	}
-
-	/**
-	 * @param account
-	 * @return
-	 * @throws SalesforceException
-	 */
-	private PartnerConnection getPartnerConnection(final ConnectedAccount account) throws SalesforceException {
-		try {
-			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
-			config.setSessionId(account.getToken().getAccessToken());
-			config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/u/" + apiVersion);
-			return Connector.newConnection(config);
-		} catch (ConnectionException | FileNotFoundException e) {
-			throw new SalesforceException(e);
-		}
-	}
-
-	/**
-	 * @param account
-	 * @return
-	 * @throws SalesforceException
-	 */
-	private MetadataConnection getMetadataConnection(final ConnectedAccount account) throws SalesforceException {
-		try {
-			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
-			config.setSessionId(account.getToken().getAccessToken());
-			config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/m/" + apiVersion);
-			return com.sforce.soap.metadata.Connector.newConnection(config);
-		} catch (ConnectionException | FileNotFoundException e) {
-			throw new SalesforceException(e);
-		}
-	}
-
-	/**
-	 * @param account
-	 * @return
-	 * @throws SalesforceException
-	 */
-	private SoapConnection getSoapConnection(final ConnectedAccount account) throws SalesforceException {
-		try {
-			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
-			config.setSessionId(account.getToken().getAccessToken());
-			config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/s/" + apiVersion);
-			return com.sforce.soap.apex.Connector.newConnection(config);
-		} catch (ConnectionException | FileNotFoundException e) {
-			throw new SalesforceException(e);
-		}
-	}
-
-	private BulkConnection getBulkConnection(final ConnectedAccount account) throws SalesforceException {
-		try {
-			final ConnectorConfig config = new ConnectorConfig();
-			config.setTraceFile("trace.log");
-			config.setTraceMessage(true);
-			config.setPrettyPrintXml(true);
-			config.setSessionId(account.getToken().getAccessToken());
-			config.setRestEndpoint(account.getToken().getInstanceUrl() + "/services/async/" + apiVersion);
-			config.setCompression(true);
-			return new BulkConnection(config);
-		} catch (FileNotFoundException | AsyncApiException e) {
-			throw new SalesforceException(e);
-		}
-	}
-
-	/**
-	 * @param metadata
-	 * @return
-	 */
-	private Package createPackage(final DescribeMetadataObject[] metadata) {
-		final List<PackageTypeMembers> types = new ArrayList<>();
-		for (final DescribeMetadataObject describeMetadataObject : metadata) {
-			final PackageTypeMembers members = new PackageTypeMembers();
-			members.setName(describeMetadataObject.getXmlName());
-			members.setMembers(new String[] { "*" });
-
-			types.add(members);
-		}
-		final Package pkg = new Package();
-		pkg.setTypes(types.toArray(new PackageTypeMembers[0]));
-		pkg.setVersion(apiVersion);
-		return pkg;
-	}
-
-	/**
-	 * @param orgId
-	 * @return
-	 * @throws SalesforceException
-	 */
-	public List<Backup> listBackups(final String orgId) throws SalesforceException {
-		final Organization organization = orgDAO.get(orgId);
-		return organization.getBackups();
-	}
-
-	/**
-	 * @param orgId
-	 * @param tests
-	 * @return
-	 * @throws SalesforceException
-	 */
-	public RunTestsResult runTests(final String orgId, final String[] tests) throws SalesforceException {
-		final Organization organization = orgDAO.get(orgId);
-		final ConnectedAccount account = organization.getAccount();
-		final RunTestsRequest runTestsRequest = new RunTestsRequest();
-		runTestsRequest.setAllTests(tests == null || tests.length == 0);
-		runTestsRequest.setClasses(tests);
-		runTestsRequest.setNamespace("");
-		final RunTestsResult runTests = runTests(runTestsRequest, account);
-		organization.getTestResults().add(runTests);
-		orgDAO.persist(organization);
-		return runTests;
-	}
-
-	/**
-	 * Check if the exception was caused by an invalid session
-	 *
-	 * @param e
-	 * @return true if the session was invalid
-	 */
-	private boolean isInvalidSessionException(final ConnectionException e) {
-		log.error("Checking for INVALID_SESSION_ID");
-		if (e instanceof SoapFaultException) {
-			if (((SoapFaultException) e).getFaultCode().getLocalPart()
-					.equals(ExceptionCode.INVALID_SESSION_ID.toString())) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * @param request
-	 * @param account
-	 * @return
-	 * @throws SalesforceException
-	 */
-	private RunTestsResult runTests(final RunTestsRequest request, final ConnectedAccount account)
-			throws SalesforceException {
-		SoapConnection soapConnection = getSoapConnection(account);
-		com.sforce.soap.apex.RunTestsResult runTestsResult = null;
-		try {
-			runTestsResult = soapConnection.runTests(request);
-		} catch (final ConnectionException e) {
-			if (isInvalidSessionException(e)) {
-				refreshToken(account);
-				soapConnection = getSoapConnection(account);
-				try {
-					runTestsResult = soapConnection.runTests(request);
-				} catch (final ConnectionException e1) {
-					throw new SalesforceException(e1);
-				}
-			}
-		}
-		if (runTestsResult != null) {
-			final RunTestsResult testsResult = ConvertUtils.toRunTestsResult(runTestsResult);
-			final RunTestsResult result = testRunDAO.persist(testsResult);
-			return result;
-		}
-		return null;
-	}
-
-	/**
-	 * @param orgId
-	 * @return
-	 */
-	public List<RunTestsResult> listTests(final String orgId) {
-		final Organization organization = orgDAO.get(orgId);
-		final List<RunTestsResult> testResults = organization.getTestResults();
-		testResults.size(); // lazy loading
-		return testResults;
-	}
-
-	/**
-	 * @param runId
-	 * @return
-	 */
-	public RunTestsResult showTest(final String runId) {
-		final RunTestsResult result = testRunDAO.get(runId);
-		log.debug(result); // log it to lazy load everything
-		return result;
-	}
-
-	/**
-	 * @return
-	 */
-	public List<Organization> listOrgs() {
-		return orgDAO.listAll();
-	}
-
-	private String getOrganizationId(final ConnectedAccount account) throws SalesforceException {
-		PartnerConnection connection = getPartnerConnection(account);
-		String organizationId = null;
-		try {
-			organizationId = connection.getUserInfo().getOrganizationId();
-		} catch (final ConnectionException e) {
-			if (isInvalidSessionException(e)) {
-				refreshToken(account);
-				connection = getPartnerConnection(account);
-				try {
-					organizationId = connection.getUserInfo().getOrganizationId();
-				} catch (final ConnectionException e1) {
-					throw new SalesforceException(e1);
-				}
-			}
-		}
-		return organizationId;
-	}
-
-	private QueryResult runQuery(final ConnectedAccount account, final String query) throws SalesforceException {
-		PartnerConnection connection = getPartnerConnection(account);
-		QueryResult queryResult = null;
-		try {
-			queryResult = connection.query(query);
-		} catch (final ConnectionException e) {
-			if (isInvalidSessionException(e)) {
-				refreshToken(account);
-				connection = getPartnerConnection(account);
-				try {
-					queryResult = connection.query(query);
-				} catch (final ConnectionException e1) {
-					throw new SalesforceException(e1);
-				}
-			}
-		}
-		while (!queryResult.isDone()) {
-			log.info(queryResult);
-			try {
-				Thread.sleep(1000);
-			} catch (final InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		return queryResult;
-	}
-
-	private Organization getOrganization(final ConnectedAccount account, final String organizationId)
-			throws SalesforceException {
-		final QueryResult queryResult = runQuery(account,
-				"SELECT Id, Name, OrganizationType, IsSandbox FROM Organization WHERE Id = '" + organizationId + "'");
-		final SObject sObject = queryResult.getRecords()[0];
-		final Organization organization = ConvertUtils.toOrganization(sObject);
-		return organization;
-	}
-
-	/**
-	 * @param accId
-	 * @return
-	 * @throws SalesforceException
-	 */
-	public Organization addOrg(final int accId) throws SalesforceException {
-		try {
-			final ConnectedAccount account = credDAO.get(accId);
-			final String organizationId = getOrganizationId(account);
-
-			Organization organization = orgDAO.get(organizationId);
-			if (organization == null) {
-				organization = getOrganization(account, organizationId);
-			}
-			organization.setAccount(account);
-			final File repoDir = new File(configuration.getSalesforceDirectory(), organizationId);
-			if (!gitService.isRepo(repoDir)) {
-				gitService.createRepo(repoDir);
-			}
-			orgDAO.persist(organization);
-			return organization;
-		} catch (final SalesforceException e) {
-			throw e;
-		} catch (final GitServiceException e) {
-			throw new SalesforceException(e);
-		}
-	}
-
-	/**
-	 * @param orgId
-	 * @return
-	 */
-	public Organization getOrg(final String orgId) {
-		final Organization organization = orgDAO.get(orgId);
-		organization.getBackups().size(); // lazy load
-		organization.getTestResults().size(); // lazy load
-		return organization;
-	}
-
-	/**
-	 * @param id
-	 * @param backupId
-	 * @return
-	 * @throws SalesforceException
-	 */
-	public void deleteBackup(final String id, final int backupId) throws SalesforceException {
-		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
-		final Organization organization = orgDAO.get(id);
-		final Backup b = backupDAO.get(backupId);
-		organization.getBackups().remove(b);
-		try {
-			gitService.removeTag(repoDir, b.getName());
-			orgDAO.persist(organization);
-			backupDAO.delete(backupId);
-		} catch (final GitServiceException e) {
-			throw new SalesforceException(e);
-		}
-	}
-
-	public Backup getBackup(final int backupId) {
-		return backupDAO.get(backupId);
-	}
-
-	/**
-	 * @param orgId
-	 * @return
-	 * @throws SalesforceException
-	 */
-	public TreeNode getMetadataTree(final String orgId) throws SalesforceException {
-		final File repoDir = new File(configuration.getSalesforceDirectory(), orgId);
-		final Map<String, TreeNode> nodeMap = new HashMap<>();
-
-		final Path path = repoDir.toPath();
-		try {
-			Files.walk(path).filter(p -> {
-				return !p.toString().contains(".git") && !p.toString().endsWith("-meta.xml")
-						&& !p.toString().contains("package.xml");
-			}).forEach(p -> {
-				final TreeNode node = new TreeNode();
-				node.setText(p.getFileName().toString());
-				nodeMap.put(p.toAbsolutePath().toString(), node);
-
-				final String pp = p.getParent().toAbsolutePath().toString();
-				final TreeNode parentNode = nodeMap.get(pp);
-				if (parentNode != null) {
-					parentNode.getNodes().add(node);
-				}
-			});
-		} catch (final IOException e) {
-			throw new SalesforceException(e);
-		}
-
-		final TreeNode rootNode = nodeMap.get(path.toAbsolutePath().toString());
-		rootNode.setText("/");
-		rootNode.getState().setExpanded(true);
-		return rootNode;
-	}
-
-	/**
-	 * @param orgId
-	 * @return
-	 * @throws SalesforceException
-	 */
-	public TreeNode getTestTree(final String orgId) throws SalesforceException {
-		final TreeNode rootNode = new TreeNode();
-		rootNode.setText("/");
-		rootNode.getState().setExpanded(true);
-		rootNode.setIcon("fa fa-cloud");
-		final Organization organization = orgDAO.get(orgId);
-		final List<RunTestsResult> testResults = organization.getTestResults();
-		testResults.forEach(r -> {
-			final TreeNode node = new TreeNode();
-			node.setText(String.valueOf(r.getId()));
-			node.setIcon("fa fa-tasks");
-			final List<RunTestMessage> messages = new ArrayList<>();
-			final Map<String, TreeNode> nodeMap = new HashMap<>();
-			messages.addAll(r.getSuccesses());
-			messages.addAll(r.getFailures());
-			messages.stream().sorted().forEach(m -> {
-				if (!nodeMap.containsKey(m.getName())) {
-					final TreeNode classNode = new TreeNode();
-					classNode.setText(m.getName());
-					nodeMap.put(m.getName(), classNode);
-					node.getNodes().add(classNode);
-				}
-				final TreeNode classNode = nodeMap.get(m.getName());
-				final TreeNode messageNode = new TreeNode();
-				messageNode.setText(m.getMethodName());
-				if (m instanceof RunTestFailure) {
-					messageNode.setIcon("fa fa-times");
-				} else {
-					messageNode.setIcon("fa fa-check");
-				}
-				classNode.getNodes().add(messageNode);
-			});
-			rootNode.getNodes().add(node);
-		});
-		return rootNode;
-	}
-
-	/**
-	 * @param orgId
-	 * @return
-	 */
-	public List<CodeCoverageResult> getCodeCoverage(final String orgId) {
-		final List<RunTestsResult> tests = listTests(orgId);
-		if (tests.isEmpty()) {
-			return null;
-		}
-		final RunTestsResult test = tests.get(0);
-		final List<CodeCoverageResult> coverage = test.getCodeCoverage();
-		for (final CodeCoverageResult codeCoverageResult : coverage) {
-			codeCoverageResult.getLocationsNotCovered().size();
-		}
-		return coverage;
 	}
 
 	/**
@@ -872,27 +431,6 @@ public class SalesforceService implements ConnectedService {
 		}
 	}
 
-	private List<String> pathsFromPackage(final File dir) throws SalesforceException {
-		final List<String> paths = new ArrayList<>();
-		final Path path = new File(dir, "src").toPath();
-
-		try {
-			Files.walk(path).filter(p -> {
-				return !p.toString().contains(".git") && Files.isDirectory(p);
-			}).forEach(p -> {
-				final Path relativize = path.relativize(p);
-				final String pp = relativize.toString();
-				if (StringUtils.isNotBlank(pp)) {
-					paths.add(pp);
-				}
-			});
-		} catch (final IOException e) {
-			throw new SalesforceException(e);
-		}
-
-		return paths;
-	}
-
 	/**
 	 * @param orgIdA
 	 * @param orgIdB
@@ -920,6 +458,178 @@ public class SalesforceService implements ConnectedService {
 			} catch (final GitServiceException e) {
 				throw new SalesforceException(e);
 			}
+		}
+	}
+
+	/**
+	 * @param id
+	 * @param backupId
+	 * @return
+	 * @throws SalesforceException
+	 */
+	public InputStream downloadBackup(final String id, final int backupId) throws SalesforceException {
+		final File repoDir = new File(configuration.getSalesforceDirectory(), id);
+		try {
+			final Backup backup = backupDAO.get(backupId);
+			gitService.checkout(repoDir, backup.getName());
+			final File zipFile = new File(configuration.getBackupDirectory(), backup.getName() + ".zip");
+			if (zipFile.exists()) {
+				FileUtils.forceDelete(zipFile);
+			}
+			pack(repoDir, zipFile);
+			gitService.checkout(repoDir, "master");
+			return new FileInputStream(zipFile);
+		} catch (GitServiceException | IOException e) {
+			throw new SalesforceException(e);
+		}
+	}
+
+	/**
+	 * @param dir
+	 * @param zipIn
+	 * @throws IOException
+	 * @throws FileNotFoundException
+	 * @throws ArchiveException
+	 */
+	private void extractMetadataZip(final File dir, final InputStream zipIn)
+			throws IOException, FileNotFoundException, ArchiveException {
+		try (ArchiveInputStream in = new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.ZIP,
+				zipIn);) {
+			ZipArchiveEntry entry;
+			while ((entry = (ZipArchiveEntry) in.getNextEntry()) != null) {
+				final File destFile = new File(dir, entry.getName().replaceAll("unpackaged[/\\\\]", ""));
+				FileUtils.forceMkdir(destFile.getParentFile());
+				try (OutputStream out = new FileOutputStream(destFile);) {
+					IOUtils.copy(in, out);
+				}
+			}
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * nz.co.trineo.common.ConnectedService#getAccessToken(java.lang.String,
+	 * java.lang.String, java.net.URI, java.util.Map)
+	 */
+	@Override
+	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri,
+			final Map<String, Object> additional) {
+		final JerseyClient client = JerseyClientBuilder.createClient();
+		final Form entity = new Form();
+		entity.param("code", code);
+		entity.param("grant_type", "authorization_code");
+		entity.param("client_id", getClientId());
+		entity.param("client_secret", getClientSecret());
+		entity.param("redirect_uri", redirectUri.toString());
+		final AccountToken tokenResponse = client
+				.target(tokenURL(getOrgurl((Environment) additional.get("environment"))))
+				.request(MediaType.APPLICATION_JSON_TYPE)
+				.post(Entity.entity(entity, MediaType.APPLICATION_FORM_URLENCODED_TYPE), AccountToken.class);
+		return tokenResponse;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * nz.co.trineo.common.ConnectedService#getAuthorizeURIForService(nz.co.
+	 * trineo.common.model.ConnectedAccount, java.net.URI, java.lang.String,
+	 * java.util.Map)
+	 */
+	@Override
+	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state,
+			final Map<String, Object> additional) {
+		final String uriTemplate = authorizeURL(getOrgurl((Environment) additional.get("environment")))
+				+ "?response_type=code&client_id={clientId}&redirect_uri={redirect_uri}&state={state}&scope={scope}&display={display}&prompt={prompt}";
+		final URI url = UriBuilder.fromUri(uriTemplate).build(getClientId(), redirectUri, state, "full refresh_token",
+				"popup", "login consent");
+		return url;
+	}
+
+	public Backup getBackup(final int backupId) {
+		return backupDAO.get(backupId);
+	}
+
+	private BulkConnection getBulkConnection(final ConnectedAccount account) throws SalesforceException {
+		try {
+			final ConnectorConfig config = new ConnectorConfig();
+			config.setTraceFile("trace.log");
+			config.setTraceMessage(true);
+			config.setPrettyPrintXml(true);
+			config.setSessionId(account.getToken().getAccessToken());
+			config.setRestEndpoint(account.getToken().getInstanceUrl() + "/services/async/" + apiVersion);
+			config.setCompression(true);
+			return new BulkConnection(config);
+		} catch (FileNotFoundException | AsyncApiException e) {
+			throw new SalesforceException(e);
+		}
+	}
+
+	/**
+	 * @return
+	 */
+	public String getClientId() {
+		return configuration.getClientKey();
+	}
+
+	/**
+	 * @return
+	 */
+	public String getClientSecret() {
+		return configuration.getClientSecret();
+	}
+
+	/**
+	 * @param orgId
+	 * @return
+	 */
+	public List<CodeCoverageResult> getCodeCoverage(final String orgId) {
+		final List<RunTestsResult> tests = listTests(orgId);
+		if (tests.isEmpty()) {
+			return null;
+		}
+		final RunTestsResult test = tests.get(0);
+		final List<CodeCoverageResult> coverage = test.getCodeCoverage();
+		for (final CodeCoverageResult codeCoverageResult : coverage) {
+			codeCoverageResult.getLocationsNotCovered().size();
+		}
+		return coverage;
+	}
+
+	/**
+	 * @param orgId
+	 * @param filename
+	 * @return
+	 */
+	public CodeCoverageResult getCoverageFor(final String orgId, final String filename) {
+		final List<RunTestsResult> tests = listTests(orgId);
+		if (tests.isEmpty()) {
+			return null;
+		}
+		final RunTestsResult test = tests.get(0);
+		final String key = filename.split("\\.")[0];
+		final Optional<CodeCoverageResult> first = test.getCodeCoverage().stream().filter(ccr -> {
+			return key.equals(ccr.getName());
+		}).findFirst();
+		final CodeCoverageResult result = first.orElse(null);
+		return result;
+	}
+
+	/**
+	 * @param account
+	 * @return
+	 * @throws SalesforceException
+	 */
+	private MetadataConnection getMetadataConnection(final ConnectedAccount account) throws SalesforceException {
+		try {
+			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
+			config.setSessionId(account.getToken().getAccessToken());
+			config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/m/" + apiVersion);
+			return com.sforce.soap.metadata.Connector.newConnection(config);
+		} catch (ConnectionException | FileNotFoundException e) {
+			throw new SalesforceException(e);
 		}
 	}
 
@@ -977,35 +687,86 @@ public class SalesforceService implements ConnectedService {
 
 	/**
 	 * @param orgId
-	 * @param filename
 	 * @return
+	 * @throws SalesforceException
 	 */
-	public CodeCoverageResult getCoverageFor(final String orgId, final String filename) {
-		final List<RunTestsResult> tests = listTests(orgId);
-		if (tests.isEmpty()) {
-			return null;
+	public TreeNode getMetadataTree(final String orgId) throws SalesforceException {
+		final File repoDir = new File(configuration.getSalesforceDirectory(), orgId);
+		final Map<String, TreeNode> nodeMap = new HashMap<>();
+
+		final Path path = repoDir.toPath();
+		try {
+			Files.walk(path).filter(p -> {
+				return !p.toString().contains(".git") && !p.toString().endsWith("-meta.xml")
+						&& !p.toString().contains("package.xml");
+			}).forEach(p -> {
+				final TreeNode node = new TreeNode();
+				node.setText(p.getFileName().toString());
+				nodeMap.put(p.toAbsolutePath().toString(), node);
+
+				final String pp = p.getParent().toAbsolutePath().toString();
+				final TreeNode parentNode = nodeMap.get(pp);
+				if (parentNode != null) {
+					parentNode.getNodes().add(node);
+				}
+			});
+		} catch (final IOException e) {
+			throw new SalesforceException(e);
 		}
-		final RunTestsResult test = tests.get(0);
-		final String key = filename.split("\\.")[0];
-		final Optional<CodeCoverageResult> first = test.getCodeCoverage().stream().filter(ccr -> {
-			return key.equals(ccr.getName());
-		}).findFirst();
-		final CodeCoverageResult result = first.orElse(null);
-		return result;
+
+		final TreeNode rootNode = nodeMap.get(path.toAbsolutePath().toString());
+		rootNode.setText("/");
+		rootNode.getState().setExpanded(true);
+		return rootNode;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see nz.co.trineo.common.ConnectedService#getName()
+	 */
+	@Override
+	public String getName() {
+		return "Salesforce";
 	}
 
 	/**
+	 * @param orgId
 	 * @return
 	 */
-	public String getClientId() {
-		return configuration.getClientKey();
+	public Organization getOrg(final String orgId) {
+		final Organization organization = orgDAO.get(orgId);
+		organization.getBackups().size(); // lazy load
+		organization.getTestResults().size(); // lazy load
+		return organization;
 	}
 
-	/**
-	 * @return
-	 */
-	public String getClientSecret() {
-		return configuration.getClientSecret();
+	private Organization getOrganization(final ConnectedAccount account, final String organizationId)
+			throws SalesforceException {
+		final QueryResult queryResult = runQuery(account,
+				"SELECT Id, Name, OrganizationType, IsSandbox FROM Organization WHERE Id = '" + organizationId + "'");
+		final SObject sObject = queryResult.getRecords()[0];
+		final Organization organization = ConvertUtils.toOrganization(sObject);
+		return organization;
+	}
+
+	private String getOrganizationId(final ConnectedAccount account) throws SalesforceException {
+		PartnerConnection connection = getPartnerConnection(account);
+		String organizationId = null;
+		try {
+			organizationId = connection.getUserInfo().getOrganizationId();
+		} catch (final ConnectionException e) {
+			if (isInvalidSessionException(e)) {
+				refreshToken(account);
+				connection = getPartnerConnection(account);
+				try {
+					organizationId = connection.getUserInfo().getOrganizationId();
+				} catch (final ConnectionException e1) {
+					throw new SalesforceException(e1);
+				}
+			}
+		}
+		return organizationId;
 	}
 
 	/**
@@ -1028,78 +789,174 @@ public class SalesforceService implements ConnectedService {
 	}
 
 	/**
-	 * @param baseurl
+	 * @param account
 	 * @return
+	 * @throws SalesforceException
 	 */
-	public String tokenURL(final String baseurl) {
-		return baseurl + "/services/oauth2/token";
+	private PartnerConnection getPartnerConnection(final ConnectedAccount account) throws SalesforceException {
+		try {
+			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
+			config.setSessionId(account.getToken().getAccessToken());
+			config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/u/" + apiVersion);
+			return Connector.newConnection(config);
+		} catch (ConnectionException | FileNotFoundException e) {
+			throw new SalesforceException(e);
+		}
 	}
 
 	/**
-	 * @param object
+	 * @param account
+	 * @return
+	 * @throws SalesforceException
+	 */
+	private SoapConnection getSoapConnection(final ConnectedAccount account) throws SalesforceException {
+		try {
+			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
+			config.setSessionId(account.getToken().getAccessToken());
+			config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/s/" + apiVersion);
+			return com.sforce.soap.apex.Connector.newConnection(config);
+		} catch (ConnectionException | FileNotFoundException e) {
+			throw new SalesforceException(e);
+		}
+	}
+
+	/**
+	 * @param orgId
+	 * @return
+	 * @throws SalesforceException
+	 */
+	public TreeNode getTestTree(final String orgId) throws SalesforceException {
+		final TreeNode rootNode = new TreeNode();
+		rootNode.setText("/");
+		rootNode.getState().setExpanded(true);
+		rootNode.setIcon("fa fa-cloud");
+		final Organization organization = orgDAO.get(orgId);
+		final List<RunTestsResult> testResults = organization.getTestResults();
+		testResults.forEach(r -> {
+			final TreeNode node = new TreeNode();
+			node.setText(String.valueOf(r.getId()));
+			node.setIcon("fa fa-tasks");
+			final List<RunTestMessage> messages = new ArrayList<>();
+			final Map<String, TreeNode> nodeMap = new HashMap<>();
+			messages.addAll(r.getSuccesses());
+			messages.addAll(r.getFailures());
+			messages.stream().sorted().forEach(m -> {
+				if (!nodeMap.containsKey(m.getName())) {
+					final TreeNode classNode = new TreeNode();
+					classNode.setText(m.getName());
+					nodeMap.put(m.getName(), classNode);
+					node.getNodes().add(classNode);
+				}
+				final TreeNode classNode = nodeMap.get(m.getName());
+				final TreeNode messageNode = new TreeNode();
+				messageNode.setText(m.getMethodName());
+				if (m instanceof RunTestFailure) {
+					messageNode.setIcon("fa fa-times");
+				} else {
+					messageNode.setIcon("fa fa-check");
+				}
+				classNode.getNodes().add(messageNode);
+			});
+			rootNode.getNodes().add(node);
+		});
+		return rootNode;
+	}
+
+	/**
+	 * Check if the exception was caused by an invalid session
+	 *
+	 * @param e
+	 * @return true if the session was invalid
+	 */
+	private boolean isInvalidSessionException(final ConnectionException e) {
+		log.error("Checking for INVALID_SESSION_ID");
+		if (e instanceof SoapFaultException) {
+			if (((SoapFaultException) e).getFaultCode().getLocalPart()
+					.equals(ExceptionCode.INVALID_SESSION_ID.toString())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * @param orgId
+	 * @return
+	 * @throws SalesforceException
+	 */
+	public List<Backup> listBackups(final String orgId) throws SalesforceException {
+		final Organization organization = orgDAO.get(orgId);
+		return organization.getBackups();
+	}
+
+	/**
 	 * @return
 	 */
-	public String authorizeURL(final String baseurl) {
-		return baseurl + "/services/oauth2/authorize";
+	public List<Organization> listOrgs() {
+		return orgDAO.listAll();
 	}
 
-	/* (non-Javadoc)
-	 *
-	 * @see nz.co.trineo.common.ConnectedService#getAuthorizeURIForService(nz.co.trineo.common.model.ConnectedAccount,
-	 * java.net.URI, java.lang.String, java.util.Map) */
-	@Override
-	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state,
-			final Map<String, Object> additional) {
-		final String uriTemplate = authorizeURL(getOrgurl((Environment) additional.get("environment")))
-				+ "?response_type=code&client_id={clientId}&redirect_uri={redirect_uri}&state={state}&scope={scope}&display={display}&prompt={prompt}";
-		final URI url = UriBuilder.fromUri(uriTemplate).build(getClientId(), redirectUri, state, "full refresh_token",
-				"popup", "login consent");
-		return url;
+	/**
+	 * @param orgId
+	 * @return
+	 */
+	public List<RunTestsResult> listTests(final String orgId) {
+		final Organization organization = orgDAO.get(orgId);
+		final List<RunTestsResult> testResults = organization.getTestResults();
+		testResults.size(); // lazy loading
+		return testResults;
 	}
 
-	/* (non-Javadoc)
-	 *
-	 * @see nz.co.trineo.common.ConnectedService#getAccessToken(java.lang.String, java.lang.String, java.net.URI,
-	 * java.util.Map) */
-	@Override
-	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri,
-			final Map<String, Object> additional) {
-		final JerseyClient client = JerseyClientBuilder.createClient();
-		final Form entity = new Form();
-		entity.param("code", code);
-		entity.param("grant_type", "authorization_code");
-		entity.param("client_id", getClientId());
-		entity.param("client_secret", getClientSecret());
-		entity.param("redirect_uri", redirectUri.toString());
-		final AccountToken tokenResponse = client
-				.target(tokenURL(getOrgurl((Environment) additional.get("environment"))))
-				.request(MediaType.APPLICATION_JSON_TYPE)
-				.post(Entity.entity(entity, MediaType.APPLICATION_FORM_URLENCODED_TYPE), AccountToken.class);
-		return tokenResponse;
-	}
-
-	@Override
-	public boolean verify(final ConnectedAccount account) {
+	/**
+	 * @param folder
+	 * @param zipFile
+	 * @throws SalesforceException
+	 */
+	private void pack(final File folder, final File zipFile) throws SalesforceException {
 		try {
-			PartnerConnection connection = getPartnerConnection(account);
-			try {
-				connection.getUserInfo().getOrganizationId();
-			} catch (final ConnectionException e) {
-				if (isInvalidSessionException(e)) {
-					refreshToken(account);
-					connection = getPartnerConnection(account);
-					try {
-						connection.getUserInfo().getOrganizationId();
-					} catch (final ConnectionException e1) {
-						throw new SalesforceException(e1);
-					}
-				}
+			final Path p = Files.createFile(zipFile.toPath());
+			try (ZipOutputStream zs = new ZipOutputStream(Files.newOutputStream(p));) {
+				final Path pp = folder.toPath();
+				Files.walk(pp)
+						.filter(path -> !Files.isDirectory(path) && !path.toAbsolutePath().toString().contains(".git"))
+						.forEach(path -> {
+							final String sp = path.toAbsolutePath().toString()
+									.replace(pp.toAbsolutePath().toString(), "unpackaged")
+									.replace(path.getFileName().toString(), "");
+							final ZipEntry zipEntry = new ZipEntry(sp + "/" + path.getFileName().toString());
+							try {
+								zs.putNextEntry(zipEntry);
+								zs.write(Files.readAllBytes(path));
+								zs.closeEntry();
+							} catch (final Exception e) {
+								log.error("An error ocurred packing the zip file", e);
+							}
+						});
 			}
-		} catch (final SalesforceException e) {
-			log.error("Unable to verify salesforce account", e);
-			return false;
+		} catch (final IOException e) {
+			throw new SalesforceException(e);
 		}
-		return true;
+	}
+
+	private List<String> pathsFromPackage(final File dir) throws SalesforceException {
+		final List<String> paths = new ArrayList<>();
+		final Path path = new File(dir, "src").toPath();
+
+		try {
+			Files.walk(path).filter(p -> {
+				return !p.toString().contains(".git") && Files.isDirectory(p);
+			}).forEach(p -> {
+				final Path relativize = path.relativize(p);
+				final String pp = relativize.toString();
+				if (StringUtils.isNotBlank(pp)) {
+					paths.add(pp);
+				}
+			});
+		} catch (final IOException e) {
+			throw new SalesforceException(e);
+		}
+
+		return paths;
 	}
 
 	/**
@@ -1130,6 +987,128 @@ public class SalesforceService implements ConnectedService {
 		return tokenResponse;
 	}
 
+	private QueryResult runQuery(final ConnectedAccount account, final String query) throws SalesforceException {
+		PartnerConnection connection = getPartnerConnection(account);
+		QueryResult queryResult = null;
+		try {
+			queryResult = connection.query(query);
+		} catch (final ConnectionException e) {
+			if (isInvalidSessionException(e)) {
+				refreshToken(account);
+				connection = getPartnerConnection(account);
+				try {
+					queryResult = connection.query(query);
+				} catch (final ConnectionException e1) {
+					throw new SalesforceException(e1);
+				}
+			}
+		}
+		while (!queryResult.isDone()) {
+			log.info(queryResult);
+			try {
+				Thread.sleep(1000);
+			} catch (final InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		return queryResult;
+	}
+
+	/**
+	 * @param request
+	 * @param account
+	 * @return
+	 * @throws SalesforceException
+	 */
+	private RunTestsResult runTests(final RunTestsRequest request, final ConnectedAccount account)
+			throws SalesforceException {
+		SoapConnection soapConnection = getSoapConnection(account);
+		com.sforce.soap.apex.RunTestsResult runTestsResult = null;
+		try {
+			runTestsResult = soapConnection.runTests(request);
+		} catch (final ConnectionException e) {
+			if (isInvalidSessionException(e)) {
+				refreshToken(account);
+				soapConnection = getSoapConnection(account);
+				try {
+					runTestsResult = soapConnection.runTests(request);
+				} catch (final ConnectionException e1) {
+					throw new SalesforceException(e1);
+				}
+			}
+		}
+		if (runTestsResult != null) {
+			final RunTestsResult testsResult = ConvertUtils.toRunTestsResult(runTestsResult);
+			final RunTestsResult result = testRunDAO.persist(testsResult);
+			return result;
+		}
+		return null;
+	}
+
+	/**
+	 * @param orgId
+	 * @param tests
+	 * @return
+	 * @throws SalesforceException
+	 */
+	public RunTestsResult runTests(final String orgId, final String[] tests) throws SalesforceException {
+		final Organization organization = orgDAO.get(orgId);
+		final ConnectedAccount account = organization.getAccount();
+		final RunTestsRequest runTestsRequest = new RunTestsRequest();
+		runTestsRequest.setAllTests(tests == null || tests.length == 0);
+		runTestsRequest.setClasses(tests);
+		runTestsRequest.setNamespace("");
+		final RunTestsResult runTests = runTests(runTestsRequest, account);
+		organization.getTestResults().add(runTests);
+		orgDAO.persist(organization);
+		return runTests;
+	}
+
+	/**
+	 * @param runId
+	 * @return
+	 */
+	public RunTestsResult showTest(final String runId) {
+		final RunTestsResult result = testRunDAO.get(runId);
+		log.debug(result); // log it to lazy load everything
+		return result;
+	}
+
+	public Backup startBackup(final String orgId) throws SalesforceException {
+		final Organization org = orgDAO.get(orgId);
+		final ConnectedAccount account = org.getAccount();
+
+		final DescribeMetadataObject[] metadata = describeMetadata(account);
+		final MetadataConnection metadataConnection = getMetadataConnection(account);
+
+		final RetrieveRequest request = createRequest(metadata);
+		final AsyncResult asyncResult;
+		try {
+			asyncResult = metadataConnection.retrieve(request);
+		} catch (final ConnectionException e) {
+			throw new SalesforceException(e);
+		}
+
+		final Backup backup = new Backup();
+		final DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+		final String date = format.format(new Date());
+		backup.setName(date);
+		backup.setRetrieveId(asyncResult.getId());
+		backup.setStatus(BackupStatus.IN_PROGRESS);
+		org.getBackups().add(backup);
+		backupDAO.persist(backup);
+		orgDAO.persist(org);
+		return backup;
+	}
+
+	/**
+	 * @param baseurl
+	 * @return
+	 */
+	public String tokenURL(final String baseurl) {
+		return baseurl + "/services/oauth2/token";
+	}
+
 	public Organization updateOrg(final Organization org) {
 		final Organization organization = orgDAO.get(org.getId());
 		if (org.getClient() != null) {
@@ -1151,17 +1130,59 @@ public class SalesforceService implements ConnectedService {
 		return organization;
 	}
 
-	public void deleteOrg(final String id) {
-		final Organization organization = orgDAO.get(id);
-		organization.setClient(null);
-		organization.setBranch(null);
-		organization.getTestResults().forEach(r -> {
-			testRunDAO.delete(r.getId());
-		});
-		organization.getBackups().forEach(b -> {
-			backupDAO.delete(b.getId());
-		});
-		credDAO.delete(organization.getAccount().getId());
-		orgDAO.delete(id);
+	@Override
+	public boolean verify(final ConnectedAccount account) {
+		try {
+			PartnerConnection connection = getPartnerConnection(account);
+			try {
+				connection.getUserInfo().getOrganizationId();
+			} catch (final ConnectionException e) {
+				if (isInvalidSessionException(e)) {
+					refreshToken(account);
+					connection = getPartnerConnection(account);
+					try {
+						connection.getUserInfo().getOrganizationId();
+					} catch (final ConnectionException e1) {
+						throw new SalesforceException(e1);
+					}
+				}
+			}
+		} catch (final SalesforceException e) {
+			log.error("Unable to verify salesforce account", e);
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * @param connection
+	 * @param asyncResult
+	 * @return
+	 * @throws InterruptedException
+	 * @throws SalesforceException
+	 * @throws ConnectionException
+	 */
+	private RetrieveResult waitForRetrieveCompletion(final Organization org, final String asyncResultId)
+			throws SalesforceException, InterruptedException, ConnectionException {
+		final ConnectedAccount account = org.getAccount();
+
+		// Wait for the retrieve to complete
+		int poll = 0;
+		long waitTimeMilliSecs = ONE_SECOND;
+		RetrieveResult result = null;
+		do {
+			Thread.sleep(waitTimeMilliSecs);
+			// Double the wait time for the next iteration
+			waitTimeMilliSecs *= 2;
+			if (poll++ > MAX_NUM_POLL_REQUESTS) {
+				throw new SalesforceException("Request timed out.  If this is a large set "
+						+ "of metadata components, check that the time allowed "
+						+ "by MAX_NUM_POLL_REQUESTS is sufficient.");
+			}
+			result = checkRetrieveStatus(account, asyncResultId, true);
+			log.info("Retrieve Status: " + result.getStatus());
+		} while (!result.isDone());
+
+		return result;
 	}
 }

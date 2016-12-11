@@ -26,23 +26,23 @@ public class SfOrgView extends View {
 		this.branches = branches;
 	}
 
-	public Organization getOrg() {
-		return org;
-	}
-
 	public List<Backup> getBackups() {
 		return backups;
 	}
 
-	public List<RunTestsResult> getTests() {
-		return tests;
+	public List<Branch> getBranches() {
+		return branches;
 	}
 
 	public List<Client> getClients() {
 		return clients;
 	}
 
-	public List<Branch> getBranches() {
-		return branches;
+	public Organization getOrg() {
+		return org;
+	}
+
+	public List<RunTestsResult> getTests() {
+		return tests;
 	}
 }

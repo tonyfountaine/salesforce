@@ -17,20 +17,9 @@ public final class GitMonitor implements ProgressMonitor {
 	}
 
 	@Override
-	public void update(final int completed) {
-		process.getTask().setCurrentWork(completed);
+	public void beginTask(final String title, final int totalWork) {
+		process.setTask(new GitTask(title, totalWork));
 		processDAO.persist(process);
-	}
-
-	@Override
-	public void start(final int totalTasks) {
-		process.setTotalTasks(totalTasks);
-		processDAO.persist(process);
-	}
-
-	@Override
-	public boolean isCancelled() {
-		return false;
 	}
 
 	@Override
@@ -41,8 +30,19 @@ public final class GitMonitor implements ProgressMonitor {
 	}
 
 	@Override
-	public void beginTask(final String title, final int totalWork) {
-		process.setTask(new GitTask(title, totalWork));
+	public boolean isCancelled() {
+		return false;
+	}
+
+	@Override
+	public void start(final int totalTasks) {
+		process.setTotalTasks(totalTasks);
+		processDAO.persist(process);
+	}
+
+	@Override
+	public void update(final int completed) {
+		process.getTask().setCurrentWork(completed);
 		processDAO.persist(process);
 	}
 }

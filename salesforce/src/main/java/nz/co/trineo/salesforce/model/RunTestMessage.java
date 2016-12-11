@@ -25,60 +25,6 @@ public abstract class RunTestMessage implements Comparable<RunTestMessage> {
 	@Column
 	private double time;
 
-	@JsonProperty
-	public String getId() {
-		return id;
-	}
-
-	public void setId(final String id) {
-		this.id = id;
-	}
-
-	@JsonProperty
-	public String getMethodName() {
-		return methodName;
-	}
-
-	public void setMethodName(final String methodName) {
-		this.methodName = methodName;
-	}
-
-	@JsonProperty
-	public String getName() {
-		return name;
-	}
-
-	public void setName(final String name) {
-		this.name = name;
-	}
-
-	@JsonProperty
-	public String getNamespace() {
-		return namespace;
-	}
-
-	public void setNamespace(final String namespace) {
-		this.namespace = namespace;
-	}
-
-	@JsonProperty
-	public boolean isSeeAllData() {
-		return seeAllData;
-	}
-
-	public void setSeeAllData(final boolean seeAllData) {
-		this.seeAllData = seeAllData;
-	}
-
-	@JsonProperty
-	public double getTime() {
-		return time;
-	}
-
-	public void setTime(final double time) {
-		this.time = time;
-	}
-
 	private int compareString(final String str1, final String str2) {
 		if (str1 == null && str2 == null) {
 			return 0;
@@ -102,22 +48,6 @@ public abstract class RunTestMessage implements Comparable<RunTestMessage> {
 			compare = compareString(methodName, that.methodName);
 		}
 		return compare;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + dbId;
-		result = prime * result + (id == null ? 0 : id.hashCode());
-		result = prime * result + (methodName == null ? 0 : methodName.hashCode());
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + (namespace == null ? 0 : namespace.hashCode());
-		result = prime * result + (seeAllData ? 1231 : 1237);
-		long temp;
-		temp = Double.doubleToLongBits(time);
-		result = prime * result + (int) (temp ^ temp >>> 32);
-		return result;
 	}
 
 	@Override
@@ -170,5 +100,75 @@ public abstract class RunTestMessage implements Comparable<RunTestMessage> {
 			return false;
 		}
 		return true;
+	}
+
+	@JsonProperty
+	public String getId() {
+		return id;
+	}
+
+	@JsonProperty
+	public String getMethodName() {
+		return methodName;
+	}
+
+	@JsonProperty
+	public String getName() {
+		return name;
+	}
+
+	@JsonProperty
+	public String getNamespace() {
+		return namespace;
+	}
+
+	@JsonProperty
+	public double getTime() {
+		return time;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + dbId;
+		result = prime * result + (id == null ? 0 : id.hashCode());
+		result = prime * result + (methodName == null ? 0 : methodName.hashCode());
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (namespace == null ? 0 : namespace.hashCode());
+		result = prime * result + (seeAllData ? 1231 : 1237);
+		long temp;
+		temp = Double.doubleToLongBits(time);
+		result = prime * result + (int) (temp ^ temp >>> 32);
+		return result;
+	}
+
+	@JsonProperty
+	public boolean isSeeAllData() {
+		return seeAllData;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public void setMethodName(final String methodName) {
+		this.methodName = methodName;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
+	public void setNamespace(final String namespace) {
+		this.namespace = namespace;
+	}
+
+	public void setSeeAllData(final boolean seeAllData) {
+		this.seeAllData = seeAllData;
+	}
+
+	public void setTime(final double time) {
+		this.time = time;
 	}
 }

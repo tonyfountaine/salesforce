@@ -25,12 +25,12 @@ public class ContentView extends View {
 		}
 	}
 
-	public List<String> getLines() {
-		return lines;
-	}
-
 	public Set<Integer> getCoverage() {
 		return coverage;
+	}
+
+	public List<String> getLines() {
+		return lines;
 	}
 
 	public CodeCoverageResult getResult() {

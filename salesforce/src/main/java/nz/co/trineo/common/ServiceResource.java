@@ -29,17 +29,17 @@ public class ServiceResource {
 
 	@GET
 	@Timed
-	public Response listServices() {
-		final Set<String> services = ServiceRegistry.listRegistedServices();
-		return Response.ok(services).build();
-	}
-
-	@GET
-	@Timed
 	@UnitOfWork
 	@Path("/{name}/accounts")
 	public Response getAccounts(final @PathParam("name") String name) {
 		final List<ConnectedAccount> accounts = accountService.byService(name.toLowerCase());
 		return Response.ok(accounts).build();
+	}
+
+	@GET
+	@Timed
+	public Response listServices() {
+		final Set<String> services = ServiceRegistry.listRegistedServices();
+		return Response.ok(services).build();
 	}
 }

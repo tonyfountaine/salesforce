@@ -31,17 +31,9 @@ public class CodeCoverageWarning {
 		return id;
 	}
 
-	public void setId(final String id) {
-		this.id = id;
-	}
-
 	@JsonProperty
 	public String getMessage() {
 		return message;
-	}
-
-	public void setMessage(final String message) {
-		this.message = message;
 	}
 
 	@JsonProperty
@@ -49,13 +41,21 @@ public class CodeCoverageWarning {
 		return name;
 	}
 
-	public void setName(final String name) {
-		this.name = name;
-	}
-
 	@JsonProperty
 	public String getNamespace() {
 		return namespace;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
+	}
+
+	public void setMessage(final String message) {
+		this.message = message;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
 	}
 
 	public void setNamespace(final String namespace) {

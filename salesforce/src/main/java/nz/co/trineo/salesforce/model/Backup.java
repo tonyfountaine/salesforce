@@ -23,49 +23,6 @@ public class Backup {
 	@Column
 	private BackupStatus status;
 
-	public int getId() {
-		return id;
-	}
-
-	public void setId(final int id) {
-		this.id = id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(final String name) {
-		this.name = name;
-	}
-
-	public String getRetrieveId() {
-		return retrieveId;
-	}
-
-	public void setRetrieveId(final String retrieveId) {
-		this.retrieveId = retrieveId;
-	}
-
-	public BackupStatus getStatus() {
-		return status;
-	}
-
-	public void setStatus(final BackupStatus status) {
-		this.status = status;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + id;
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + (retrieveId == null ? 0 : retrieveId.hashCode());
-		result = prime * result + (status == null ? 0 : status.hashCode());
-		return result;
-	}
-
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj) {
@@ -99,5 +56,48 @@ public class Backup {
 			return false;
 		}
 		return true;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getRetrieveId() {
+		return retrieveId;
+	}
+
+	public BackupStatus getStatus() {
+		return status;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + id;
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (retrieveId == null ? 0 : retrieveId.hashCode());
+		result = prime * result + (status == null ? 0 : status.hashCode());
+		return result;
+	}
+
+	public void setId(final int id) {
+		this.id = id;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
+	public void setRetrieveId(final String retrieveId) {
+		this.retrieveId = retrieveId;
+	}
+
+	public void setStatus(final BackupStatus status) {
+		this.status = status;
 	}
 }

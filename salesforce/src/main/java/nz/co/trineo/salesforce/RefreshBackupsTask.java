@@ -22,12 +22,12 @@ import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.BackupStatus;
 
 public class RefreshBackupsTask extends Task {
+	private static final Pattern DATE_PATTERN = Pattern.compile(".*\\s+(\\d+-\\d+-\\d+-\\d+-\\d+-\\d+).*");
 	private final OrganizationDAO orgDAO;
 	private final GitService gitService;
 	private final AppConfiguration configuration;
-	private final SessionFactory sessionFactory;
 
-	private static final Pattern DATE_PATTERN = Pattern.compile(".*\\s+(\\d+-\\d+-\\d+-\\d+-\\d+-\\d+).*");
+	private final SessionFactory sessionFactory;
 
 	public RefreshBackupsTask(final OrganizationDAO orgDAO, final GitService gitService,
 			final AppConfiguration configuration, final SessionFactory sessionFactory) {

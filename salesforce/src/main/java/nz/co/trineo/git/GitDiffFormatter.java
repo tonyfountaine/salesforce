@@ -19,9 +19,14 @@ import nz.co.trineo.git.model.GitDiffHeader;
 import nz.co.trineo.git.model.GitDiffLine;
 
 public class GitDiffFormatter extends DiffFormatter {
+	private static boolean end(final Edit edit, final int a, final int b) {
+		return edit.getEndA() <= a && edit.getEndB() <= b;
+	}
+
 	private final List<GitDiff> entries = new ArrayList<>();
 	private int context = 3;
 	private String newPath;
+
 	private String oldPath;
 
 	public GitDiffFormatter(final OutputStream out) {
@@ -29,22 +34,6 @@ public class GitDiffFormatter extends DiffFormatter {
 		setContext(5);
 		setNewPrefix("");
 		setOldPrefix("");
-	}
-
-	@Override
-	public void setContext(final int lineCount) {
-		if (lineCount < 0) {
-			throw new IllegalArgumentException(JGitText.get().contextMustBeNonNegative);
-		}
-		context = lineCount;
-	}
-
-	private int findCombinedEnd(final List<Edit> edits, final int i) {
-		int end = i + 1;
-		while (end < edits.size() && (combineA(edits, end) || combineB(edits, end))) {
-			end++;
-		}
-		return end - 1;
 	}
 
 	private boolean combineA(final List<Edit> e, final int i) {
@@ -55,13 +44,50 @@ public class GitDiffFormatter extends DiffFormatter {
 		return e.get(i).getBeginB() - e.get(i - 1).getEndB() <= 2 * context;
 	}
 
-	private static boolean end(final Edit edit, final int a, final int b) {
-		return edit.getEndA() <= a && edit.getEndB() <= b;
+	protected GitDiffLine createAddedLine(final RawText text, final int lineNum) throws IOException {
+		final GitDiffLine line = new GitDiffLine();
+		line.setLineNumB(lineNum);
+		line.setLine(createLine(text, lineNum));
+		line.setAdded(true);
+		return line;
 	}
 
-	public void setPaths(final String newPath, final String oldPath) {
-		this.newPath = newPath;
-		this.oldPath = oldPath;
+	protected GitDiffLine createContextLine(final RawText text, final int lineA, final int lineB) throws IOException {
+		final GitDiffLine line = new GitDiffLine();
+		line.setLineNumA(lineA);
+		line.setLineNumB(lineB);
+		line.setLine(createLine(text, lineA));
+		return line;
+	}
+
+	protected GitDiffHeader createHeader(final int startLine, final int endLine) {
+		final GitDiffHeader header = new GitDiffHeader();
+		header.setStart(startLine + 1);
+		header.setEnd(endLine - startLine);
+		return header;
+	}
+
+	private String createLine(final RawText text, final int cur) throws IOException {
+		final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		text.writeLine(stream, cur);
+		final String escape = HtmlEscapers.htmlEscaper().escape(stream.toString());
+		return escape;
+	}
+
+	protected GitDiffLine createRemovedLine(final RawText text, final int lineNum) throws IOException {
+		final GitDiffLine line = new GitDiffLine();
+		line.setLineNumA(lineNum);
+		line.setLine(createLine(text, lineNum));
+		line.setRemoved(true);
+		return line;
+	}
+
+	private int findCombinedEnd(final List<Edit> edits, final int i) {
+		int end = i + 1;
+		while (end < edits.size() && (combineA(edits, end) || combineB(edits, end))) {
+			end++;
+		}
+		return end - 1;
 	}
 
 	@Override
@@ -109,45 +135,20 @@ public class GitDiffFormatter extends DiffFormatter {
 		}
 	}
 
-	protected GitDiffHeader createHeader(final int startLine, final int endLine) {
-		final GitDiffHeader header = new GitDiffHeader();
-		header.setStart(startLine + 1);
-		header.setEnd(endLine - startLine);
-		return header;
-	}
-
-	protected GitDiffLine createContextLine(final RawText text, final int lineA, final int lineB) throws IOException {
-		final GitDiffLine line = new GitDiffLine();
-		line.setLineNumA(lineA);
-		line.setLineNumB(lineB);
-		line.setLine(createLine(text, lineA));
-		return line;
-	}
-
-	protected GitDiffLine createAddedLine(final RawText text, final int lineNum) throws IOException {
-		final GitDiffLine line = new GitDiffLine();
-		line.setLineNumB(lineNum);
-		line.setLine(createLine(text, lineNum));
-		line.setAdded(true);
-		return line;
-	}
-
-	protected GitDiffLine createRemovedLine(final RawText text, final int lineNum) throws IOException {
-		final GitDiffLine line = new GitDiffLine();
-		line.setLineNumA(lineNum);
-		line.setLine(createLine(text, lineNum));
-		line.setRemoved(true);
-		return line;
-	}
-
-	private String createLine(final RawText text, final int cur) throws IOException {
-		final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		text.writeLine(stream, cur);
-		final String escape = HtmlEscapers.htmlEscaper().escape(stream.toString());
-		return escape;
-	}
-
 	public List<GitDiff> getEntries() {
 		return entries;
+	}
+
+	@Override
+	public void setContext(final int lineCount) {
+		if (lineCount < 0) {
+			throw new IllegalArgumentException(JGitText.get().contextMustBeNonNegative);
+		}
+		context = lineCount;
+	}
+
+	public void setPaths(final String newPath, final String oldPath) {
+		this.newPath = newPath;
+		this.oldPath = oldPath;
 	}
 }

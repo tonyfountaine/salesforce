@@ -24,35 +24,35 @@ public class GitRepo {
 	@Embedded
 	private Credentals credentals;
 
-	public String getName() {
-		return name;
-	}
-
-	public void setName(final String name) {
-		this.name = name;
-	}
-
-	public String getRemote() {
-		return remote;
-	}
-
-	public void setRemote(final String remote) {
-		this.remote = remote;
+	public Credentals getCredentals() {
+		return credentals;
 	}
 
 	public int getId() {
 		return id;
 	}
 
-	public void setId(final int id) {
-		this.id = id;
+	public String getName() {
+		return name;
 	}
 
-	public Credentals getCredentals() {
-		return credentals;
+	public String getRemote() {
+		return remote;
 	}
 
 	public void setCredentals(final Credentals credentals) {
 		this.credentals = credentals;
+	}
+
+	public void setId(final int id) {
+		this.id = id;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
+	public void setRemote(final String remote) {
+		this.remote = remote;
 	}
 }

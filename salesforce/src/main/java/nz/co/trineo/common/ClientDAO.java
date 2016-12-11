@@ -14,22 +14,22 @@ public class ClientDAO extends AbstractDAO<Client> {
 		super(sessionFactory);
 	}
 
-	@Override
-	public Client get(final Serializable id) {
-		return super.get(id);
+	public void delete(final long id) {
+		final Client account = get(id);
+		currentSession().delete(account);
 	}
 
 	@Override
-	public Client persist(final Client entity) throws HibernateException {
-		return super.persist(entity);
+	public Client get(final Serializable id) {
+		return super.get(id);
 	}
 
 	public List<Client> listAll() {
 		return list(currentSession().createCriteria(getEntityClass()));
 	}
 
-	public void delete(final long id) {
-		final Client account = get(id);
-		currentSession().delete(account);
+	@Override
+	public Client persist(final Client entity) throws HibernateException {
+		return super.persist(entity);
 	}
 }

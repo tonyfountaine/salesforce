@@ -12,12 +12,16 @@ public class ClientService {
 		this.clientDAO = clientDAO;
 	}
 
-	public List<Client> list() {
-		return clientDAO.listAll();
-	}
-
 	public Client create(final Client client) {
 		return clientDAO.persist(client);
+	}
+
+	public void delete(final long id) {
+		clientDAO.delete(id);
+	}
+
+	public List<Client> list() {
+		return clientDAO.listAll();
 	}
 
 	public Client read(final long id) {
@@ -26,9 +30,5 @@ public class ClientService {
 
 	public Client update(final Client client) {
 		return clientDAO.persist(client);
-	}
-
-	public void delete(final long id) {
-		clientDAO.delete(id);
 	}
 }

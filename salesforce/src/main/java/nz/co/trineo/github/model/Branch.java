@@ -38,54 +38,6 @@ public class Branch {
 	@OneToOne(mappedBy = "branch")
 	private Organization org;
 
-	@JsonProperty
-	public String getName() {
-		return name;
-	}
-
-	public void setName(final String name) {
-		this.name = name;
-	}
-
-	@JsonProperty
-	public String getUrl() {
-		return url;
-	}
-
-	public void setUrl(final String url) {
-		this.url = url;
-	}
-
-	@JsonProperty
-	public String getSha() {
-		return sha;
-	}
-
-	public void setSha(final String sha) {
-		this.sha = sha;
-	}
-
-	@JsonIgnore
-	public Repository getRepo() {
-		return repo;
-	}
-
-	public void setRepo(final Repository repo) {
-		this.repo = repo;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (int) (id ^ id >>> 32);
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + (repo == null ? 0 : repo.hashCode());
-		result = prime * result + (sha == null ? 0 : sha.hashCode());
-		result = prime * result + (url == null ? 0 : url.hashCode());
-		return result;
-	}
-
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj) {
@@ -132,19 +84,14 @@ public class Branch {
 		return true;
 	}
 
-	@Override
-	public String toString() {
-		return new ReflectionToStringBuilder(this, ToStringStyle.JSON_STYLE).setExcludeFieldNames("org", "repo")
-				.build();
-	}
-
 	@JsonProperty
 	public long getId() {
 		return id;
 	}
 
-	public void setId(final long id) {
-		this.id = id;
+	@JsonProperty
+	public String getName() {
+		return name;
 	}
 
 	@JsonIgnore
@@ -152,7 +99,60 @@ public class Branch {
 		return org;
 	}
 
+	@JsonIgnore
+	public Repository getRepo() {
+		return repo;
+	}
+
+	@JsonProperty
+	public String getSha() {
+		return sha;
+	}
+
+	@JsonProperty
+	public String getUrl() {
+		return url;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) (id ^ id >>> 32);
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (repo == null ? 0 : repo.hashCode());
+		result = prime * result + (sha == null ? 0 : sha.hashCode());
+		result = prime * result + (url == null ? 0 : url.hashCode());
+		return result;
+	}
+
+	public void setId(final long id) {
+		this.id = id;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
 	public void setOrg(final Organization org) {
 		this.org = org;
+	}
+
+	public void setRepo(final Repository repo) {
+		this.repo = repo;
+	}
+
+	public void setSha(final String sha) {
+		this.sha = sha;
+	}
+
+	public void setUrl(final String url) {
+		this.url = url;
+	}
+
+	@Override
+	public String toString() {
+		return new ReflectionToStringBuilder(this, ToStringStyle.JSON_STYLE).setExcludeFieldNames("org", "repo")
+				.build();
 	}
 }

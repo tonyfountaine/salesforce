@@ -36,74 +36,6 @@ public class Tag {
 	@JoinColumn(name = "TAG_ID", nullable = false)
 	private Repository repo;
 
-	@JsonProperty
-	public String getName() {
-		return name;
-	}
-
-	public void setName(final String name) {
-		this.name = name;
-	}
-
-	@JsonProperty
-	public String getUrl() {
-		return url;
-	}
-
-	public void setUrl(final String url) {
-		this.url = url;
-	}
-
-	@JsonProperty
-	public String getSha() {
-		return sha;
-	}
-
-	public void setSha(final String sha) {
-		this.sha = sha;
-	}
-
-	@JsonProperty
-	public String getTarballUrl() {
-		return tarballUrl;
-	}
-
-	public void setTarballUrl(final String tarballUrl) {
-		this.tarballUrl = tarballUrl;
-	}
-
-	@JsonProperty
-	public String getZipballUrl() {
-		return zipballUrl;
-	}
-
-	public void setZipballUrl(final String zipballUrl) {
-		this.zipballUrl = zipballUrl;
-	}
-
-	@JsonIgnore
-	public Repository getRepo() {
-		return repo;
-	}
-
-	public void setRepo(final Repository repo) {
-		this.repo = repo;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (int) (id ^ id >>> 32);
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		result = prime * result + (repo == null ? 0 : repo.hashCode());
-		result = prime * result + (sha == null ? 0 : sha.hashCode());
-		result = prime * result + (tarballUrl == null ? 0 : tarballUrl.hashCode());
-		result = prime * result + (url == null ? 0 : url.hashCode());
-		result = prime * result + (zipballUrl == null ? 0 : zipballUrl.hashCode());
-		return result;
-	}
-
 	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj) {
@@ -164,17 +96,85 @@ public class Tag {
 		return true;
 	}
 
-	@Override
-	public String toString() {
-		return ToStringBuilder.reflectionToString(this);
-	}
-
 	@JsonProperty
 	public long getId() {
 		return id;
 	}
 
+	@JsonProperty
+	public String getName() {
+		return name;
+	}
+
+	@JsonIgnore
+	public Repository getRepo() {
+		return repo;
+	}
+
+	@JsonProperty
+	public String getSha() {
+		return sha;
+	}
+
+	@JsonProperty
+	public String getTarballUrl() {
+		return tarballUrl;
+	}
+
+	@JsonProperty
+	public String getUrl() {
+		return url;
+	}
+
+	@JsonProperty
+	public String getZipballUrl() {
+		return zipballUrl;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) (id ^ id >>> 32);
+		result = prime * result + (name == null ? 0 : name.hashCode());
+		result = prime * result + (repo == null ? 0 : repo.hashCode());
+		result = prime * result + (sha == null ? 0 : sha.hashCode());
+		result = prime * result + (tarballUrl == null ? 0 : tarballUrl.hashCode());
+		result = prime * result + (url == null ? 0 : url.hashCode());
+		result = prime * result + (zipballUrl == null ? 0 : zipballUrl.hashCode());
+		return result;
+	}
+
 	public void setId(final long id) {
 		this.id = id;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
+	}
+
+	public void setRepo(final Repository repo) {
+		this.repo = repo;
+	}
+
+	public void setSha(final String sha) {
+		this.sha = sha;
+	}
+
+	public void setTarballUrl(final String tarballUrl) {
+		this.tarballUrl = tarballUrl;
+	}
+
+	public void setUrl(final String url) {
+		this.url = url;
+	}
+
+	public void setZipballUrl(final String zipballUrl) {
+		this.zipballUrl = zipballUrl;
+	}
+
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this);
 	}
 }

@@ -15,26 +15,26 @@ public class AccountDAO extends AbstractDAO<ConnectedAccount> {
 		super(sessionFactory);
 	}
 
-	@Override
-	public ConnectedAccount get(final Serializable id) {
-		return super.get(id);
+	public void delete(final int id) {
+		final ConnectedAccount account = get(id);
+		currentSession().delete(account);
 	}
 
 	@Override
-	public ConnectedAccount persist(final ConnectedAccount entity) throws HibernateException {
-		return super.persist(entity);
+	public ConnectedAccount get(final Serializable id) {
+		return super.get(id);
 	}
 
 	public List<ConnectedAccount> listAll() {
 		return list(currentSession().createCriteria(getEntityClass()));
 	}
 
-	public void delete(final int id) {
-		final ConnectedAccount account = get(id);
-		currentSession().delete(account);
-	}
-
 	public List<ConnectedAccount> listByService(final String service) {
 		return list(currentSession().createCriteria(getEntityClass()).add(Restrictions.eq("service", service)));
+	}
+
+	@Override
+	public ConnectedAccount persist(final ConnectedAccount entity) throws HibernateException {
+		return super.persist(entity);
 	}
 }
