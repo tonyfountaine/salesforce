@@ -142,6 +142,11 @@
 		    <artifactId>sforce-tooling-api</artifactId>
 		    <version>35.0</version>
 		</dependency>
+		<dependency>
+			<groupId>com.vladsch.flexmark</groupId>
+			<artifactId>flexmark</artifactId>
+			<version>0.11.1</version>
+		</dependency>
 	</dependencies>
 
 	<build>

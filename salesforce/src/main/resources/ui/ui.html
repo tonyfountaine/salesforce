@@ -958,7 +958,7 @@
                             <div style="margin-left: 50px; border-left: 1px solid #ccc; padding: 10px;">
                                 <div id="cardInfo">
 	                                <p data-bind="text: $data.name"></p>
-	                                <p data-bind="text: $data.desc"></p>
+	                                <p data-bind="html: $data.desc"></p>
 	                                <form class="form-horizontal">
 	                                	<div class="form-group">
 	                                		<label class="col-sm-2 control-form">Labels</label>
@@ -1003,7 +1003,7 @@
 			                                <!-- /ko -->
 			                                <span data-bind="text: $data.memberCreator.fullName"></span>
 		                                </p>
-	                                    <p style="margin-left: 30px;" data-bind="text: $data.data.text">
+	                                    <p style="margin-left: 30px;" data-bind="html: $data.data.text">
 	                                    </p>
 	                                </div>
 	                                <!-- /ko -->

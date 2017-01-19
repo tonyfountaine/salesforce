@@ -22,6 +22,9 @@ import com.julienvey.trello.domain.Card;
 import com.julienvey.trello.domain.Member;
 import com.julienvey.trello.domain.TList;
 import com.julienvey.trello.impl.TrelloImpl;
+import com.vladsch.flexmark.ast.Node;
+import com.vladsch.flexmark.html.HtmlRenderer;
+import com.vladsch.flexmark.parser.Parser;
 
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.ClientService;
@@ -49,6 +52,14 @@ public class TrelloService implements ConnectedService {
 
 	public String authorizeURL() {
 		return "https://trello.com/1/OAuthAuthorizeToken";
+	}
+
+	private String formatMarkdown(final String inStr) {
+		final Parser parser = Parser.builder().build();
+		final Node node = parser.parse(inStr);
+		final HtmlRenderer renderer = HtmlRenderer.builder().build();
+		final String outStr = renderer.render(node);
+		return outStr;
 	}
 
 	@Override
@@ -91,6 +102,7 @@ public class TrelloService implements ConnectedService {
 		final Trello trello = getTrello(board.getAccount());
 		final Card card = trello.getCard(cardId,
 				new Argument("fields", "name,idList,url,desc,labels,badges,shortLink,shortUrl"));
+		card.setDesc(formatMarkdown(card.getDesc()));
 		return card;
 	}
 
@@ -105,6 +117,7 @@ public class TrelloService implements ConnectedService {
 		final nz.co.trineo.trello.model.Board board = boardDAO.get(boardId);
 		final Trello trello = getTrello(board.getAccount());
 		final List<Action> cardActions = trello.getCardActions(cardId, new Argument("filter", "commentCard"));
+		cardActions.forEach(ca -> ca.getData().setText(formatMarkdown(ca.getData().getText())));
 		return cardActions;
 	}
 
@@ -120,6 +133,7 @@ public class TrelloService implements ConnectedService {
 		if (listId != null) {
 			boardCards = boardCards.stream().filter(c -> listId.equals(c.getIdList())).collect(Collectors.toList());
 		}
+		boardCards.forEach(c -> c.setDesc(formatMarkdown(c.getDesc())));
 		return boardCards;
 	}
 
