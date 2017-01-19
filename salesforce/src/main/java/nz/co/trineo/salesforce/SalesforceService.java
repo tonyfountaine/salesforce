@@ -5,23 +5,11 @@ import static com.sforce.soap.metadata.RetrieveStatus.Succeeded;
 import static java.text.MessageFormat.format;
 import static org.apache.commons.io.FileUtils.forceMkdir;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.*;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -106,6 +94,7 @@ import nz.co.trineo.salesforce.model.TreeNode;
  *
  */
 public class SalesforceService implements ConnectedService {
+	private static final SimpleDateFormat BACKUP_NAME_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	private static final Log log = LogFactory.getLog(SalesforceService.class);
 	private static final long ONE_SECOND = 1000;
 	private static final int MAX_NUM_POLL_REQUESTS = 50;
@@ -506,13 +495,10 @@ public class SalesforceService implements ConnectedService {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
+	/* (non-Javadoc)
 	 *
-	 * @see
-	 * nz.co.trineo.common.ConnectedService#getAccessToken(java.lang.String,
-	 * java.lang.String, java.net.URI, java.util.Map)
-	 */
+	 * @see nz.co.trineo.common.ConnectedService#getAccessToken(java.lang.String, java.lang.String, java.net.URI,
+	 * java.util.Map) */
 	@Override
 	public AccountToken getAccessToken(final String code, final String state, final URI redirectUri,
 			final Map<String, Object> additional) {
@@ -530,14 +516,10 @@ public class SalesforceService implements ConnectedService {
 		return tokenResponse;
 	}
 
-	/*
-	 * (non-Javadoc)
+	/* (non-Javadoc)
 	 *
-	 * @see
-	 * nz.co.trineo.common.ConnectedService#getAuthorizeURIForService(nz.co.
-	 * trineo.common.model.ConnectedAccount, java.net.URI, java.lang.String,
-	 * java.util.Map)
-	 */
+	 * @see nz.co.trineo.common.ConnectedService#getAuthorizeURIForService(nz.co. trineo.common.model.ConnectedAccount,
+	 * java.net.URI, java.lang.String, java.util.Map) */
 	@Override
 	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri, final String state,
 			final Map<String, Object> additional) {
@@ -720,11 +702,9 @@ public class SalesforceService implements ConnectedService {
 		return rootNode;
 	}
 
-	/*
-	 * (non-Javadoc)
+	/* (non-Javadoc)
 	 *
-	 * @see nz.co.trineo.common.ConnectedService#getName()
-	 */
+	 * @see nz.co.trineo.common.ConnectedService#getName() */
 	@Override
 	public String getName() {
 		return "Salesforce";
@@ -886,7 +866,18 @@ public class SalesforceService implements ConnectedService {
 	 */
 	public List<Backup> listBackups(final String orgId) throws SalesforceException {
 		final Organization organization = orgDAO.get(orgId);
-		return organization.getBackups();
+		List<Backup> sorted = organization.getBackups();
+		sorted.sort((Backup o1, Backup o2) -> {
+			try {
+				final Date d1 = BACKUP_NAME_FORMAT.parse(o1.getName());
+				final Date d2 = BACKUP_NAME_FORMAT.parse(o2.getName());
+				return d1.compareTo(d2) * -1;
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+			return 0;
+		});
+		return sorted;
 	}
 
 	/**
@@ -1090,8 +1081,7 @@ public class SalesforceService implements ConnectedService {
 		}
 
 		final Backup backup = new Backup();
-		final DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-		final String date = format.format(new Date());
+		final String date = BACKUP_NAME_FORMAT.format(new Date());
 		backup.setName(date);
 		backup.setRetrieveId(asyncResult.getId());
 		backup.setStatus(BackupStatus.IN_PROGRESS);
