@@ -16,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import nz.co.trineo.github.model.Repository;
+import nz.co.trineo.repo.model.Repository;
 import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.trello.model.Board;
 

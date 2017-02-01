@@ -1,5 +1,6 @@
 package nz.co.trineo.common;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ws.rs.Consumes;
@@ -23,8 +24,9 @@ import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.model.Client;
-import nz.co.trineo.common.views.ClientsView;
-import nz.co.trineo.github.model.Repository;
+import nz.co.trineo.repo.model.Repository;
+import nz.co.trineo.repo.view.OrganizationView;
+import nz.co.trineo.repo.view.RepositoryView;
 import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.trello.model.Board;
 
@@ -67,7 +69,7 @@ public class ClientResource {
 	@Path("/{id}/boards")
 	public Response getBoards(final @PathParam("id") long id) {
 		final List<Board> boards = clientService.read(id).getBoards();
-		boards.size();
+		boards.size(); // lazy loading
 		return Response.ok(boards).build();
 	}
 
@@ -77,8 +79,11 @@ public class ClientResource {
 	@Path("/{id}/organizations")
 	public Response getOrganizations(final @PathParam("id") long id) {
 		final List<Organization> organizations = clientService.read(id).getOrganizations();
-		organizations.size();
-		return Response.ok(organizations).build();
+		final List<OrganizationView> list = new ArrayList<>();
+		organizations.forEach(o -> {
+			list.add(new OrganizationView(o));
+		});
+		return Response.ok(list).build();
 	}
 
 	@GET
@@ -87,8 +92,11 @@ public class ClientResource {
 	@Path("/{id}/repos")
 	public Response getRepos(final @PathParam("id") long id) {
 		final List<Repository> repositories = clientService.read(id).getRepositories();
-		repositories.size();
-		return Response.ok(repositories).build();
+		final List<RepositoryView> list = new ArrayList<>();
+		repositories.forEach(r -> {
+			list.add(new RepositoryView(r));
+		});
+		return Response.ok(list).build();
 	}
 
 	@GET
@@ -97,16 +105,6 @@ public class ClientResource {
 	public Response listAccounts() {
 		final List<Client> list = clientService.list();
 		return Response.ok(list).build();
-	}
-
-	@GET
-	@Timed
-	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
-	public ClientsView listHTML() {
-		final List<Client> clients = clientService.list();
-		log.debug(clients);
-		return new ClientsView(clients);
 	}
 
 	@GET

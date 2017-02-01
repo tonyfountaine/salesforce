@@ -1,4 +1,4 @@
-package nz.co.trineo.github.model;
+package nz.co.trineo.repo.model;
 
 import java.util.List;
 
@@ -15,17 +15,11 @@ import javax.persistence.Table;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
 
 @Entity
 @Table(name = "repo")
-@JsonInclude(Include.NON_DEFAULT)
 public class Repository {
 	@Id
 	@GeneratedValue
@@ -43,6 +37,8 @@ public class Repository {
 	@ManyToOne
 	@JoinColumn(name = "CLIENT_ID")
 	private Client client;
+	@Column
+	private RepositoryType type;
 
 	@Override
 	public boolean equals(final Object obj) {
@@ -104,37 +100,30 @@ public class Repository {
 		return true;
 	}
 
-	@JsonProperty
 	public ConnectedAccount getAccount() {
 		return account;
 	}
 
-	@JsonIgnore
 	public List<Branch> getBranches() {
 		return branches;
 	}
 
-	@JsonProperty
 	public Client getClient() {
 		return client;
 	}
 
-	@JsonProperty
 	public String getCloneURL() {
 		return cloneURL;
 	}
 
-	@JsonProperty
 	public int getId() {
 		return id;
 	}
 
-	@JsonProperty
 	public String getName() {
 		return name;
 	}
 
-	@JsonIgnore
 	public List<Tag> getTags() {
 		return tags;
 	}
@@ -185,5 +174,13 @@ public class Repository {
 	public String toString() {
 		return new ReflectionToStringBuilder(this, ToStringStyle.JSON_STYLE).setExcludeFieldNames("batches.org")
 				.build();
+	}
+
+	public RepositoryType getType() {
+		return type;
+	}
+
+	public void setType(RepositoryType type) {
+		this.type = type;
 	}
 }

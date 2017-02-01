@@ -29,7 +29,6 @@ import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.model.ConnectedAccount;
-import nz.co.trineo.common.views.AccountsView;
 import nz.co.trineo.common.views.SuccessView;
 import nz.co.trineo.salesforce.model.Environment;
 
@@ -129,15 +128,6 @@ public class AccountResource {
 	@UnitOfWork
 	public List<ConnectedAccount> listAccounts() {
 		return accountService.list();
-	}
-
-	@GET
-	@Timed
-	@UnitOfWork
-	@Produces(MediaType.TEXT_HTML)
-	public AccountsView listHTML() {
-		final List<ConnectedAccount> accounts = accountService.list();
-		return new AccountsView(accounts, ServiceRegistry.listRegistedServices());
 	}
 
 	@GET

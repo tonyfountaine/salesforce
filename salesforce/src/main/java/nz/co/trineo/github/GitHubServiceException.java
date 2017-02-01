@@ -1,6 +1,8 @@
 package nz.co.trineo.github;
 
-public class GitHubServiceException extends Exception {
+import nz.co.trineo.repo.RepoServiceException;
+
+public class GitHubServiceException extends RepoServiceException {
 
 	private static final long serialVersionUID = -1300924517315350898L;
 

@@ -15,7 +15,7 @@ import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.setup.Environment;
 import nz.co.trineo.configuration.AppConfiguration;
-import nz.co.trineo.github.GitHubResource;
+import nz.co.trineo.repo.RepoResource;
 
 /**
  * Unit test for simple App.
@@ -33,7 +33,7 @@ public class AppTest {
 	public void buildsAThingResource() throws Exception {
 		application.run(config, environment);
 
-		verify(jersey).register(isA(GitHubResource.class));
+		verify(jersey).register(isA(RepoResource.class));
 	}
 
 	@Before

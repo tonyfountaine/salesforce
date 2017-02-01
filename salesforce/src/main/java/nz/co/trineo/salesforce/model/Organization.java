@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
-import nz.co.trineo.github.model.Branch;
+import nz.co.trineo.repo.model.Branch;
 
 @Entity
 @Table(name = "sforg")

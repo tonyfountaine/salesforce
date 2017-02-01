@@ -1,4 +1,4 @@
-package nz.co.trineo.github;
+package nz.co.trineo.repo;
 
 import static org.hibernate.criterion.Restrictions.eq;
 
@@ -11,11 +11,12 @@ import org.hibernate.SessionFactory;
 import com.google.common.base.Objects;
 
 import io.dropwizard.hibernate.AbstractDAO;
-import nz.co.trineo.github.model.Branch;
-import nz.co.trineo.github.model.Repository;
+import nz.co.trineo.repo.model.Branch;
+import nz.co.trineo.repo.model.Repository;
+import nz.co.trineo.repo.model.RepositoryType;
 
-public class GitHubRepoDAO extends AbstractDAO<Repository> {
-	public GitHubRepoDAO(final SessionFactory sessionFactory) {
+public class RepoDAO extends AbstractDAO<Repository> {
+	public RepoDAO(final SessionFactory sessionFactory) {
 		super(sessionFactory);
 	}
 
@@ -37,8 +38,8 @@ public class GitHubRepoDAO extends AbstractDAO<Repository> {
 		return uniqueResult(currentSession().createCriteria(getEntityClass()).add(eq("name", name)));
 	}
 
-	public List<Repository> listAll() {
-		return list(currentSession().createCriteria(getEntityClass()));
+	public List<Repository> listByType(final RepositoryType type) {
+		return list(currentSession().createCriteria(getEntityClass()).add(eq("type", type)));
 	}
 
 	@Override

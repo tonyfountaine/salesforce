@@ -39,11 +39,9 @@ import org.eclipse.jgit.treewalk.FileTreeIterator;
 import org.eclipse.jgit.treewalk.WorkingTreeOptions;
 
 import nz.co.trineo.common.Service;
-import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.git.model.GitProcess;
-import nz.co.trineo.git.model.GitRepo;
 
 public class GitService implements Service {
 	private static final String ORIGIN = "origin";
@@ -51,14 +49,11 @@ public class GitService implements Service {
 
 	private final AppConfiguration configuration;
 	private final GitProcessDAO processDAO;
-	private final GitRepoDAO gitRepoDAO;
 
-	public GitService(final AppConfiguration configuration, final GitProcessDAO processDAO, final GitRepoDAO gitRepoDAO)
-			throws IOException {
+	public GitService(final AppConfiguration configuration, final GitProcessDAO processDAO) throws IOException {
 		super();
 		this.configuration = configuration;
 		this.processDAO = processDAO;
-		this.gitRepoDAO = gitRepoDAO;
 		forceMkdir(configuration.getGitDirectory());
 	}
 
@@ -80,7 +75,7 @@ public class GitService implements Service {
 		addRemote(repoDirA, repoDirB);
 	}
 
-	public List<String> branches(final File repoDir) throws GitServiceException {
+	public List<String> getBranches(final File repoDir) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		final List<String> branches = new ArrayList<>();
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
@@ -95,9 +90,9 @@ public class GitService implements Service {
 		}
 	}
 
-	public List<String> branches(final String name) throws GitServiceException {
+	public List<String> getBranches(final String name) throws GitServiceException {
 		final File repoDir = new File(configuration.getGitDirectory(), name);
-		return branches(repoDir);
+		return getBranches(repoDir);
 	}
 
 	public void checkout(final File repoDir, final String name) throws GitServiceException {
@@ -146,15 +141,8 @@ public class GitService implements Service {
 
 	public GitProcess clone(final String name, final String cloneURL, final String username, final char[] password)
 			throws GitServiceException {
-		final GitRepo gitRepo = new GitRepo();
-		gitRepo.setName(name);
-		gitRepo.setRemote(cloneURL);
-		gitRepo.setCredentals(new Credentals());
-		gitRepo.getCredentals().setPassword(password == null ? "" : String.valueOf(password));
-		gitRepo.getCredentals().setUsername(username);
 		final File repoDir = new File(configuration.getGitDirectory(), name);
 		final GitProcess process = clone(repoDir, cloneURL, username, password);
-		gitRepoDAO.persist(gitRepo);
 		return process;
 	}
 
@@ -174,8 +162,6 @@ public class GitService implements Service {
 	}
 
 	public void createRepo(final File repoDir) throws GitServiceException {
-		final GitRepo gitRepo = new GitRepo();
-		gitRepo.setName(repoDir.getName());
 		if (!isRepo(repoDir)) {
 			try {
 				Files.createDirectory(repoDir.toPath());
@@ -189,23 +175,11 @@ public class GitService implements Service {
 				throw new GitServiceException(e);
 			}
 		}
-		gitRepoDAO.persist(gitRepo);
 	}
 
 	public void createRepo(final String name) throws GitServiceException {
 		final File repoDir = new File(configuration.getGitDirectory(), name);
 		createRepo(repoDir);
-	}
-
-	public void credentals(final String name, final String username, final String password) {
-		final GitRepo gitRepo = gitRepoDAO.getByName(name);
-		if (gitRepo.getCredentals() == null) {
-			gitRepo.setCredentals(new Credentals());
-		}
-		final Credentals credentals = gitRepo.getCredentals();
-		credentals.setPassword(password);
-		credentals.setUsername(username);
-		gitRepoDAO.persist(gitRepo);
 	}
 
 	public List<GitDiff> diff(final File repoDir, final String firstTag, final String secondTag,
@@ -388,23 +362,6 @@ public class GitService implements Service {
 		return isRepo(repoDir);
 	}
 
-	public List<GitRepo> listRepos() throws GitServiceException {
-		return gitRepoDAO.listAll();
-		/*
-		 * final List<GitRepo> repos = new ArrayList<>(); final Path
-		 * gitDirectory = configuration.getGitDirectory().toPath(); try {
-		 * Files.walk(gitDirectory, 1).filter(p ->
-		 * Files.isDirectory(p.resolve(".git"))).forEach(p -> { try { final
-		 * String remote = getRemote(p.toFile()); final GitRepo repo = new
-		 * GitRepo(); repo.setName(p.getFileName().toString());
-		 * repo.setRemote(remote);
-		 *
-		 * repos.add(repo); } catch (final GitServiceException e) {
-		 * log.error(e); } }); } catch (final IOException e) { log.error(e); }
-		 * return repos;
-		 */
-	}
-
 	public List<String> log(final File repoDir) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		final List<String> logEntries = new ArrayList<>();
@@ -444,13 +401,6 @@ public class GitService implements Service {
 		}
 	}
 
-	public PullResult pull(final File repoDir) throws GitServiceException {
-		final GitRepo gitRepo = gitRepoDAO.getByName(repoDir.getName());
-		final String password = gitRepo.getCredentals().getPassword();
-		return pull(repoDir, gitRepo.getCredentals().getUsername(),
-				password == null ? new char[0] : password.toCharArray());
-	}
-
 	public PullResult pull(final File repoDir, final String username, final char[] password)
 			throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
@@ -473,16 +423,9 @@ public class GitService implements Service {
 		return call;
 	}
 
-	public PullResult pull(final String name) throws GitServiceException {
+	public PullResult pull(final String name, final String username, final char[] password) throws GitServiceException {
 		final File repoDir = new File(configuration.getGitDirectory(), name);
-		return pull(repoDir);
-	}
-
-	public Iterable<PushResult> push(final File repoDir) throws GitServiceException {
-		final GitRepo gitRepo = gitRepoDAO.getByName(repoDir.getName());
-		final String password = gitRepo.getCredentals().getPassword();
-		return push(repoDir, gitRepo.getCredentals().getUsername(),
-				password == null ? new char[0] : password.toCharArray());
+		return pull(repoDir, username, password);
 	}
 
 	public Iterable<PushResult> push(final File repoDir, final String username, final char[] password)
@@ -507,9 +450,10 @@ public class GitService implements Service {
 		return call;
 	}
 
-	public Iterable<PushResult> push(final String name) throws GitServiceException {
+	public Iterable<PushResult> push(final String name, final String username, final char[] password)
+			throws GitServiceException {
 		final File repoDir = new File(configuration.getGitDirectory(), name);
-		return push(repoDir);
+		return push(repoDir, username, password);
 	}
 
 	public void removeRemote(final File repoDir) throws GitServiceException {
@@ -554,5 +498,33 @@ public class GitService implements Service {
 	public void tag(final String name, final String tag) throws GitServiceException {
 		final File repoDir = new File(configuration.getGitDirectory(), name);
 		tag(repoDir, tag);
+	}
+
+	public void createBranch(final File repoDir, final String name) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			git.branchCreate().setName(name).call();
+		} catch (IOException | GitAPIException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	public void createBranch(final String name, final String branchName) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		createBranch(repoDir, branchName);
+	}
+
+	public void deleteBranch(final File repoDir, final String name) throws GitServiceException {
+		final File gitDir = new File(repoDir, ".git");
+		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
+			git.branchDelete().setBranchNames(name).call();
+		} catch (IOException | GitAPIException e) {
+			throw new GitServiceException(e);
+		}
+	}
+
+	public void deleteBranch(final String name, final String branchName) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		deleteBranch(repoDir, branchName);
 	}
 }

@@ -25,18 +25,15 @@ import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitProcessDAO;
-import nz.co.trineo.git.GitRepoDAO;
-import nz.co.trineo.git.GitResource;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.model.GitProcess;
-import nz.co.trineo.git.model.GitRepo;
 import nz.co.trineo.git.model.GitTask;
-import nz.co.trineo.github.GitHubRepoDAO;
-import nz.co.trineo.github.GitHubResource;
 import nz.co.trineo.github.GitHubService;
-import nz.co.trineo.github.model.Branch;
-import nz.co.trineo.github.model.Repository;
-import nz.co.trineo.github.model.Tag;
+import nz.co.trineo.repo.RepoDAO;
+import nz.co.trineo.repo.RepoResource;
+import nz.co.trineo.repo.model.Branch;
+import nz.co.trineo.repo.model.Repository;
+import nz.co.trineo.repo.model.Tag;
 import nz.co.trineo.salesforce.BackupDAO;
 import nz.co.trineo.salesforce.OrganizationDAO;
 import nz.co.trineo.salesforce.RefreshBackupsTask;
@@ -68,10 +65,10 @@ public class App extends Application<AppConfiguration> {
 	}
 
 	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(
-			AccountToken.class, Client.class, ConnectedAccount.class, Credentals.class, GitProcess.class, GitRepo.class,
-			GitTask.class, Backup.class, CodeCoverageResult.class, CodeCoverageWarning.class, CodeLocation.class,
-			Organization.class, RunTestFailure.class, RunTestsResult.class, RunTestSuccess.class, Repository.class,
-			Branch.class, Tag.class, Board.class) {
+			AccountToken.class, Client.class, ConnectedAccount.class, Credentals.class, GitProcess.class, GitTask.class,
+			Backup.class, CodeCoverageResult.class, CodeCoverageWarning.class, CodeLocation.class, Organization.class,
+			RunTestFailure.class, RunTestsResult.class, RunTestSuccess.class, Repository.class, Branch.class, Tag.class,
+			Board.class) {
 		@Override
 		public DataSourceFactory getDataSourceFactory(final AppConfiguration configuration) {
 			return configuration.getDataSourceFactory();
@@ -109,23 +106,20 @@ public class App extends Application<AppConfiguration> {
 		final AccountDAO accountDAO = new AccountDAO(sessionFactory);
 		final TestRunDAO testRunDAO = new TestRunDAO(sessionFactory);
 		final BackupDAO backupDAO = new BackupDAO(sessionFactory);
-		final GitRepoDAO gitRepoDAO = new GitRepoDAO(sessionFactory);
-		final GitHubRepoDAO gitHubRepoDAO = new GitHubRepoDAO(sessionFactory);
+		final RepoDAO repoDAO = new RepoDAO(sessionFactory);
 		final ClientDAO clientDAO = new ClientDAO(sessionFactory);
 		final BoardDAO boardDAO = new BoardDAO(sessionFactory);
 
-		final GitService gService = new GitService(configuration, processDAO, gitRepoDAO);
+		final GitService gService = new GitService(configuration, processDAO);
 		final ClientService clientService = new ClientService(clientDAO);
-		final GitHubService ghService = new GitHubService(gitHubRepoDAO, configuration, accountDAO, clientService,
-				gService);
+		final GitHubService ghService = new GitHubService(repoDAO, configuration, accountDAO, clientService, gService);
 		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService,
 				testRunDAO, backupDAO, sessionFactory, clientService, ghService);
 		final AccountService aService = new AccountService(accountDAO);
 		final TrelloService tService = new TrelloService(configuration, accountDAO, boardDAO, clientService);
 
-		final GitResource gResource = new GitResource(gService);
-		final GitHubResource ghResource = new GitHubResource(ghService, aService, clientService);
-		final SalesforceResource sfResource = new SalesforceResource(sfService, aService, clientService);
+		final RepoResource gResource = new RepoResource();
+		final SalesforceResource sfResource = new SalesforceResource(sfService);
 		final AccountResource aResource = new AccountResource(aService);
 		final TrelloResource tResource = new TrelloResource(tService);
 		final StaticResource staticResource = new StaticResource();
@@ -137,7 +131,6 @@ public class App extends Application<AppConfiguration> {
 		ServiceRegistry.registerService(ghService);
 		ServiceRegistry.registerService(gService);
 
-		environment.jersey().register(ghResource);
 		environment.jersey().register(gResource);
 		environment.jersey().register(sfResource);
 		environment.jersey().register(aResource);

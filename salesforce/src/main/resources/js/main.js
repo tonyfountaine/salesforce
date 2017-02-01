@@ -101,7 +101,7 @@ function OrgModel(org) {
 	self.compareBackups = function() {
         $.getJSON("/sf/orgs/" + self.id + "/compare/" + self.sourceBackup() + "/" + self.targetBackup(), function(data) {
         	var temp = new Map();
-        	data.compare.forEach(function(d) {
+        	data.forEach(function(d) {
         		var path = '/dev/null' == d.pathA ? d.pathB : d.pathA;
         		if (!temp.has(path)) {
         			temp.set(path, new Array());
@@ -117,7 +117,7 @@ function OrgModel(org) {
 	self.compareBranch = function() {
         $.post("/sf/orgs/" + self.id + "/compareBranch", function(data) {
         	var temp = new Map();
-        	data.compare.forEach(function(d) {
+        	data.forEach(function(d) {
         		var path = '/dev/null' == d.pathA ? d.pathB : d.pathA;
         		if (!temp.has(path)) {
         			temp.set(path, new Array());
@@ -133,7 +133,7 @@ function OrgModel(org) {
 	self.compareOrgs = function() {
         $.getJSON("/sf/orgs/" + self.id + "/compare/" + self.targetOrg(), function(data) {
         	var temp = new Map();
-        	data.compare.forEach(function(d) {
+        	data.forEach(function(d) {
         		var path = '/dev/null' == d.pathA ? d.pathB : d.pathA;
         		if (!temp.has(path)) {
         			temp.set(path, new Array());
@@ -178,7 +178,7 @@ function RepoModel(repo) {
 	self.compare = function() {
         $.getJSON("/github/branches/" + self.sourceBranch() + "/compare/" + self.targetBranch(), function(data) {
         	var temp = new Map();
-        	data.compare.forEach(function(d) {
+        	data.forEach(function(d) {
         		var path = '/dev/null' == d.pathA ? d.pathB : d.pathA;
         		if (!temp.has(path)) {
         			temp.set(path, new Array());
@@ -305,40 +305,6 @@ function CardModel(org) {
         });*/
 	};
 };
-
-function formatGitHeader(header) {
-	if (header != undefined) {
-		switch (header.end) {
-		case 0:
-			return header.start - 1 + ",0";
-		case 1:
-			return header.start;
-		default:
-			return header.start + "," + header.end;
-		}
-	}
-	return '';
-}
-
-function getTreeFilename(tree, selectedNodes) {
-	var filename = "";
-	if (selectedNodes.length > 0) {
-		var n = selectedNodes[0];
-		while (n.text != "/") {
-			filename = "/" + n.text + filename;
-			n = tree.treeview('getParent', n);
-		}
-	}
-	return filename;
-};
-
-function extension(name) {
-	var i = name.lastIndexOf('.');
-	if (i > 0) {
-		return name.substring(i + 1);
-	}
-	return name;
-}
 
 function TrineoViewModel() {
 	var self = this;
@@ -545,15 +511,17 @@ function TrineoViewModel() {
 	};
 	self.getClientBranches = function(id) {
 		self.branches([]);
-		$.getJSON("/clients/" + id + "/repos", function(repos) {
-			repos.forEach(function(r) {
-				$.getJSON("/github/repos/" + r.id + "/branches", function(data) {
-					var temp = self.branches();
-					temp = temp.concat(data);
-					self.branches(temp);
+		if (id != null) {
+			$.getJSON("/clients/" + id + "/repos", function(repos) {
+				repos.forEach(function(r) {
+					$.getJSON("/github/repos/" + r.id + "/branches", function(data) {
+						var temp = self.branches();
+						temp = temp.concat(data);
+						self.branches(temp);
+					});
 				});
 			});
-		});
+		}
 	};
 	self.getClientOrgs = function(id) {
 		self.org().clientOrgs([]);
@@ -579,7 +547,7 @@ function TrineoViewModel() {
 		if (filename.length > 0) {
 			$.getJSON("/sf/orgs/" + self.org().id + "/metadata" + filename, function (data, textStatus, jqXHR) {
 				$('#codeHead').text(selectedNodes[0].text);
-				self.content(data.lines);
+				self.content(data);
 			});
 		} else {
 			self.content(null);
@@ -593,13 +561,13 @@ function TrineoViewModel() {
 	};
 	self.getCodeCoverage = function(id) {
 		$.getJSON("/sf/orgs/" + id + "/coverage", function (data) {
-			self.codeCoverage(data.coverage);
+			self.codeCoverage(data);
 		});
 	};
 
 	self.getRepos = function() {
 		$.getJSON("/github/repos/", function (data) {
-			var mapped = $.map(data.repos, function(item) {
+			var mapped = $.map(data, function(item) {
 				return new RepoModel(item)
 			});
 			self.repos(mapped);
@@ -620,7 +588,7 @@ function TrineoViewModel() {
 	};
 	self.getRepo = function(id) {
 		$.getJSON("/github/repos/" + id, function (data) {
-			self.repo(new RepoModel(data.repo));
+			self.repo(new RepoModel(data));
 		});
 	};
 	self.getBranches = function(id) {
