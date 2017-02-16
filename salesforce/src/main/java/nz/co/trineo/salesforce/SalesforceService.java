@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -68,6 +69,7 @@ import com.uwyn.jhighlight.renderer.XmlXhtmlRenderer;
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.ClientService;
 import nz.co.trineo.common.ConnectedService;
+import nz.co.trineo.common.JobExecutionService;
 import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
@@ -110,6 +112,7 @@ public class SalesforceService implements ConnectedService {
 	private final BackupDAO backupDAO;
 	private final SessionFactory sessionFactory;
 	private final String apiVersion;
+	private final JobExecutionService executionService;
 
 	/**
 	 * @param dao
@@ -121,8 +124,8 @@ public class SalesforceService implements ConnectedService {
 	 */
 	public SalesforceService(final AccountDAO dao, final OrganizationDAO orgDAO, final AppConfiguration configuration,
 			final GitService gitService, final TestRunDAO testRunDAO, final BackupDAO backupDAO,
-			final SessionFactory sessionFactory, final ClientService clientService, final GitHubService githubService)
-			throws IOException {
+			final SessionFactory sessionFactory, final ClientService clientService, final GitHubService githubService,
+			final JobExecutionService executionService) throws IOException {
 		credDAO = dao;
 		this.orgDAO = orgDAO;
 		this.configuration = configuration;
@@ -132,6 +135,7 @@ public class SalesforceService implements ConnectedService {
 		this.sessionFactory = sessionFactory;
 		this.clientService = clientService;
 		this.githubService = githubService;
+		this.executionService = executionService;
 		forceMkdir(configuration.getSalesforceDirectory());
 		forceMkdir(configuration.getBackupDirectory());
 		apiVersion = configuration.getApiVersion();
@@ -226,43 +230,47 @@ public class SalesforceService implements ConnectedService {
 
 		final Backup backup = startBackup(orgId);
 
-		new Thread(() -> {
-			final Session session = sessionFactory.openSession();
-			try {
-				ManagedSessionContext.bind(session);
-				final Transaction transaction = session.beginTransaction();
+		executionService.scheduleJob(new Callable<Void>() {
+			@Override
+			public Void call() throws Exception {
+				final Session session = sessionFactory.openSession();
 				try {
+					ManagedSessionContext.bind(session);
+					final Transaction transaction = session.beginTransaction();
 					try {
-						final RetrieveResult result = waitForRetrieveCompletion(org, backup.getRetrieveId());
-						if (result.getStatus() == Failed) {
-							backup.setStatus(BackupStatus.FAILED);
-							throw new SalesforceException(format("code: {0}, message: {1}", result.getErrorStatusCode(),
-									result.getErrorMessage()));
-						} else if (result.getStatus() == Succeeded) {
-							backup.setStatus(BackupStatus.SUCCESSFUL);
-							final File repoDir = new File(configuration.getSalesforceDirectory(), orgId);
-							cleanDirectory(repoDir);
-							try (InputStream in = new ByteArrayInputStream(result.getZipFile())) {
-								extractMetadataZip(repoDir, in);
+						try {
+							final RetrieveResult result = waitForRetrieveCompletion(org, backup.getRetrieveId());
+							if (result.getStatus() == Failed) {
+								backup.setStatus(BackupStatus.FAILED);
+								throw new SalesforceException(format("code: {0}, message: {1}",
+										result.getErrorStatusCode(), result.getErrorMessage()));
+							} else if (result.getStatus() == Succeeded) {
+								backup.setStatus(BackupStatus.SUCCESSFUL);
+								final File repoDir = new File(configuration.getSalesforceDirectory(), orgId);
+								cleanDirectory(repoDir);
+								try (InputStream in = new ByteArrayInputStream(result.getZipFile())) {
+									extractMetadataZip(repoDir, in);
+								}
+								gitService.commit(repoDir, format("Backup of all metadata for {0}. timestamp: {1}",
+										org.getName(), backup.getName()));
+								gitService.tag(repoDir, backup.getName());
 							}
-							gitService.commit(repoDir, format("Backup of all metadata for {0}. timestamp: {1}",
-									org.getName(), backup.getName()));
-							gitService.tag(repoDir, backup.getName());
+						} catch (final Exception e) {
+							log.error("Unable to retrieve backup", e);
+						} finally {
+							backupDAO.persist(backup);
 						}
+						transaction.commit();
 					} catch (final Exception e) {
-						log.error("Unable to retrieve backup", e);
-					} finally {
-						backupDAO.persist(backup);
+						transaction.rollback();
 					}
-					transaction.commit();
-				} catch (final Exception e) {
-					transaction.rollback();
+				} finally {
+					session.close();
+					ManagedSessionContext.unbind(sessionFactory);
 				}
-			} finally {
-				session.close();
-				ManagedSessionContext.unbind(sessionFactory);
+				return null;
 			}
-		}).start();
+		});
 
 		return backup;
 	}

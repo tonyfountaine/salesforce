@@ -10,15 +10,7 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
 import nz.co.anzac.dropwizard.quartz.QuartzBundle;
-import nz.co.trineo.common.AccountDAO;
-import nz.co.trineo.common.AccountResource;
-import nz.co.trineo.common.AccountService;
-import nz.co.trineo.common.ClientDAO;
-import nz.co.trineo.common.ClientResource;
-import nz.co.trineo.common.ClientService;
-import nz.co.trineo.common.ServiceRegistry;
-import nz.co.trineo.common.ServiceResource;
-import nz.co.trineo.common.StaticResource;
+import nz.co.trineo.common.*;
 import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
@@ -110,11 +102,13 @@ public class App extends Application<AppConfiguration> {
 		final ClientDAO clientDAO = new ClientDAO(sessionFactory);
 		final BoardDAO boardDAO = new BoardDAO(sessionFactory);
 
+		final JobExecutionService executionService = new JobExecutionService();
+
 		final GitService gService = new GitService(configuration, processDAO);
 		final ClientService clientService = new ClientService(clientDAO);
 		final GitHubService ghService = new GitHubService(repoDAO, configuration, accountDAO, clientService, gService);
 		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService,
-				testRunDAO, backupDAO, sessionFactory, clientService, ghService);
+				testRunDAO, backupDAO, sessionFactory, clientService, ghService, executionService);
 		final AccountService aService = new AccountService(accountDAO);
 		final TrelloService tService = new TrelloService(configuration, accountDAO, boardDAO, clientService);
 
@@ -141,5 +135,6 @@ public class App extends Application<AppConfiguration> {
 
 		environment.admin().addTask(new RefreshBackupsTask(organizationDAO, gService, configuration, sessionFactory));
 		environment.lifecycle().manage(new SalesforceScheduleManager(sessionFactory, sfService));
+		environment.lifecycle().manage(executionService);
 	}
 }
