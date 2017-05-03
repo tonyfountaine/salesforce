@@ -1,6 +1,7 @@
 package nz.co.trineo.repo;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.ws.rs.Consumes;
@@ -38,6 +39,19 @@ public class RepoResource {
 		return (RepoService) ServiceRegistry.getService(type);
 	}
 
+	@GET
+	@Timed
+	@Path("/repos")
+	@UnitOfWork
+	public Response getRepos(final @PathParam("type") String type) throws RepoServiceException {
+		final List<Repository> list = getService(type).getRepos();
+		final List<RepositoryView> repos = new ArrayList<>();
+		list.forEach(r -> {
+			repos.add(new RepositoryView(r));
+		});
+		return Response.ok(repos).build();
+	}
+
 	@POST
 	@Timed
 	@Path("/repos")
@@ -49,14 +63,15 @@ public class RepoResource {
 		return Response.ok(view).build();
 	}
 
-	@GET
+	@PUT
+	@Path("/repos")
 	@Timed
-	@Path("/branches/{id}/compare/{compareId}")
 	@UnitOfWork
-	public Response compareBranches(final @PathParam("type") String type, final @PathParam("id") long id,
-			final @PathParam("compareId") long compareId) throws RepoServiceException {
-		final List<GitDiff> list = getService(type).diffBranches(id, compareId);
-		return Response.ok(list).build();
+	public Response updateRepo(final @PathParam("type") String type, final Repository repo)
+			throws RepoServiceException {
+		final Repository updatedRepo = getService(type).updateRepo(repo);
+		final RepositoryView view = new RepositoryView(updatedRepo);
+		return Response.ok(view).build();
 	}
 
 	@POST
@@ -70,6 +85,27 @@ public class RepoResource {
 		return Response.ok(view).build();
 	}
 
+	@GET
+	@Timed
+	@Path("/branches/{id}/compare/{compareId}")
+	@UnitOfWork
+	public Response compareBranches(final @PathParam("type") String type, final @PathParam("id") long id,
+			final @PathParam("compareId") long compareId) throws RepoServiceException {
+		final List<GitDiff> list = getService(type).diffBranches(id, compareId);
+		return Response.ok(list).build();
+	}
+
+	@GET
+	@Timed
+	@Path("/repos/{id}")
+	@UnitOfWork
+	public Response getRepo(final @PathParam("type") String type, final @PathParam("id") int id)
+			throws RepoServiceException {
+		final Repository repo = getService(type).getRepo(id);
+		final RepositoryView view = new RepositoryView(repo);
+		return Response.ok(view).build();
+	}
+
 	@DELETE
 	@Timed
 	@Path("/repos/{id}")
@@ -79,6 +115,16 @@ public class RepoResource {
 		getService(type).deleteRepo(id);
 	}
 
+	@POST
+	@Timed
+	@Path("/repos/{id}/pull")
+	@UnitOfWork
+	public Response pullRepo(final @PathParam("type") String type, final @PathParam("id") int id)
+			throws RepoServiceException {
+		getService(type).pull(id);
+		return Response.ok().build();
+	}
+
 	@GET
 	@Timed
 	@Path("/repos/{id}/branches")
@@ -86,11 +132,22 @@ public class RepoResource {
 	public Response getBranches(final @PathParam("type") String type, final @PathParam("id") int id)
 			throws RepoServiceException {
 		final List<Branch> branches = getService(type).getBranches(id);
+		final List<BranchView> list = toBranchView(branches);
+		return Response.ok(list).build();
+	}
+
+	private List<BranchView> toBranchView(final List<Branch> branches) {
 		final List<BranchView> list = new ArrayList<>();
 		branches.forEach(b -> {
 			list.add(new BranchView(b));
 		});
-		return Response.ok(list).build();
+		list.sort(new Comparator<BranchView>() {
+			@Override
+			public int compare(BranchView o1, BranchView o2) {
+				return o1.getName().compareTo(o2.getName());
+			}
+		});
+		return list;
 	}
 
 	@POST
@@ -100,10 +157,7 @@ public class RepoResource {
 	public Response updateBranches(final @PathParam("type") String type, final @PathParam("id") int id)
 			throws RepoServiceException {
 		final List<Branch> branches = getService(type).updateBranches(id);
-		final List<BranchView> list = new ArrayList<>();
-		branches.forEach(b -> {
-			list.add(new BranchView(b));
-		});
+		final List<BranchView> list = toBranchView(branches);
 		return Response.ok(list).build();
 	}
 
@@ -129,30 +183,6 @@ public class RepoResource {
 
 	@GET
 	@Timed
-	@Path("/repos/{id}")
-	@UnitOfWork
-	public Response getRepo(final @PathParam("type") String type, final @PathParam("id") int id)
-			throws RepoServiceException {
-		final Repository repo = getService(type).getRepo(id);
-		final RepositoryView view = new RepositoryView(repo);
-		return Response.ok(view).build();
-	}
-
-	@GET
-	@Timed
-	@Path("/repos")
-	@UnitOfWork
-	public Response getRepos(final @PathParam("type") String type) throws RepoServiceException {
-		final List<Repository> list = getService(type).getRepos();
-		final List<RepositoryView> repos = new ArrayList<>();
-		list.forEach(r -> {
-			repos.add(new RepositoryView(r));
-		});
-		return Response.ok(repos).build();
-	}
-
-	@GET
-	@Timed
 	@Path("/repos/{id}/tags")
 	@UnitOfWork
 	public Response getTags(final @PathParam("type") String type, final @PathParam("id") int id)
@@ -165,14 +195,17 @@ public class RepoResource {
 		return Response.ok(list).build();
 	}
 
-	@PUT
-	@Path("/repos")
+	@POST
 	@Timed
+	@Path("/repos/{id}/tags")
 	@UnitOfWork
-	public Response updateRepo(final @PathParam("type") String type, final Repository repo)
+	public Response updateTags(final @PathParam("type") String type, final @PathParam("id") int id)
 			throws RepoServiceException {
-		final Repository updatedRepo = getService(type).updateRepo(repo);
-		final RepositoryView view = new RepositoryView(updatedRepo);
-		return Response.ok(view).build();
+		final List<Tag> tags = getService(type).updateTags(id);
+		final List<TagView> list = new ArrayList<>();
+		tags.forEach(t -> {
+			list.add(new TagView(t));
+		});
+		return Response.ok(list).build();
 	}
 }

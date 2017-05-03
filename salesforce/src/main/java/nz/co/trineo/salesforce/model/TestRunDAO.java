@@ -1,4 +1,4 @@
-package nz.co.trineo.salesforce;
+package nz.co.trineo.salesforce.model;
 
 import java.io.Serializable;
 import java.util.List;
@@ -8,7 +8,6 @@ import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
 
 import io.dropwizard.hibernate.AbstractDAO;
-import nz.co.trineo.salesforce.model.RunTestsResult;
 
 public class TestRunDAO extends AbstractDAO<RunTestsResult> {
 	public TestRunDAO(final SessionFactory sessionFactory) {

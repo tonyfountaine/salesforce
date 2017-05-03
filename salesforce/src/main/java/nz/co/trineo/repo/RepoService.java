@@ -5,14 +5,14 @@ import java.util.List;
 import org.eclipse.egit.github.core.RepositoryCommit;
 
 import nz.co.trineo.common.Service;
+import nz.co.trineo.common.model.TreeNode;
 import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.repo.model.Branch;
 import nz.co.trineo.repo.model.Repository;
 import nz.co.trineo.repo.model.Tag;
-import nz.co.trineo.salesforce.model.TreeNode;
 
 public interface RepoService extends Service {
-	void checkout(final int id, final String name) throws RepoServiceException;
+	void checkout(int id, String name) throws RepoServiceException;
 
 	Repository createRepo(String url, int accId) throws RepoServiceException;
 
@@ -28,6 +28,8 @@ public interface RepoService extends Service {
 
 	List<Branch> updateBranches(int id) throws RepoServiceException;
 
+	List<Tag> updateTags(int id) throws RepoServiceException;
+
 	RepositoryCommit getCommit(int id, String sha1) throws RepoServiceException;
 
 	List<String> getCommits(int id) throws RepoServiceException;
@@ -39,4 +41,10 @@ public interface RepoService extends Service {
 	List<Tag> getTags(int id) throws RepoServiceException;
 
 	Repository updateRepo(Repository repo) throws RepoServiceException;
+
+	boolean isRepo(int id) throws RepoServiceException;
+
+	void clone(final int id) throws RepoServiceException;
+
+	void pull(final int id) throws RepoServiceException;
 }

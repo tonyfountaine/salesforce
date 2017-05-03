@@ -16,6 +16,7 @@ import org.apache.commons.io.IOUtils;
 import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
+import nz.co.trineo.common.model.TreeNode;
 import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.repo.view.BranchView;
 import nz.co.trineo.salesforce.model.Backup;
@@ -23,7 +24,6 @@ import nz.co.trineo.salesforce.model.CodeCoverageResult;
 import nz.co.trineo.salesforce.model.Environment;
 import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.salesforce.model.RunTestsResult;
-import nz.co.trineo.salesforce.model.TreeNode;
 import nz.co.trineo.salesforce.views.BackupView;
 import nz.co.trineo.salesforce.views.OrganizationView;
 

@@ -37,6 +37,7 @@ import com.uwyn.jhighlight.highlighter.ExplicitStateHighlighter;
 	public static final byte APEX_COMMENT_STYLE = 7;
 	public static final byte APEXDOC_COMMENT_STYLE = 8;
 	public static final byte APEXDOC_TAG_STYLE = 9;
+    public static final byte STRING_LITERAL_STYLE = 10;
 	
 	/* Highlighter implementation */
 	
@@ -198,15 +199,15 @@ Exponent = [eE] [+\-]? [0-9]+
   "false" |
   "null" |
 
-  (\" ( [^\"\n\\] | \\[^\n] )* (\n | \\\n | \")) |
-  (\' ( [^\'\n\\] | \\[^\n] )* (\n | \\\n | \')) |
-
   {DecLiteral} |
   {HexLiteral} |
   {OctLiteral} |
 
   {FloatLiteral}
 	{ return LITERAL_STYLE; }
+
+  (\" ( [^\"\n\\] | \\[^\n] )* (\n | \\\n | \")) |
+  (\' ( [^\'\n\\] | \\[^\n] )* (\n | \\\n | \')) { return STRING_LITERAL_STYLE; }
   
   /* separators */
   "(" |

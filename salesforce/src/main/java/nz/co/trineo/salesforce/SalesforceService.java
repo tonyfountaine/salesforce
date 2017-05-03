@@ -2,10 +2,17 @@ package nz.co.trineo.salesforce;
 
 import static com.sforce.soap.metadata.RetrieveStatus.Failed;
 import static com.sforce.soap.metadata.RetrieveStatus.Succeeded;
-import static java.text.MessageFormat.format;
 import static org.apache.commons.io.FileUtils.forceMkdir;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -27,21 +33,13 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 
-import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
-import org.hibernate.context.internal.ManagedSessionContext;
 
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BulkConnection;
@@ -70,26 +68,23 @@ import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.ClientService;
 import nz.co.trineo.common.ConnectedService;
 import nz.co.trineo.common.JobExecutionService;
+import nz.co.trineo.common.ServiceRegistry;
 import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.common.model.TreeNode;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
 import nz.co.trineo.git.model.GitDiff;
-import nz.co.trineo.github.GitHubService;
-import nz.co.trineo.github.GitHubServiceException;
+import nz.co.trineo.repo.RepoDAO;
+import nz.co.trineo.repo.RepoService;
+import nz.co.trineo.repo.RepoServiceException;
 import nz.co.trineo.repo.model.Branch;
 import nz.co.trineo.repo.model.Repository;
-import nz.co.trineo.salesforce.model.Backup;
-import nz.co.trineo.salesforce.model.BackupStatus;
-import nz.co.trineo.salesforce.model.CodeCoverageResult;
-import nz.co.trineo.salesforce.model.Environment;
-import nz.co.trineo.salesforce.model.Organization;
-import nz.co.trineo.salesforce.model.RunTestFailure;
-import nz.co.trineo.salesforce.model.RunTestMessage;
-import nz.co.trineo.salesforce.model.RunTestsResult;
-import nz.co.trineo.salesforce.model.TreeNode;
+import nz.co.trineo.repo.model.RepositoryType;
+import nz.co.trineo.salesforce.jobs.BackupCallableJob;
+import nz.co.trineo.salesforce.model.*;
 
 /**
  * @author tonyfountaine
@@ -98,8 +93,6 @@ import nz.co.trineo.salesforce.model.TreeNode;
 public class SalesforceService implements ConnectedService {
 	private static final SimpleDateFormat BACKUP_NAME_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	private static final Log log = LogFactory.getLog(SalesforceService.class);
-	private static final long ONE_SECOND = 1000;
-	private static final int MAX_NUM_POLL_REQUESTS = 50;
 	private static final Pattern genPattern = Pattern.compile("<!--\\s+.*\\s+-->");
 
 	private final AccountDAO credDAO;
@@ -107,12 +100,12 @@ public class SalesforceService implements ConnectedService {
 	private final AppConfiguration configuration;
 	private final GitService gitService;
 	private final ClientService clientService;
-	private final GitHubService githubService;
 	private final TestRunDAO testRunDAO;
 	private final BackupDAO backupDAO;
 	private final SessionFactory sessionFactory;
 	private final String apiVersion;
 	private final JobExecutionService executionService;
+	private final RepoDAO repoDAO;
 
 	/**
 	 * @param dao
@@ -124,8 +117,8 @@ public class SalesforceService implements ConnectedService {
 	 */
 	public SalesforceService(final AccountDAO dao, final OrganizationDAO orgDAO, final AppConfiguration configuration,
 			final GitService gitService, final TestRunDAO testRunDAO, final BackupDAO backupDAO,
-			final SessionFactory sessionFactory, final ClientService clientService, final GitHubService githubService,
-			final JobExecutionService executionService) throws IOException {
+			final SessionFactory sessionFactory, final ClientService clientService,
+			final JobExecutionService executionService, final RepoDAO repoDAO) throws IOException {
 		credDAO = dao;
 		this.orgDAO = orgDAO;
 		this.configuration = configuration;
@@ -134,8 +127,8 @@ public class SalesforceService implements ConnectedService {
 		this.backupDAO = backupDAO;
 		this.sessionFactory = sessionFactory;
 		this.clientService = clientService;
-		this.githubService = githubService;
 		this.executionService = executionService;
+		this.repoDAO = repoDAO;
 		forceMkdir(configuration.getSalesforceDirectory());
 		forceMkdir(configuration.getBackupDirectory());
 		apiVersion = configuration.getApiVersion();
@@ -192,7 +185,7 @@ public class SalesforceService implements ConnectedService {
 		return b;
 	}
 
-	private RetrieveResult checkRetrieveStatus(final ConnectedAccount account, final String asyncResultId,
+	public RetrieveResult checkRetrieveStatus(final ConnectedAccount account, final String asyncResultId,
 			final boolean includeZip) throws SalesforceException {
 		RetrieveResult result = null;
 		MetadataConnection metadataConnection = getMetadataConnection(account);
@@ -212,14 +205,6 @@ public class SalesforceService implements ConnectedService {
 		return result;
 	}
 
-	private void cleanDirectory(final File repoDir) throws IOException {
-		final File[] files = repoDir.listFiles((FilenameFilter) (dir, name) -> !name.startsWith("."));
-		log.info(files);
-		for (final File file : files) {
-			FileUtils.forceDelete(file);
-		}
-	}
-
 	/**
 	 * @param orgId
 	 * @return
@@ -230,47 +215,8 @@ public class SalesforceService implements ConnectedService {
 
 		final Backup backup = startBackup(orgId);
 
-		executionService.scheduleJob(new Callable<Void>() {
-			@Override
-			public Void call() throws Exception {
-				final Session session = sessionFactory.openSession();
-				try {
-					ManagedSessionContext.bind(session);
-					final Transaction transaction = session.beginTransaction();
-					try {
-						try {
-							final RetrieveResult result = waitForRetrieveCompletion(org, backup.getRetrieveId());
-							if (result.getStatus() == Failed) {
-								backup.setStatus(BackupStatus.FAILED);
-								throw new SalesforceException(format("code: {0}, message: {1}",
-										result.getErrorStatusCode(), result.getErrorMessage()));
-							} else if (result.getStatus() == Succeeded) {
-								backup.setStatus(BackupStatus.SUCCESSFUL);
-								final File repoDir = new File(configuration.getSalesforceDirectory(), orgId);
-								cleanDirectory(repoDir);
-								try (InputStream in = new ByteArrayInputStream(result.getZipFile())) {
-									extractMetadataZip(repoDir, in);
-								}
-								gitService.commit(repoDir, format("Backup of all metadata for {0}. timestamp: {1}",
-										org.getName(), backup.getName()));
-								gitService.tag(repoDir, backup.getName());
-							}
-						} catch (final Exception e) {
-							log.error("Unable to retrieve backup", e);
-						} finally {
-							backupDAO.persist(backup);
-						}
-						transaction.commit();
-					} catch (final Exception e) {
-						transaction.rollback();
-					}
-				} finally {
-					session.close();
-					ManagedSessionContext.unbind(sessionFactory);
-				}
-				return null;
-			}
-		});
+		executionService.scheduleJob(new BackupCallableJob(org, backup, configuration.getSalesforceDirectory(),
+				sessionFactory, this, gitService));
 
 		return backup;
 	}
@@ -403,21 +349,27 @@ public class SalesforceService implements ConnectedService {
 		}
 	}
 
+	private RepoService getRepoService(final RepositoryType type) {
+		return (RepoService) ServiceRegistry.getService(type.name());
+	}
+
 	public List<GitDiff> diffBranch(final String id) throws SalesforceException {
 		final Organization org = orgDAO.get(id);
 		final File repoDirA = new File(configuration.getSalesforceDirectory(), id);
 		final Branch branch = org.getBranch();
 		final Repository repo = branch.getRepo();
 		final File repoDirB = new File(configuration.getGithubDirectory(), repo.getName());
+		final RepoService service = getRepoService(repo.getType());
+
 		try {
-			if (!githubService.isRepo(repo.getId())) {
-				githubService.clone(repo.getId());
+			if (!service.isRepo(repo.getId())) {
+				service.clone(repo.getId());
 			}
-			githubService.checkout(repo.getId(), branch.getName());
-			githubService.pull(repo.getId());
+			service.checkout(repo.getId(), branch.getName());
+			service.pull(repo.getId());
 			final List<String> paths = pathsFromPackage(repoDirB);
 			return gitService.diffReposPath(repoDirA, repoDirB, paths);
-		} catch (final GitServiceException | GitHubServiceException e) {
+		} catch (final RepoServiceException e) {
 			throw new SalesforceException(e);
 		} finally {
 			try {
@@ -478,28 +430,6 @@ public class SalesforceService implements ConnectedService {
 			return new FileInputStream(zipFile);
 		} catch (GitServiceException | IOException e) {
 			throw new SalesforceException(e);
-		}
-	}
-
-	/**
-	 * @param dir
-	 * @param zipIn
-	 * @throws IOException
-	 * @throws FileNotFoundException
-	 * @throws ArchiveException
-	 */
-	private void extractMetadataZip(final File dir, final InputStream zipIn)
-			throws IOException, FileNotFoundException, ArchiveException {
-		try (ArchiveInputStream in = new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.ZIP,
-				zipIn);) {
-			ZipArchiveEntry entry;
-			while ((entry = (ZipArchiveEntry) in.getNextEntry()) != null) {
-				final File destFile = new File(dir, entry.getName().replaceAll("unpackaged[/\\\\]", ""));
-				FileUtils.forceMkdir(destFile.getParentFile());
-				try (OutputStream out = new FileOutputStream(destFile);) {
-					IOUtils.copy(in, out);
-				}
-			}
 		}
 	}
 
@@ -583,7 +513,7 @@ public class SalesforceService implements ConnectedService {
 		final RunTestsResult test = tests.get(0);
 		final List<CodeCoverageResult> coverage = test.getCodeCoverage();
 		for (final CodeCoverageResult codeCoverageResult : coverage) {
-			codeCoverageResult.getLocationsNotCovered().size();
+			codeCoverageResult.getLocationsNotCovered().size(); // lazy load
 		}
 		return coverage;
 	}
@@ -614,9 +544,11 @@ public class SalesforceService implements ConnectedService {
 	 */
 	private MetadataConnection getMetadataConnection(final ConnectedAccount account) throws SalesforceException {
 		try {
-			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
-			config.setSessionId(account.getToken().getAccessToken());
-			config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/m/" + apiVersion);
+			final AccountToken token = account.getToken();
+			final String instanceUrl = token.getInstanceUrl();
+			final ConnectorConfig config = createConfig(instanceUrl);
+			config.setSessionId(token.getAccessToken());
+			config.setServiceEndpoint(instanceUrl + "/services/Soap/m/" + apiVersion);
 			return com.sforce.soap.metadata.Connector.newConnection(config);
 		} catch (ConnectionException | FileNotFoundException e) {
 			throw new SalesforceException(e);
@@ -783,9 +715,11 @@ public class SalesforceService implements ConnectedService {
 	 */
 	private PartnerConnection getPartnerConnection(final ConnectedAccount account) throws SalesforceException {
 		try {
-			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
-			config.setSessionId(account.getToken().getAccessToken());
-			config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/u/" + apiVersion);
+			final AccountToken token = account.getToken();
+			final String instanceUrl = token.getInstanceUrl();
+			final ConnectorConfig config = createConfig(instanceUrl);
+			config.setSessionId(token.getAccessToken());
+			config.setServiceEndpoint(instanceUrl + "/services/Soap/u/" + apiVersion);
 			return Connector.newConnection(config);
 		} catch (ConnectionException | FileNotFoundException e) {
 			throw new SalesforceException(e);
@@ -799,9 +733,11 @@ public class SalesforceService implements ConnectedService {
 	 */
 	private SoapConnection getSoapConnection(final ConnectedAccount account) throws SalesforceException {
 		try {
-			final ConnectorConfig config = createConfig(account.getToken().getInstanceUrl());
-			config.setSessionId(account.getToken().getAccessToken());
-			config.setServiceEndpoint(account.getToken().getInstanceUrl() + "/services/Soap/s/" + apiVersion);
+			final AccountToken token = account.getToken();
+			final String instanceUrl = token.getInstanceUrl();
+			final ConnectorConfig config = createConfig(instanceUrl);
+			config.setSessionId(token.getAccessToken());
+			config.setServiceEndpoint(instanceUrl + "/services/Soap/s/" + apiVersion);
 			return com.sforce.soap.apex.Connector.newConnection(config);
 		} catch (ConnectionException | FileNotFoundException e) {
 			throw new SalesforceException(e);
@@ -1118,7 +1054,7 @@ public class SalesforceService implements ConnectedService {
 			clientService.update(client);
 		}
 		if (org.getBranch() != null) {
-			final Branch branch = githubService.readBranch(org.getBranch().getId());
+			final Branch branch = repoDAO.getBranch(org.getBranch().getId());
 			organization.setBranch(branch);
 		}
 		if (StringUtils.isNotBlank(org.getNickName())) {
@@ -1126,6 +1062,10 @@ public class SalesforceService implements ConnectedService {
 		}
 		orgDAO.persist(organization);
 		return organization;
+	}
+
+	public Backup updateBackup(final Backup backup) {
+		return backupDAO.persist(backup);
 	}
 
 	@Override
@@ -1150,37 +1090,5 @@ public class SalesforceService implements ConnectedService {
 			return false;
 		}
 		return true;
-	}
-
-	/**
-	 * @param connection
-	 * @param asyncResult
-	 * @return
-	 * @throws InterruptedException
-	 * @throws SalesforceException
-	 * @throws ConnectionException
-	 */
-	private RetrieveResult waitForRetrieveCompletion(final Organization org, final String asyncResultId)
-			throws SalesforceException, InterruptedException, ConnectionException {
-		final ConnectedAccount account = org.getAccount();
-
-		// Wait for the retrieve to complete
-		int poll = 0;
-		long waitTimeMilliSecs = ONE_SECOND;
-		RetrieveResult result = null;
-		do {
-			Thread.sleep(waitTimeMilliSecs);
-			// Double the wait time for the next iteration
-			waitTimeMilliSecs *= 2;
-			if (poll++ > MAX_NUM_POLL_REQUESTS) {
-				throw new SalesforceException("Request timed out.  If this is a large set "
-						+ "of metadata components, check that the time allowed "
-						+ "by MAX_NUM_POLL_REQUESTS is sufficient.");
-			}
-			result = checkRetrieveStatus(account, asyncResultId, true);
-			log.info("Retrieve Status: " + result.getStatus());
-		} while (!result.isDone());
-
-		return result;
 	}
 }

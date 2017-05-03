@@ -177,7 +177,7 @@ a.edit {
 }
 
 .apex_literal {
-	color: rgb(42, 0, 251);
+	color: rgb(129, 0, 83);
 }
 
 .apex_comment {
@@ -185,12 +185,16 @@ a.edit {
 }
 
 .apex_apexdoc_comment {
-	color: rgb(61, 127, 96);
+	color: rgb(61, 93, 188);
 }
 
 .apex_apexdoc_tag {
 	color: rgb(61, 93, 188);
 	font-weight: bold;
+}
+
+.string_literal {
+    color: rgb(42, 0, 251);
 }
 
 .compare-breadcrumb div:not(:last-child ):after {

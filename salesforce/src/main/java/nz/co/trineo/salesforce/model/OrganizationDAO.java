@@ -1,4 +1,4 @@
-package nz.co.trineo.salesforce;
+package nz.co.trineo.salesforce.model;
 
 import java.io.Serializable;
 import java.util.List;
@@ -11,7 +11,6 @@ import com.google.common.base.Objects;
 
 import io.dropwizard.hibernate.AbstractDAO;
 import nz.co.trineo.common.model.ConnectedAccount;
-import nz.co.trineo.salesforce.model.Organization;
 
 public class OrganizationDAO extends AbstractDAO<Organization> {
 	public OrganizationDAO(final SessionFactory sessionFactory) {

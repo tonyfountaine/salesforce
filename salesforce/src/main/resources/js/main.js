@@ -207,6 +207,24 @@ function RepoModel(repo) {
             dataType: "json"
         });
 	};
+	self.pull = function() {
+		$.ajax({
+			method: "POST",
+			url: "/github/repos/" + repo.id + "/pull"
+		});
+	};
+	self.updateBranches = function() {
+		$.ajax({
+			method: "POST",
+			url: "/github/repos/" + repo.id + "/branches"
+		});
+	};
+	self.updateTags = function() {
+		$.ajax({
+			method: "POST",
+			url: "/github/repos/" + repo.id + "/tags"
+		});
+	};
 };
 
 function BranchModel(branch) {
@@ -685,6 +703,8 @@ function TrineoViewModel() {
 				self.getBoards();
 				self.getServiceAccounts("trello");
 				self.board(null);
+			} else if (section == 'github') {
+				this.app.runRoute('get', '#GitHub');
 			}
 		});
 		this.get("#:section/:id", function() {
@@ -692,6 +712,8 @@ function TrineoViewModel() {
 			var id = this.params.id;
 			if (section == "Salesforce" || section == "GitHub" || section == "Trello") {
 				this.app.runRoute('get', '#' + section + '/' + id + '/Overview');
+			} else if (section == 'github') {
+				this.app.runRoute('get', '#GitHub/' + id);
 			}
 		});
 		this.get("#:section/:id/:subsection", function() {

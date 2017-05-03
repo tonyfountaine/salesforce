@@ -1,4 +1,4 @@
-package nz.co.trineo.salesforce;
+package nz.co.trineo.salesforce.jobs;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -20,6 +20,7 @@ import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
 import nz.co.trineo.salesforce.model.Backup;
 import nz.co.trineo.salesforce.model.BackupStatus;
+import nz.co.trineo.salesforce.model.OrganizationDAO;
 
 public class RefreshBackupsTask extends Task {
 	private static final Pattern DATE_PATTERN = Pattern.compile(".*\\s+(\\d+-\\d+-\\d+-\\d+-\\d+-\\d+).*");

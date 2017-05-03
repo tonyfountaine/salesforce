@@ -62,6 +62,8 @@ public class ApexXhtmlRenderer extends XhtmlRenderer {
 			return "apex_apexdoc_comment";
 		case ApexHighlighter.APEXDOC_TAG_STYLE:
 			return "apex_apexdoc_tag";
+		case ApexHighlighter.STRING_LITERAL_STYLE:
+			return "string_literal";
 		}
 
 		return null;

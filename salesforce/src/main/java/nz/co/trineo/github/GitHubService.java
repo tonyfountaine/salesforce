@@ -27,6 +27,7 @@ import org.eclipse.egit.github.core.TypedResource;
 import org.eclipse.egit.github.core.service.CommitService;
 import org.eclipse.egit.github.core.service.DataService;
 import org.eclipse.egit.github.core.service.RepositoryService;
+import org.eclipse.jgit.api.PullResult;
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 
@@ -36,6 +37,7 @@ import nz.co.trineo.common.ConnectedService;
 import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.common.model.TreeNode;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
@@ -46,7 +48,6 @@ import nz.co.trineo.repo.model.Branch;
 import nz.co.trineo.repo.model.Repository;
 import nz.co.trineo.repo.model.RepositoryType;
 import nz.co.trineo.repo.model.Tag;
-import nz.co.trineo.salesforce.model.TreeNode;
 
 public class GitHubService implements ConnectedService, RepoService {
 	private static final Log log = LogFactory.getLog(GitHubService.class);
@@ -330,7 +331,11 @@ public class GitHubService implements ConnectedService, RepoService {
 		final Repository repository = dao.get(id);
 		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
 		try {
-			gitService.pull(repoDir, repository.getAccount().getToken().getAccessToken(), new char[0]);
+			final PullResult pullResult = gitService.pull(repoDir, repository.getAccount().getToken().getAccessToken(),
+					new char[0]);
+			if (!pullResult.isSuccessful()) {
+				throw new GitHubServiceException("Error while pulling from remote.");
+			}
 		} catch (final GitServiceException e) {
 			throw new GitHubServiceException(e);
 		}

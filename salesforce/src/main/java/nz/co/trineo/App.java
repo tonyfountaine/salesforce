@@ -26,21 +26,11 @@ import nz.co.trineo.repo.RepoResource;
 import nz.co.trineo.repo.model.Branch;
 import nz.co.trineo.repo.model.Repository;
 import nz.co.trineo.repo.model.Tag;
-import nz.co.trineo.salesforce.BackupDAO;
-import nz.co.trineo.salesforce.OrganizationDAO;
-import nz.co.trineo.salesforce.RefreshBackupsTask;
 import nz.co.trineo.salesforce.SalesforceResource;
 import nz.co.trineo.salesforce.SalesforceScheduleManager;
 import nz.co.trineo.salesforce.SalesforceService;
-import nz.co.trineo.salesforce.TestRunDAO;
-import nz.co.trineo.salesforce.model.Backup;
-import nz.co.trineo.salesforce.model.CodeCoverageResult;
-import nz.co.trineo.salesforce.model.CodeCoverageWarning;
-import nz.co.trineo.salesforce.model.CodeLocation;
-import nz.co.trineo.salesforce.model.Organization;
-import nz.co.trineo.salesforce.model.RunTestFailure;
-import nz.co.trineo.salesforce.model.RunTestSuccess;
-import nz.co.trineo.salesforce.model.RunTestsResult;
+import nz.co.trineo.salesforce.jobs.RefreshBackupsTask;
+import nz.co.trineo.salesforce.model.*;
 import nz.co.trineo.trello.BoardDAO;
 import nz.co.trineo.trello.TrelloResource;
 import nz.co.trineo.trello.TrelloService;
@@ -108,7 +98,7 @@ public class App extends Application<AppConfiguration> {
 		final ClientService clientService = new ClientService(clientDAO);
 		final GitHubService ghService = new GitHubService(repoDAO, configuration, accountDAO, clientService, gService);
 		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService,
-				testRunDAO, backupDAO, sessionFactory, clientService, ghService, executionService);
+				testRunDAO, backupDAO, sessionFactory, clientService, executionService, repoDAO);
 		final AccountService aService = new AccountService(accountDAO);
 		final TrelloService tService = new TrelloService(configuration, accountDAO, boardDAO, clientService);
 
