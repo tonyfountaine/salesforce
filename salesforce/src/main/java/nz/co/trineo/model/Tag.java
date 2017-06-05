@@ -1,4 +1,4 @@
-package nz.co.trineo.repo.model;
+package nz.co.trineo.model;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -6,17 +6,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
-import nz.co.trineo.salesforce.model.Organization;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @Entity
-@Table(name = "branch")
-public class Branch {
+@Table(name = "tag")
+public class Tag {
 	@Id
 	@GeneratedValue
 	private long id;
@@ -26,11 +22,13 @@ public class Branch {
 	private String name;
 	@Column
 	private String url;
+	@Column
+	private String tarballUrl;
+	@Column
+	private String zipballUrl;
 	@ManyToOne
-	@JoinColumn(name = "BRANCH_ID", nullable = false)
+	@JoinColumn(name = "TAG_ID", nullable = false)
 	private Repository repo;
-	@OneToOne(mappedBy = "branch")
-	private Organization org;
 
 	@Override
 	public boolean equals(final Object obj) {
@@ -43,7 +41,7 @@ public class Branch {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		final Branch other = (Branch) obj;
+		final Tag other = (Tag) obj;
 		if (id != other.id) {
 			return false;
 		}
@@ -68,11 +66,25 @@ public class Branch {
 		} else if (!sha.equals(other.sha)) {
 			return false;
 		}
+		if (tarballUrl == null) {
+			if (other.tarballUrl != null) {
+				return false;
+			}
+		} else if (!tarballUrl.equals(other.tarballUrl)) {
+			return false;
+		}
 		if (url == null) {
 			if (other.url != null) {
 				return false;
 			}
 		} else if (!url.equals(other.url)) {
+			return false;
+		}
+		if (zipballUrl == null) {
+			if (other.zipballUrl != null) {
+				return false;
+			}
+		} else if (!zipballUrl.equals(other.zipballUrl)) {
 			return false;
 		}
 		return true;
@@ -86,10 +98,6 @@ public class Branch {
 		return name;
 	}
 
-	public Organization getOrg() {
-		return org;
-	}
-
 	public Repository getRepo() {
 		return repo;
 	}
@@ -98,8 +106,16 @@ public class Branch {
 		return sha;
 	}
 
+	public String getTarballUrl() {
+		return tarballUrl;
+	}
+
 	public String getUrl() {
 		return url;
+	}
+
+	public String getZipballUrl() {
+		return zipballUrl;
 	}
 
 	@Override
@@ -110,7 +126,9 @@ public class Branch {
 		result = prime * result + (name == null ? 0 : name.hashCode());
 		result = prime * result + (repo == null ? 0 : repo.hashCode());
 		result = prime * result + (sha == null ? 0 : sha.hashCode());
+		result = prime * result + (tarballUrl == null ? 0 : tarballUrl.hashCode());
 		result = prime * result + (url == null ? 0 : url.hashCode());
+		result = prime * result + (zipballUrl == null ? 0 : zipballUrl.hashCode());
 		return result;
 	}
 
@@ -122,10 +140,6 @@ public class Branch {
 		this.name = name;
 	}
 
-	public void setOrg(final Organization org) {
-		this.org = org;
-	}
-
 	public void setRepo(final Repository repo) {
 		this.repo = repo;
 	}
@@ -134,13 +148,20 @@ public class Branch {
 		this.sha = sha;
 	}
 
+	public void setTarballUrl(final String tarballUrl) {
+		this.tarballUrl = tarballUrl;
+	}
+
 	public void setUrl(final String url) {
 		this.url = url;
 	}
 
+	public void setZipballUrl(final String zipballUrl) {
+		this.zipballUrl = zipballUrl;
+	}
+
 	@Override
 	public String toString() {
-		return new ReflectionToStringBuilder(this, ToStringStyle.JSON_STYLE).setExcludeFieldNames("org", "repo")
-				.build();
+		return ToStringBuilder.reflectionToString(this);
 	}
 }

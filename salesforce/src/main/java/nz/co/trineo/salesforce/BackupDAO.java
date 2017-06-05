@@ -1,4 +1,4 @@
-package nz.co.trineo.salesforce.model;
+package nz.co.trineo.salesforce;
 
 import java.io.Serializable;
 import java.util.List;
@@ -7,9 +7,12 @@ import javax.inject.Inject;
 
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
+import org.jvnet.hk2.annotations.Service;
 
 import io.dropwizard.hibernate.AbstractDAO;
+import nz.co.trineo.model.Backup;
 
+@Service
 public class BackupDAO extends AbstractDAO<Backup> {
 	@Inject
 	public BackupDAO(final SessionFactory sessionFactory) {

@@ -73,32 +73,14 @@ import nz.co.trineo.common.ClientService;
 import nz.co.trineo.common.ConnectedService;
 import nz.co.trineo.common.JobExecutionService;
 import nz.co.trineo.common.ServiceRegistry;
-import nz.co.trineo.common.model.AccountToken;
-import nz.co.trineo.common.model.Client;
-import nz.co.trineo.common.model.ConnectedAccount;
-import nz.co.trineo.common.model.TreeNode;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
-import nz.co.trineo.git.model.GitDiff;
+import nz.co.trineo.model.*;
 import nz.co.trineo.repo.RepoDAO;
 import nz.co.trineo.repo.RepoService;
 import nz.co.trineo.repo.RepoServiceException;
-import nz.co.trineo.repo.model.Branch;
-import nz.co.trineo.repo.model.Repository;
-import nz.co.trineo.repo.model.RepositoryType;
 import nz.co.trineo.salesforce.jobs.BackupCallableJob;
-import nz.co.trineo.salesforce.model.Backup;
-import nz.co.trineo.salesforce.model.BackupDAO;
-import nz.co.trineo.salesforce.model.BackupStatus;
-import nz.co.trineo.salesforce.model.CodeCoverageResult;
-import nz.co.trineo.salesforce.model.Environment;
-import nz.co.trineo.salesforce.model.Organization;
-import nz.co.trineo.salesforce.model.OrganizationDAO;
-import nz.co.trineo.salesforce.model.RunTestFailure;
-import nz.co.trineo.salesforce.model.RunTestMessage;
-import nz.co.trineo.salesforce.model.RunTestsResult;
-import nz.co.trineo.salesforce.model.TestRunDAO;
 
 /**
  * @author tonyfountaine

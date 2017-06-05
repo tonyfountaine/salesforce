@@ -8,10 +8,12 @@ import javax.inject.Inject;
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
+import org.jvnet.hk2.annotations.Service;
 
 import io.dropwizard.hibernate.AbstractDAO;
-import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.model.ConnectedAccount;
 
+@Service
 public class AccountDAO extends AbstractDAO<ConnectedAccount> {
 	@Inject
 	public AccountDAO(final SessionFactory sessionFactory) {

@@ -1,4 +1,4 @@
-package nz.co.trineo.repo.model;
+package nz.co.trineo.model;
 
 import java.util.List;
 
@@ -14,9 +14,6 @@ import javax.persistence.Table;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-
-import nz.co.trineo.common.model.Client;
-import nz.co.trineo.common.model.ConnectedAccount;
 
 @Entity
 @Table(name = "repo")

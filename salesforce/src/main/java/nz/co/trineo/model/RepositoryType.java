@@ -1,4 +1,4 @@
-package nz.co.trineo.repo.model;
+package nz.co.trineo.model;
 
 public enum RepositoryType {
 	git, github, bitbucket;

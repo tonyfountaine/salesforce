@@ -22,19 +22,19 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.ClientService;
 import nz.co.trineo.common.Service;
-import nz.co.trineo.common.model.Client;
-import nz.co.trineo.common.model.ConnectedAccount;
-import nz.co.trineo.common.model.Credentals;
-import nz.co.trineo.common.model.TreeNode;
 import nz.co.trineo.configuration.AppConfiguration;
-import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.github.GitHubService;
+import nz.co.trineo.model.Branch;
+import nz.co.trineo.model.Client;
+import nz.co.trineo.model.ConnectedAccount;
+import nz.co.trineo.model.Credentals;
+import nz.co.trineo.model.GitDiff;
+import nz.co.trineo.model.Repository;
+import nz.co.trineo.model.RepositoryType;
+import nz.co.trineo.model.Tag;
+import nz.co.trineo.model.TreeNode;
 import nz.co.trineo.repo.RepoDAO;
 import nz.co.trineo.repo.RepoService;
-import nz.co.trineo.repo.model.Branch;
-import nz.co.trineo.repo.model.Repository;
-import nz.co.trineo.repo.model.RepositoryType;
-import nz.co.trineo.repo.model.Tag;
 
 public class GitRepoService implements Service, RepoService {
 	private static final Log log = LogFactory.getLog(GitHubService.class);

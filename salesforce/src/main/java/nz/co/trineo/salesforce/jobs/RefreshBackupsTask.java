@@ -18,9 +18,9 @@ import io.dropwizard.servlets.tasks.Task;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
-import nz.co.trineo.salesforce.model.Backup;
-import nz.co.trineo.salesforce.model.BackupStatus;
-import nz.co.trineo.salesforce.model.OrganizationDAO;
+import nz.co.trineo.model.Backup;
+import nz.co.trineo.model.BackupStatus;
+import nz.co.trineo.salesforce.OrganizationDAO;
 
 public class RefreshBackupsTask extends Task {
 	private static final Pattern DATE_PATTERN = Pattern.compile(".*\\s+(\\d+-\\d+-\\d+-\\d+-\\d+-\\d+).*");

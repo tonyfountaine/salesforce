@@ -5,13 +5,13 @@ import org.apache.commons.logging.LogFactory;
 
 import com.sforce.soap.partner.sobject.SObject;
 
-import nz.co.trineo.salesforce.model.CodeCoverageResult;
-import nz.co.trineo.salesforce.model.CodeCoverageWarning;
-import nz.co.trineo.salesforce.model.CodeLocation;
-import nz.co.trineo.salesforce.model.Organization;
-import nz.co.trineo.salesforce.model.RunTestFailure;
-import nz.co.trineo.salesforce.model.RunTestSuccess;
-import nz.co.trineo.salesforce.model.RunTestsResult;
+import nz.co.trineo.model.CodeCoverageResult;
+import nz.co.trineo.model.CodeCoverageWarning;
+import nz.co.trineo.model.CodeLocation;
+import nz.co.trineo.model.Organization;
+import nz.co.trineo.model.RunTestFailure;
+import nz.co.trineo.model.RunTestSuccess;
+import nz.co.trineo.model.RunTestsResult;
 
 public class ConvertUtils {
 	private static final Log log = LogFactory.getLog(ConvertUtils.class);

@@ -2,8 +2,8 @@ package nz.co.trineo.salesforce.views;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import nz.co.trineo.salesforce.model.Backup;
-import nz.co.trineo.salesforce.model.BackupStatus;
+import nz.co.trineo.model.Backup;
+import nz.co.trineo.model.BackupStatus;
 
 public class BackupView {
 	private int id;

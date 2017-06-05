@@ -2,7 +2,7 @@ package nz.co.trineo.repo.view;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import nz.co.trineo.repo.model.Tag;
+import nz.co.trineo.model.Tag;
 
 public class TagView {
 	private long id;

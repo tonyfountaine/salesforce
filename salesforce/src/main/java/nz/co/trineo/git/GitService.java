@@ -42,8 +42,8 @@ import org.eclipse.jgit.treewalk.WorkingTreeOptions;
 
 import nz.co.trineo.common.Service;
 import nz.co.trineo.configuration.AppConfiguration;
-import nz.co.trineo.git.model.GitDiff;
-import nz.co.trineo.git.model.GitProcess;
+import nz.co.trineo.model.GitDiff;
+import nz.co.trineo.model.GitProcess;
 
 @org.jvnet.hk2.annotations.Service
 public class GitService implements Service {

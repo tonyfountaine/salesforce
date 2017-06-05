@@ -22,10 +22,10 @@ import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.common.ServiceRegistry;
-import nz.co.trineo.git.model.GitDiff;
-import nz.co.trineo.repo.model.Branch;
-import nz.co.trineo.repo.model.Repository;
-import nz.co.trineo.repo.model.Tag;
+import nz.co.trineo.model.Branch;
+import nz.co.trineo.model.GitDiff;
+import nz.co.trineo.model.Repository;
+import nz.co.trineo.model.Tag;
 import nz.co.trineo.repo.view.BranchView;
 import nz.co.trineo.repo.view.RepositoryView;
 import nz.co.trineo.repo.view.TagView;

@@ -32,10 +32,10 @@ import com.vladsch.flexmark.parser.Parser;
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.ClientService;
 import nz.co.trineo.common.ConnectedService;
-import nz.co.trineo.common.model.AccountToken;
-import nz.co.trineo.common.model.Client;
-import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
+import nz.co.trineo.model.AccountToken;
+import nz.co.trineo.model.Client;
+import nz.co.trineo.model.ConnectedAccount;
 
 @Service
 public class TrelloService implements ConnectedService {

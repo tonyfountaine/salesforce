@@ -1,4 +1,4 @@
-package nz.co.trineo.salesforce.model;
+package nz.co.trineo.salesforce;
 
 import java.io.Serializable;
 import java.util.List;
@@ -8,12 +8,15 @@ import javax.inject.Inject;
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
+import org.jvnet.hk2.annotations.Service;
 
 import com.google.common.base.Objects;
 
 import io.dropwizard.hibernate.AbstractDAO;
-import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.model.ConnectedAccount;
+import nz.co.trineo.model.Organization;
 
+@Service
 public class OrganizationDAO extends AbstractDAO<Organization> {
 	@Inject
 	public OrganizationDAO(final SessionFactory sessionFactory) {

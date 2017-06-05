@@ -30,13 +30,13 @@ import org.hibernate.context.internal.ManagedSessionContext;
 import com.sforce.soap.metadata.RetrieveResult;
 import com.sforce.ws.ConnectionException;
 
-import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.git.GitService;
+import nz.co.trineo.model.Backup;
+import nz.co.trineo.model.BackupStatus;
+import nz.co.trineo.model.ConnectedAccount;
+import nz.co.trineo.model.Organization;
 import nz.co.trineo.salesforce.SalesforceException;
 import nz.co.trineo.salesforce.SalesforceService;
-import nz.co.trineo.salesforce.model.Backup;
-import nz.co.trineo.salesforce.model.BackupStatus;
-import nz.co.trineo.salesforce.model.Organization;
 
 public final class BackupCallableJob implements Callable<Void> {
 	private static final Log log = LogFactory.getLog(SalesforceService.class);

@@ -1,4 +1,4 @@
-package nz.co.trineo.common.model;
+package nz.co.trineo.model;
 
 import java.util.List;
 
@@ -16,8 +16,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import nz.co.trineo.repo.model.Repository;
-import nz.co.trineo.salesforce.model.Organization;
 import nz.co.trineo.trello.model.Board;
 
 @Entity

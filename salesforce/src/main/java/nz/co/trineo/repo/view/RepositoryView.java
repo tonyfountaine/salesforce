@@ -5,8 +5,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import nz.co.trineo.repo.model.Repository;
-import nz.co.trineo.repo.model.RepositoryType;
+import nz.co.trineo.model.Repository;
+import nz.co.trineo.model.RepositoryType;
 
 public class RepositoryView {
 	private int id;

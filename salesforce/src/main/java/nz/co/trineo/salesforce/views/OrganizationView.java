@@ -2,7 +2,7 @@ package nz.co.trineo.salesforce.views;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import nz.co.trineo.salesforce.model.Organization;
+import nz.co.trineo.model.Organization;
 
 public class OrganizationView {
 	private String id;

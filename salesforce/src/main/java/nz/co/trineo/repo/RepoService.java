@@ -5,11 +5,11 @@ import java.util.List;
 import org.eclipse.egit.github.core.RepositoryCommit;
 
 import nz.co.trineo.common.Service;
-import nz.co.trineo.common.model.TreeNode;
-import nz.co.trineo.git.model.GitDiff;
-import nz.co.trineo.repo.model.Branch;
-import nz.co.trineo.repo.model.Repository;
-import nz.co.trineo.repo.model.Tag;
+import nz.co.trineo.model.Branch;
+import nz.co.trineo.model.GitDiff;
+import nz.co.trineo.model.Repository;
+import nz.co.trineo.model.Tag;
+import nz.co.trineo.model.TreeNode;
 
 public interface RepoService extends Service {
 	void checkout(int id, String name) throws RepoServiceException;

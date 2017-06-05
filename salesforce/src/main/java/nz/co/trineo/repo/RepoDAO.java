@@ -9,14 +9,16 @@ import javax.inject.Inject;
 
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
+import org.jvnet.hk2.annotations.Service;
 
 import com.google.common.base.Objects;
 
 import io.dropwizard.hibernate.AbstractDAO;
-import nz.co.trineo.repo.model.Branch;
-import nz.co.trineo.repo.model.Repository;
-import nz.co.trineo.repo.model.RepositoryType;
+import nz.co.trineo.model.Branch;
+import nz.co.trineo.model.Repository;
+import nz.co.trineo.model.RepositoryType;
 
+@Service
 public class RepoDAO extends AbstractDAO<Repository> {
 	@Inject
 	public RepoDAO(final SessionFactory sessionFactory) {

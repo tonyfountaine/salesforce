@@ -7,10 +7,12 @@ import javax.inject.Inject;
 
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
+import org.jvnet.hk2.annotations.Service;
 
 import io.dropwizard.hibernate.AbstractDAO;
-import nz.co.trineo.common.model.Client;
+import nz.co.trineo.model.Client;
 
+@Service
 public class ClientDAO extends AbstractDAO<Client> {
 	@Inject
 	public ClientDAO(final SessionFactory sessionFactory) {

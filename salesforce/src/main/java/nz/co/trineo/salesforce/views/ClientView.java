@@ -2,7 +2,7 @@ package nz.co.trineo.salesforce.views;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import nz.co.trineo.common.model.Client;
+import nz.co.trineo.model.Client;
 
 public class ClientView {
 	private long id;

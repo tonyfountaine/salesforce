@@ -2,8 +2,8 @@ package nz.co.trineo.git;
 
 import org.eclipse.jgit.lib.ProgressMonitor;
 
-import nz.co.trineo.git.model.GitProcess;
-import nz.co.trineo.git.model.GitTask;
+import nz.co.trineo.model.GitProcess;
+import nz.co.trineo.model.GitTask;
 
 public final class GitMonitor implements ProgressMonitor {
 

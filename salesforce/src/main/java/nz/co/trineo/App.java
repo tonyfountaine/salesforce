@@ -11,6 +11,7 @@ import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
+import io.dropwizard.hibernate.ScanningHibernateBundle;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -25,28 +26,20 @@ import nz.co.trineo.common.ClientService;
 import nz.co.trineo.common.JobExecutionService;
 import nz.co.trineo.common.ServiceResource;
 import nz.co.trineo.common.StaticResource;
-import nz.co.trineo.common.model.AccountToken;
-import nz.co.trineo.common.model.Client;
-import nz.co.trineo.common.model.ConnectedAccount;
-import nz.co.trineo.common.model.Credentals;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitProcessDAO;
 import nz.co.trineo.git.GitService;
-import nz.co.trineo.git.model.GitProcess;
-import nz.co.trineo.git.model.GitTask;
 import nz.co.trineo.github.GitHubService;
 import nz.co.trineo.repo.RepoDAO;
 import nz.co.trineo.repo.RepoResource;
-import nz.co.trineo.repo.model.Branch;
-import nz.co.trineo.repo.model.Repository;
-import nz.co.trineo.repo.model.Tag;
+import nz.co.trineo.salesforce.BackupDAO;
+import nz.co.trineo.salesforce.OrganizationDAO;
 import nz.co.trineo.salesforce.SalesforceResource;
 import nz.co.trineo.salesforce.SalesforceService;
-import nz.co.trineo.salesforce.model.*;
+import nz.co.trineo.salesforce.TestRunDAO;
 import nz.co.trineo.trello.BoardDAO;
 import nz.co.trineo.trello.TrelloResource;
 import nz.co.trineo.trello.TrelloService;
-import nz.co.trineo.trello.model.Board;
 
 /**
  * Hello world!
@@ -58,11 +51,8 @@ public class App extends Application<AppConfiguration> {
 		new App().run(args);
 	}
 
-	private final HibernateBundle<AppConfiguration> hibernate = new HibernateBundle<AppConfiguration>(
-			AccountToken.class, Client.class, ConnectedAccount.class, Credentals.class, GitProcess.class, GitTask.class,
-			Backup.class, CodeCoverageResult.class, CodeCoverageWarning.class, CodeLocation.class, Organization.class,
-			RunTestFailure.class, RunTestsResult.class, RunTestSuccess.class, Repository.class, Branch.class, Tag.class,
-			Board.class) {
+	private final HibernateBundle<AppConfiguration> hibernate = new ScanningHibernateBundle<AppConfiguration>(
+			"nz.co.trineo.model") {
 		@Override
 		public DataSourceFactory getDataSourceFactory(final AppConfiguration configuration) {
 			return configuration.getDataSourceFactory();

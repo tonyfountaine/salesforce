@@ -2,7 +2,7 @@ package nz.co.trineo.repo.view;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import nz.co.trineo.repo.model.Branch;
+import nz.co.trineo.model.Branch;
 
 public class BranchView {
 	private long id;

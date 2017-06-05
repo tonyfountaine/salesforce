@@ -29,9 +29,9 @@ import org.apache.commons.logging.LogFactory;
 import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
-import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.common.views.SuccessView;
-import nz.co.trineo.salesforce.model.Environment;
+import nz.co.trineo.model.ConnectedAccount;
+import nz.co.trineo.model.Environment;
 
 @Path("/accounts")
 @Produces(MediaType.APPLICATION_JSON)

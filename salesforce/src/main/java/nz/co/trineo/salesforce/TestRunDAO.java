@@ -1,4 +1,4 @@
-package nz.co.trineo.salesforce.model;
+package nz.co.trineo.salesforce;
 
 import java.io.Serializable;
 import java.util.List;
@@ -8,9 +8,12 @@ import javax.inject.Inject;
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
+import org.jvnet.hk2.annotations.Service;
 
 import io.dropwizard.hibernate.AbstractDAO;
+import nz.co.trineo.model.RunTestsResult;
 
+@Service
 public class TestRunDAO extends AbstractDAO<RunTestsResult> {
 	@Inject
 	public TestRunDAO(final SessionFactory sessionFactory) {

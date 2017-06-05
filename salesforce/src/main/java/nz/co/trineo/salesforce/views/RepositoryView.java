@@ -2,7 +2,7 @@ package nz.co.trineo.salesforce.views;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import nz.co.trineo.repo.model.Repository;
+import nz.co.trineo.model.Repository;
 
 public class RepositoryView {
 	private int id;

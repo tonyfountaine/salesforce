@@ -1,4 +1,4 @@
-package nz.co.trineo.salesforce.model;
+package nz.co.trineo.model;
 
 public enum BackupStatus {
 	IN_PROGRESS, SUCCESSFUL, FAILED;

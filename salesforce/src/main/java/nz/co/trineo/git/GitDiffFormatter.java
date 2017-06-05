@@ -14,9 +14,9 @@ import org.eclipse.jgit.internal.JGitText;
 
 import com.google.common.html.HtmlEscapers;
 
-import nz.co.trineo.git.model.GitDiff;
-import nz.co.trineo.git.model.GitDiffHeader;
-import nz.co.trineo.git.model.GitDiffLine;
+import nz.co.trineo.model.GitDiff;
+import nz.co.trineo.model.GitDiffHeader;
+import nz.co.trineo.model.GitDiffLine;
 
 public class GitDiffFormatter extends DiffFormatter {
 	private static boolean end(final Edit edit, final int a, final int b) {

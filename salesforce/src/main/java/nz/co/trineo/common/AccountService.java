@@ -11,8 +11,8 @@ import org.jvnet.hk2.annotations.Service;
 
 import com.google.common.hash.HashCode;
 
-import nz.co.trineo.common.model.AccountToken;
-import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.model.AccountToken;
+import nz.co.trineo.model.ConnectedAccount;
 
 @Service
 public class AccountService {

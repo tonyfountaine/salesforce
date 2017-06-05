@@ -15,7 +15,7 @@ import javax.ws.rs.core.Response;
 import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
-import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.model.ConnectedAccount;
 
 @Path("/services")
 @Produces(MediaType.APPLICATION_JSON)

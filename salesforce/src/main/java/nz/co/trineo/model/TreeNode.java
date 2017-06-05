@@ -1,4 +1,4 @@
-package nz.co.trineo.common.model;
+package nz.co.trineo.model;
 
 import java.util.ArrayList;
 import java.util.HashSet;

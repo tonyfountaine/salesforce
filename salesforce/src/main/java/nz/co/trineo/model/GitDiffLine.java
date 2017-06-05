@@ -1,4 +1,4 @@
-package nz.co.trineo.git.model;
+package nz.co.trineo.model;
 
 public class GitDiffLine {
 	private int lineNumA;

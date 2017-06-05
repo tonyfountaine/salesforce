@@ -1,4 +1,4 @@
-package nz.co.trineo.salesforce.model;
+package nz.co.trineo.model;
 
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;

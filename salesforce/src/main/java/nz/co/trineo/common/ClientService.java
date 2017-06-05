@@ -6,7 +6,7 @@ import javax.inject.Inject;
 
 import org.jvnet.hk2.annotations.Service;
 
-import nz.co.trineo.common.model.Client;
+import nz.co.trineo.model.Client;
 
 @Service
 public class ClientService {

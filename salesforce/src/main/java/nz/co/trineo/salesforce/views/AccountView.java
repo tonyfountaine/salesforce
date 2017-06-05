@@ -2,7 +2,7 @@ package nz.co.trineo.salesforce.views;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import nz.co.trineo.common.model.ConnectedAccount;
+import nz.co.trineo.model.ConnectedAccount;
 
 public class AccountView {
 	private int id;

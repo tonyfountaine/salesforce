@@ -1,4 +1,4 @@
-package nz.co.trineo.salesforce.model;
+package nz.co.trineo.model;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,10 +15,6 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import nz.co.trineo.common.model.Client;
-import nz.co.trineo.common.model.ConnectedAccount;
-import nz.co.trineo.repo.model.Branch;
 
 @Entity
 @Table(name = "sforg")

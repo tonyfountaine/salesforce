@@ -6,10 +6,12 @@ import javax.inject.Inject;
 
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
+import org.jvnet.hk2.annotations.Service;
 
 import io.dropwizard.hibernate.AbstractDAO;
-import nz.co.trineo.git.model.GitProcess;
+import nz.co.trineo.model.GitProcess;
 
+@Service
 public class GitProcessDAO extends AbstractDAO<GitProcess> {
 
 	@Inject

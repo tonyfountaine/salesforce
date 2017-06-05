@@ -36,20 +36,20 @@ import org.jvnet.hk2.annotations.Service;
 import nz.co.trineo.common.AccountDAO;
 import nz.co.trineo.common.ClientService;
 import nz.co.trineo.common.ConnectedService;
-import nz.co.trineo.common.model.AccountToken;
-import nz.co.trineo.common.model.Client;
-import nz.co.trineo.common.model.ConnectedAccount;
-import nz.co.trineo.common.model.TreeNode;
 import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
-import nz.co.trineo.git.model.GitDiff;
+import nz.co.trineo.model.AccountToken;
+import nz.co.trineo.model.Branch;
+import nz.co.trineo.model.Client;
+import nz.co.trineo.model.ConnectedAccount;
+import nz.co.trineo.model.GitDiff;
+import nz.co.trineo.model.Repository;
+import nz.co.trineo.model.RepositoryType;
+import nz.co.trineo.model.Tag;
+import nz.co.trineo.model.TreeNode;
 import nz.co.trineo.repo.RepoDAO;
 import nz.co.trineo.repo.RepoService;
-import nz.co.trineo.repo.model.Branch;
-import nz.co.trineo.repo.model.Repository;
-import nz.co.trineo.repo.model.RepositoryType;
-import nz.co.trineo.repo.model.Tag;
 
 @Service
 public class GitHubService implements ConnectedService, RepoService {

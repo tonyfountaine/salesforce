@@ -18,7 +18,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.junit.Assert;
 import org.junit.Test;
 
-import nz.co.trineo.salesforce.model.RunTestsResult;
+import nz.co.trineo.model.RunTestsResult;
 
 public class ConvertUtilsTest {
 
