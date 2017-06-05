@@ -3,6 +3,8 @@ package nz.co.trineo.salesforce.model;
 import java.io.Serializable;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
@@ -10,6 +12,7 @@ import org.hibernate.criterion.Restrictions;
 import io.dropwizard.hibernate.AbstractDAO;
 
 public class TestRunDAO extends AbstractDAO<RunTestsResult> {
+	@Inject
 	public TestRunDAO(final SessionFactory sessionFactory) {
 		super(sessionFactory);
 	}

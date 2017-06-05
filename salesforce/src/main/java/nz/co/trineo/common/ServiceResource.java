@@ -3,6 +3,7 @@ package nz.co.trineo.common;
 import java.util.List;
 import java.util.Set;
 
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -21,10 +22,11 @@ import nz.co.trineo.common.model.ConnectedAccount;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ServiceResource {
 
-	private final AccountService accountService;
+	private final AccountService aService;
 
-	public ServiceResource(final AccountService accountService) {
-		this.accountService = accountService;
+	@Inject
+	public ServiceResource(final AccountService aService) {
+		this.aService = aService;
 	}
 
 	@GET
@@ -32,7 +34,7 @@ public class ServiceResource {
 	@UnitOfWork
 	@Path("/{name}/accounts")
 	public Response getAccounts(final @PathParam("name") String name) {
-		final List<ConnectedAccount> accounts = accountService.byService(name.toLowerCase());
+		final List<ConnectedAccount> accounts = aService.byService(name.toLowerCase());
 		return Response.ok(accounts).build();
 	}
 

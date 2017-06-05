@@ -5,6 +5,8 @@ import static org.hibernate.criterion.Restrictions.eq;
 import java.io.Serializable;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 
@@ -12,6 +14,7 @@ import io.dropwizard.hibernate.AbstractDAO;
 import nz.co.trineo.trello.model.Board;
 
 public class BoardDAO extends AbstractDAO<Board> {
+	@Inject
 	public BoardDAO(final SessionFactory sessionFactory) {
 		super(sessionFactory);
 	}

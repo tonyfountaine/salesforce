@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import javax.inject.Inject;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
@@ -40,6 +41,7 @@ import org.apache.commons.logging.LogFactory;
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.hibernate.SessionFactory;
+import org.jvnet.hk2.annotations.Service;
 
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BulkConnection;
@@ -48,6 +50,8 @@ import com.sforce.soap.apex.SoapConnection;
 import com.sforce.soap.metadata.AsyncResult;
 import com.sforce.soap.metadata.DescribeMetadataObject;
 import com.sforce.soap.metadata.DescribeMetadataResult;
+import com.sforce.soap.metadata.FileProperties;
+import com.sforce.soap.metadata.ListMetadataQuery;
 import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.metadata.Package;
 import com.sforce.soap.metadata.PackageTypeMembers;
@@ -84,12 +88,23 @@ import nz.co.trineo.repo.model.Branch;
 import nz.co.trineo.repo.model.Repository;
 import nz.co.trineo.repo.model.RepositoryType;
 import nz.co.trineo.salesforce.jobs.BackupCallableJob;
-import nz.co.trineo.salesforce.model.*;
+import nz.co.trineo.salesforce.model.Backup;
+import nz.co.trineo.salesforce.model.BackupDAO;
+import nz.co.trineo.salesforce.model.BackupStatus;
+import nz.co.trineo.salesforce.model.CodeCoverageResult;
+import nz.co.trineo.salesforce.model.Environment;
+import nz.co.trineo.salesforce.model.Organization;
+import nz.co.trineo.salesforce.model.OrganizationDAO;
+import nz.co.trineo.salesforce.model.RunTestFailure;
+import nz.co.trineo.salesforce.model.RunTestMessage;
+import nz.co.trineo.salesforce.model.RunTestsResult;
+import nz.co.trineo.salesforce.model.TestRunDAO;
 
 /**
  * @author tonyfountaine
  *
  */
+@Service
 public class SalesforceService implements ConnectedService {
 	private static final SimpleDateFormat BACKUP_NAME_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	private static final Log log = LogFactory.getLog(SalesforceService.class);
@@ -115,6 +130,7 @@ public class SalesforceService implements ConnectedService {
 	 * @param testRunDAO
 	 * @throws IOException
 	 */
+	@Inject
 	public SalesforceService(final AccountDAO dao, final OrganizationDAO orgDAO, final AppConfiguration configuration,
 			final GitService gitService, final TestRunDAO testRunDAO, final BackupDAO backupDAO,
 			final SessionFactory sessionFactory, final ClientService clientService,
@@ -247,6 +263,7 @@ public class SalesforceService implements ConnectedService {
 		final List<PackageTypeMembers> types = new ArrayList<>();
 		for (final DescribeMetadataObject describeMetadataObject : metadata) {
 			final PackageTypeMembers members = new PackageTypeMembers();
+			log.debug(describeMetadataObject.getChildXmlNames());
 			members.setName(describeMetadataObject.getXmlName());
 			members.setMembers(new String[] { "*" });
 
@@ -313,7 +330,13 @@ public class SalesforceService implements ConnectedService {
 		MetadataConnection metadataConnection = getMetadataConnection(account);
 		DescribeMetadataObject[] metadata = null;
 		try {
+			ListMetadataQuery query = new ListMetadataQuery();
+			query.setType("CustomObject");
+			FileProperties[] fileProperties = metadataConnection.listMetadata(new ListMetadataQuery[] { query },
+					Double.valueOf(apiVersion));
+			log.debug(fileProperties);
 			final DescribeMetadataResult result = metadataConnection.describeMetadata(Double.valueOf(apiVersion));
+			log.debug(result.getOrganizationNamespace());
 			metadata = result.getMetadataObjects();
 		} catch (final ConnectionException e) {
 			if (isInvalidSessionException(e)) {

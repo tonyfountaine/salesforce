@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -34,8 +35,8 @@ public class SalesforceResource {
 
 	private final SalesforceService salesforceService;
 
+	@Inject
 	public SalesforceResource(final SalesforceService salesforceService) {
-		super();
 		this.salesforceService = salesforceService;
 	}
 

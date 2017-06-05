@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
+
+import org.jvnet.hk2.annotations.Service;
 import org.scribe.builder.ServiceBuilder;
 import org.scribe.builder.api.TrelloApi;
 import org.scribe.model.Token;
@@ -34,6 +37,7 @@ import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
 import nz.co.trineo.configuration.AppConfiguration;
 
+@Service
 public class TrelloService implements ConnectedService {
 	private final AppConfiguration configuration;
 	private final AccountDAO credDAO;
@@ -42,6 +46,7 @@ public class TrelloService implements ConnectedService {
 
 	private final Map<String, Token> tokenMap = new HashMap<>();
 
+	@Inject
 	public TrelloService(final AppConfiguration configuration, final AccountDAO credDAO, final BoardDAO boardDAO,
 			final ClientService clientService) {
 		this.configuration = configuration;

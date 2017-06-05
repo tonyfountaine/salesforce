@@ -3,6 +3,7 @@ package nz.co.trineo.common;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -16,9 +17,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import com.codahale.metrics.annotation.Timed;
 
@@ -35,13 +33,12 @@ import nz.co.trineo.trello.model.Board;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ClientResource {
 
-	private static final Log log = LogFactory.getLog(ClientResource.class);
-
 	private final ClientService clientService;
 
 	@Context
 	UriInfo uriInfo;
 
+	@Inject
 	public ClientResource(final ClientService clientService) {
 		this.clientService = clientService;
 	}

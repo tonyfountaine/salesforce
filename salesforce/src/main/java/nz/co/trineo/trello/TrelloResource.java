@@ -2,6 +2,7 @@ package nz.co.trineo.trello;
 
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -30,6 +31,7 @@ import nz.co.trineo.trello.model.Board;
 public class TrelloResource {
 	private final TrelloService service;
 
+	@Inject
 	public TrelloResource(final TrelloService service) {
 		this.service = service;
 	}

@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,6 +45,7 @@ import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.model.GitDiff;
 import nz.co.trineo.git.model.GitProcess;
 
+@org.jvnet.hk2.annotations.Service
 public class GitService implements Service {
 	private static final String ORIGIN = "origin";
 	private static final Log log = LogFactory.getLog(GitService.class);
@@ -50,6 +53,7 @@ public class GitService implements Service {
 	private final AppConfiguration configuration;
 	private final GitProcessDAO processDAO;
 
+	@Inject
 	public GitService(final AppConfiguration configuration, final GitProcessDAO processDAO) throws IOException {
 		super();
 		this.configuration = configuration;

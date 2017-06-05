@@ -2,11 +2,17 @@ package nz.co.trineo.common;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
+import org.jvnet.hk2.annotations.Service;
+
 import nz.co.trineo.common.model.Client;
 
+@Service
 public class ClientService {
 	private final ClientDAO clientDAO;
 
+	@Inject
 	public ClientService(final ClientDAO clientDAO) {
 		super();
 		this.clientDAO = clientDAO;

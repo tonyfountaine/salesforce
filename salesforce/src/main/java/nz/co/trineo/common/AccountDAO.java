@@ -3,6 +3,8 @@ package nz.co.trineo.common;
 import java.io.Serializable;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
@@ -11,6 +13,7 @@ import io.dropwizard.hibernate.AbstractDAO;
 import nz.co.trineo.common.model.ConnectedAccount;
 
 public class AccountDAO extends AbstractDAO<ConnectedAccount> {
+	@Inject
 	public AccountDAO(final SessionFactory sessionFactory) {
 		super(sessionFactory);
 	}

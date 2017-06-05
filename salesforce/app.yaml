@@ -12,7 +12,7 @@ githubDirectory: /var/trineo/github
 # TODO: move client ids and secrets out of this config 
 clientKey: 3MVG9ZL0ppGP5UrC6uYG2F8MedFD2Yiy1y1KUpVsNmHUUqK6dqQSnZ05fwAtUkKX5k4zD.lbR2Tx4O.PuMfsY
 clientSecret: 1533324426739765893
-apiVersion: 36.0
+apiVersion: 39.0
 
 trelloKey: e804eb8fa9abab718b98bfac0fd43492
 trelloSecret: c3ccd4db76ef92ce847915903979ef4090ba4c6ed0e4b6375a23797b17c2df68

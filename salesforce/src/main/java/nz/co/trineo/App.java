@@ -1,16 +1,30 @@
 package nz.co.trineo;
 
+import javax.validation.Validator;
+
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.hibernate.SessionFactory;
+
+import com.codahale.metrics.MetricRegistry;
 
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
+import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
 import nz.co.anzac.dropwizard.quartz.QuartzBundle;
-import nz.co.trineo.common.*;
+import nz.co.trineo.common.AccountDAO;
+import nz.co.trineo.common.AccountResource;
+import nz.co.trineo.common.AccountService;
+import nz.co.trineo.common.ClientDAO;
+import nz.co.trineo.common.ClientResource;
+import nz.co.trineo.common.ClientService;
+import nz.co.trineo.common.JobExecutionService;
+import nz.co.trineo.common.ServiceResource;
+import nz.co.trineo.common.StaticResource;
 import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.Client;
 import nz.co.trineo.common.model.ConnectedAccount;
@@ -27,9 +41,7 @@ import nz.co.trineo.repo.model.Branch;
 import nz.co.trineo.repo.model.Repository;
 import nz.co.trineo.repo.model.Tag;
 import nz.co.trineo.salesforce.SalesforceResource;
-import nz.co.trineo.salesforce.SalesforceScheduleManager;
 import nz.co.trineo.salesforce.SalesforceService;
-import nz.co.trineo.salesforce.jobs.RefreshBackupsTask;
 import nz.co.trineo.salesforce.model.*;
 import nz.co.trineo.trello.BoardDAO;
 import nz.co.trineo.trello.TrelloResource;
@@ -83,48 +95,55 @@ public class App extends Application<AppConfiguration> {
 	@Override
 	public void run(final AppConfiguration configuration, final Environment environment) throws Exception {
 		final SessionFactory sessionFactory = hibernate.getSessionFactory();
-		final GitProcessDAO processDAO = new GitProcessDAO(sessionFactory);
-		final OrganizationDAO organizationDAO = new OrganizationDAO(sessionFactory);
-		final AccountDAO accountDAO = new AccountDAO(sessionFactory);
-		final TestRunDAO testRunDAO = new TestRunDAO(sessionFactory);
-		final BackupDAO backupDAO = new BackupDAO(sessionFactory);
-		final RepoDAO repoDAO = new RepoDAO(sessionFactory);
-		final ClientDAO clientDAO = new ClientDAO(sessionFactory);
-		final BoardDAO boardDAO = new BoardDAO(sessionFactory);
 
-		final JobExecutionService executionService = new JobExecutionService();
+		environment.jersey().register(new AbstractBinder() {
+			@Override
+			protected void configure() {
+				bind(configuration).to(AppConfiguration.class);
+				bind(environment).to(Environment.class);
+				bind(environment.lifecycle()).to(LifecycleEnvironment.class);
+				bind(environment.metrics()).to(MetricRegistry.class);
+				bind(environment.getValidator()).to(Validator.class);
 
-		final GitService gService = new GitService(configuration, processDAO);
-		final ClientService clientService = new ClientService(clientDAO);
-		final GitHubService ghService = new GitHubService(repoDAO, configuration, accountDAO, clientService, gService);
-		final SalesforceService sfService = new SalesforceService(accountDAO, organizationDAO, configuration, gService,
-				testRunDAO, backupDAO, sessionFactory, clientService, executionService, repoDAO);
-		final AccountService aService = new AccountService(accountDAO);
-		final TrelloService tService = new TrelloService(configuration, accountDAO, boardDAO, clientService);
+				bind(sessionFactory).to(SessionFactory.class);
 
-		final RepoResource gResource = new RepoResource();
-		final SalesforceResource sfResource = new SalesforceResource(sfService);
-		final AccountResource aResource = new AccountResource(aService);
-		final TrelloResource tResource = new TrelloResource(tService);
+				bind(GitProcessDAO.class).to(GitProcessDAO.class);
+				bind(OrganizationDAO.class).to(OrganizationDAO.class);
+				bind(AccountDAO.class).to(AccountDAO.class);
+				bind(TestRunDAO.class).to(TestRunDAO.class);
+				bind(BackupDAO.class).to(BackupDAO.class);
+				bind(RepoDAO.class).to(RepoDAO.class);
+				bind(ClientDAO.class).to(ClientDAO.class);
+				bind(BoardDAO.class).to(BoardDAO.class);
+
+				bind(JobExecutionService.class).to(JobExecutionService.class);
+				bind(GitService.class).to(GitService.class);
+				bind(ClientService.class).to(ClientService.class);
+				bind(GitHubService.class).to(GitHubService.class);
+				bind(SalesforceService.class).to(SalesforceService.class);
+				bind(AccountService.class).to(AccountService.class);
+				bind(TrelloService.class).to(TrelloService.class);
+			}
+		});
+
 		final StaticResource staticResource = new StaticResource();
-		final ServiceResource serviceResource = new ServiceResource(aService);
-		final ClientResource clientResource = new ClientResource(clientService);
 
-		ServiceRegistry.registerService(tService);
-		ServiceRegistry.registerService(sfService);
-		ServiceRegistry.registerService(ghService);
-		ServiceRegistry.registerService(gService);
+		// ServiceRegistry.registerService(tService);
+		// ServiceRegistry.registerService(sfService);
+		// ServiceRegistry.registerService(ghService);
+		// ServiceRegistry.registerService(gService);
 
-		environment.jersey().register(gResource);
-		environment.jersey().register(sfResource);
-		environment.jersey().register(aResource);
-		environment.jersey().register(tResource);
+		environment.jersey().register(RepoResource.class);
+		environment.jersey().register(SalesforceResource.class);
+		environment.jersey().register(AccountResource.class);
+		environment.jersey().register(TrelloResource.class);
 		environment.jersey().register(staticResource);
-		environment.jersey().register(serviceResource);
-		environment.jersey().register(clientResource);
+		environment.jersey().register(ServiceResource.class);
+		environment.jersey().register(ClientResource.class);
 
-		environment.admin().addTask(new RefreshBackupsTask(organizationDAO, gService, configuration, sessionFactory));
-		environment.lifecycle().manage(new SalesforceScheduleManager(sessionFactory, sfService));
-		environment.lifecycle().manage(executionService);
+		// environment.admin().addTask(new RefreshBackupsTask(organizationDAO, gService, configuration,
+		// sessionFactory));
+		// environment.lifecycle().manage(new SalesforceScheduleManager(sessionFactory, sfService));
+		// environment.lifecycle().manage(executionService);
 	}
 }

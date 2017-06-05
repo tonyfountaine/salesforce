@@ -5,17 +5,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import org.jvnet.hk2.annotations.Service;
+
 import com.google.common.hash.HashCode;
 
 import nz.co.trineo.common.model.AccountToken;
 import nz.co.trineo.common.model.ConnectedAccount;
 
+@Service
 public class AccountService {
 	private final AccountDAO accountDAO;
 
 	private final Map<String, ConnectedAccount> states = new HashMap<>();
 	private final Map<String, Map<String, Object>> additionalMap = new HashMap<>();
 
+	@Inject
 	public AccountService(final AccountDAO accountDAO) {
 		super();
 		this.accountDAO = accountDAO;

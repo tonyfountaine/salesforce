@@ -2,6 +2,8 @@ package nz.co.trineo.git;
 
 import java.io.Serializable;
 
+import javax.inject.Inject;
+
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 
@@ -10,6 +12,7 @@ import nz.co.trineo.git.model.GitProcess;
 
 public class GitProcessDAO extends AbstractDAO<GitProcess> {
 
+	@Inject
 	public GitProcessDAO(final SessionFactory sessionFactory) {
 		super(sessionFactory);
 	}
