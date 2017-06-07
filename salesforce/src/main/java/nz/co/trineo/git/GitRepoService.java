@@ -77,11 +77,12 @@ public class GitRepoService implements Service, RepoService {
 		nodeMap.put(path, node);
 	}
 
-	public void checkout(final int id, final String name) throws GitServiceException {
-		final Repository repository = dao.get(id);
+	public void checkout(final long id) throws GitServiceException {
+		final Branch branch = dao.getBranch(id);
+		final Repository repository = branch.getRepo();
 		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
 		try {
-			gitService.checkout(repoDir, name);
+			gitService.checkout(repoDir, branch.getName());
 		} catch (final GitServiceException e) {
 			throw new GitServiceException(e);
 		}

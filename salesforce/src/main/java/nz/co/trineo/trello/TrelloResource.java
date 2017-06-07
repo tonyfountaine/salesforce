@@ -22,8 +22,8 @@ import com.julienvey.trello.domain.Member;
 import com.julienvey.trello.domain.TList;
 
 import io.dropwizard.hibernate.UnitOfWork;
+import nz.co.trineo.model.Board;
 import nz.co.trineo.salesforce.SalesforceException;
-import nz.co.trineo.trello.model.Board;
 
 @Path("/trello")
 @Produces(MediaType.APPLICATION_JSON)

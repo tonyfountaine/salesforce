@@ -77,6 +77,9 @@ import nz.co.trineo.configuration.AppConfiguration;
 import nz.co.trineo.git.GitService;
 import nz.co.trineo.git.GitServiceException;
 import nz.co.trineo.model.*;
+import nz.co.trineo.model.CodeCoverageResult;
+import nz.co.trineo.model.RunTestFailure;
+import nz.co.trineo.model.RunTestsResult;
 import nz.co.trineo.repo.RepoDAO;
 import nz.co.trineo.repo.RepoService;
 import nz.co.trineo.repo.RepoServiceException;
@@ -370,7 +373,7 @@ public class SalesforceService implements ConnectedService {
 			if (!service.isRepo(repo.getId())) {
 				service.clone(repo.getId());
 			}
-			service.checkout(repo.getId(), branch.getName());
+			service.checkout(branch.getId());
 			service.pull(repo.getId());
 			final List<String> paths = pathsFromPackage(repoDirB);
 			return gitService.diffReposPath(repoDirA, repoDirB, paths);

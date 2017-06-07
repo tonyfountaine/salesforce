@@ -93,11 +93,12 @@ public class BitBucketService implements ConnectedService, RepoService {
 		return "https://github.com/login/oauth/authorize";
 	}
 
-	public void checkout(final int id, final String name) throws BitBucketServiceException {
-		final Repository repository = dao.get(id);
+	public void checkout(final long id) throws BitBucketServiceException {
+		final Branch branch = dao.getBranch(id);
+		final Repository repository = branch.getRepo();
 		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
 		try {
-			gitService.checkout(repoDir, name);
+			gitService.checkout(repoDir, branch.getName());
 		} catch (final GitServiceException e) {
 			throw new BitBucketServiceException(e);
 		}

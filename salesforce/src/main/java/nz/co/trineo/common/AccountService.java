@@ -18,8 +18,8 @@ import nz.co.trineo.model.ConnectedAccount;
 public class AccountService {
 	private final AccountDAO accountDAO;
 
-	private final Map<String, ConnectedAccount> states = new HashMap<>();
-	private final Map<String, Map<String, Object>> additionalMap = new HashMap<>();
+	private static final Map<String, ConnectedAccount> states = new HashMap<>();
+	private static final Map<String, Map<String, Object>> additionalMap = new HashMap<>();
 
 	@Inject
 	public AccountService(final AccountDAO accountDAO) {
@@ -40,14 +40,20 @@ public class AccountService {
 	}
 
 	public void getAccessToken(final String code, final String state, final URI redirectUri) {
-		final ConnectedAccount account = states.get(state);
-		final Map<String, Object> additional = additionalMap.get(state);
-		final ConnectedService service = (ConnectedService) ServiceRegistry.getService(account.getService());
+		try {
+			final ConnectedAccount account = states.get(state);
+			final Map<String, Object> additional = additionalMap.get(state);
+			final String name = account.getService();
+			final ConnectedService service = (ConnectedService) ServiceRegistry.getService(name);
 
-		final AccountToken tokenResponse = service.getAccessToken(code, state, redirectUri, additional);
+			final AccountToken tokenResponse = service.getAccessToken(code, state, redirectUri, additional);
 
-		account.setToken(tokenResponse);
-		create(account);
+			account.setToken(tokenResponse);
+			create(account);
+		} finally {
+			states.remove(state);
+			additionalMap.remove(state);
+		}
 	}
 
 	public URI getAuthorizeURIForService(final ConnectedAccount account, final URI redirectUri,

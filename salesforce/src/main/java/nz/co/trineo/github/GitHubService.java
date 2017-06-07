@@ -98,11 +98,12 @@ public class GitHubService implements ConnectedService, RepoService {
 		return "https://github.com/login/oauth/authorize";
 	}
 
-	public void checkout(final int id, final String name) throws GitHubServiceException {
-		final Repository repository = repoDAO.get(id);
+	public void checkout(final long id) throws GitHubServiceException {
+		final Branch branch = repoDAO.getBranch(id);
+		final Repository repository = branch.getRepo();
 		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
 		try {
-			gitService.checkout(repoDir, name);
+			gitService.checkout(repoDir, branch.getName());
 		} catch (final GitServiceException e) {
 			throw new GitHubServiceException(e);
 		}
@@ -157,8 +158,9 @@ public class GitHubService implements ConnectedService, RepoService {
 		if (!isRepo(repo.getId())) {
 			clone(repo.getId());
 		}
-		pull(repo.getId());
 		try {
+			checkout(id);
+			checkout(compareId);
 			return gitService.diff(repoDir, "refs/heads/" + branch.getName(), "refs/heads/" + branch2.getName(), null);
 		} catch (final GitServiceException e) {
 			throw new GitHubServiceException(e);

@@ -12,7 +12,7 @@ import nz.co.trineo.model.Tag;
 import nz.co.trineo.model.TreeNode;
 
 public interface RepoService extends Service {
-	void checkout(int id, String name) throws RepoServiceException;
+	void checkout(long id) throws RepoServiceException;
 
 	Repository createRepo(String url, int accId) throws RepoServiceException;
 

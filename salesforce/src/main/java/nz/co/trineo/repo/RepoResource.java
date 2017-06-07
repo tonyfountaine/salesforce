@@ -74,27 +74,6 @@ public class RepoResource {
 		return Response.ok(view).build();
 	}
 
-	@POST
-	@Timed
-	@Path("/branches/{id}")
-	@UnitOfWork
-	public Response createBranch(final @PathParam("type") String type, final @PathParam("id") int id,
-			final @QueryParam("name") String branchName) throws RepoServiceException {
-		final Branch branch = getService(type).createBranch(id, branchName);
-		final BranchView view = new BranchView(branch);
-		return Response.ok(view).build();
-	}
-
-	@GET
-	@Timed
-	@Path("/branches/{id}/compare/{compareId}")
-	@UnitOfWork
-	public Response compareBranches(final @PathParam("type") String type, final @PathParam("id") long id,
-			final @PathParam("compareId") long compareId) throws RepoServiceException {
-		final List<GitDiff> list = getService(type).diffBranches(id, compareId);
-		return Response.ok(list).build();
-	}
-
 	@GET
 	@Timed
 	@Path("/repos/{id}")
@@ -134,20 +113,6 @@ public class RepoResource {
 		final List<Branch> branches = getService(type).getBranches(id);
 		final List<BranchView> list = toBranchView(branches);
 		return Response.ok(list).build();
-	}
-
-	private List<BranchView> toBranchView(final List<Branch> branches) {
-		final List<BranchView> list = new ArrayList<>();
-		branches.forEach(b -> {
-			list.add(new BranchView(b));
-		});
-		list.sort(new Comparator<BranchView>() {
-			@Override
-			public int compare(BranchView o1, BranchView o2) {
-				return o1.getName().compareTo(o2.getName());
-			}
-		});
-		return list;
 	}
 
 	@POST
@@ -207,5 +172,50 @@ public class RepoResource {
 			list.add(new TagView(t));
 		});
 		return Response.ok(list).build();
+	}
+
+	@POST
+	@Timed
+	@Path("/branches/{id}")
+	@UnitOfWork
+	public Response createBranch(final @PathParam("type") String type, final @PathParam("id") int id,
+			final @QueryParam("name") String branchName) throws RepoServiceException {
+		final Branch branch = getService(type).createBranch(id, branchName);
+		final BranchView view = new BranchView(branch);
+		return Response.ok(view).build();
+	}
+
+	@GET
+	@Timed
+	@Path("/branches/{id}/compare/{compareId}")
+	@UnitOfWork
+	public Response compareBranches(final @PathParam("type") String type, final @PathParam("id") long id,
+			final @PathParam("compareId") long compareId) throws RepoServiceException {
+		final List<GitDiff> list = getService(type).diffBranches(id, compareId);
+		return Response.ok(list).build();
+	}
+
+	@POST
+	@Timed
+	@Path("/branches/{id}/checkout")
+	@UnitOfWork
+	public Response checkoutBranch(final @PathParam("type") String type, final @PathParam("id") int id)
+			throws RepoServiceException {
+		getService(type).checkout(id);
+		return Response.ok().build();
+	}
+
+	private List<BranchView> toBranchView(final List<Branch> branches) {
+		final List<BranchView> list = new ArrayList<>();
+		branches.forEach(b -> {
+			list.add(new BranchView(b));
+		});
+		list.sort(new Comparator<BranchView>() {
+			@Override
+			public int compare(BranchView o1, BranchView o2) {
+				return o1.getName().compareTo(o2.getName());
+			}
+		});
+		return list;
 	}
 }

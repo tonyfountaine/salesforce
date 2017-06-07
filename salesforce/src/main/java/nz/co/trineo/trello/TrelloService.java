@@ -92,7 +92,7 @@ public class TrelloService implements ConnectedService {
 		return URI.create(authorizationUrl);
 	}
 
-	public nz.co.trineo.trello.model.Board getBoard(final String id) {
+	public nz.co.trineo.model.Board getBoard(final String id) {
 		return boardDAO.get(id);
 	}
 
@@ -103,7 +103,7 @@ public class TrelloService implements ConnectedService {
 	}
 
 	public Card getCard(final String boardId, final String cardId) {
-		final nz.co.trineo.trello.model.Board board = boardDAO.get(boardId);
+		final nz.co.trineo.model.Board board = boardDAO.get(boardId);
 		final Trello trello = getTrello(board.getAccount());
 		final Card card = trello.getCard(cardId,
 				new Argument("fields", "name,idList,url,desc,labels,badges,shortLink,shortUrl"));
@@ -112,14 +112,14 @@ public class TrelloService implements ConnectedService {
 	}
 
 	public List<Attachment> getCardAttachments(final String boardId, final String cardId) {
-		final nz.co.trineo.trello.model.Board board = boardDAO.get(boardId);
+		final nz.co.trineo.model.Board board = boardDAO.get(boardId);
 		final Trello trello = getTrello(board.getAccount());
 		final List<Attachment> cardActions = trello.getCardAttachments(cardId);
 		return cardActions;
 	}
 
 	public List<Action> getCardComments(final String boardId, final String cardId) {
-		final nz.co.trineo.trello.model.Board board = boardDAO.get(boardId);
+		final nz.co.trineo.model.Board board = boardDAO.get(boardId);
 		final Trello trello = getTrello(board.getAccount());
 		final List<Action> cardActions = trello.getCardActions(cardId, new Argument("filter", "commentCard"));
 		cardActions.forEach(ca -> ca.getData().setText(formatMarkdown(ca.getData().getText())));
@@ -131,7 +131,7 @@ public class TrelloService implements ConnectedService {
 	}
 
 	public List<Card> getCards(final String id, final String listId) {
-		final nz.co.trineo.trello.model.Board board = boardDAO.get(id);
+		final nz.co.trineo.model.Board board = boardDAO.get(id);
 		final Trello trello = getTrello(board.getAccount());
 		List<Card> boardCards = trello.getBoardCards(id,
 				new Argument("fields", "name,idList,url,desc,labels,badges,shortLink,shortUrl"));
@@ -151,7 +151,7 @@ public class TrelloService implements ConnectedService {
 	}
 
 	public List<TList> getLists(final String id) {
-		final nz.co.trineo.trello.model.Board board = boardDAO.get(id);
+		final nz.co.trineo.model.Board board = boardDAO.get(id);
 		final Trello trello = getTrello(board.getAccount());
 		return trello.getBoardLists(id);
 	}
@@ -178,18 +178,18 @@ public class TrelloService implements ConnectedService {
 		return trello;
 	}
 
-	public List<nz.co.trineo.trello.model.Board> listBoards() {
+	public List<nz.co.trineo.model.Board> listBoards() {
 		return boardDAO.listAll();
 	}
 
-	public List<nz.co.trineo.trello.model.Board> listBoards(final int accId) {
+	public List<nz.co.trineo.model.Board> listBoards(final int accId) {
 		final ConnectedAccount account = credDAO.get(accId);
 		final Trello trello = getTrello(account);
 		final Member member = trello.getMemberInformation("me");
-		final List<nz.co.trineo.trello.model.Board> boards = new ArrayList<>();
+		final List<nz.co.trineo.model.Board> boards = new ArrayList<>();
 		member.getIdBoards().forEach(b -> {
 			final Board tBoard = getBoard(b, accId);
-			final nz.co.trineo.trello.model.Board board = new nz.co.trineo.trello.model.Board();
+			final nz.co.trineo.model.Board board = new nz.co.trineo.model.Board();
 			board.setAccount(account);
 			board.setClosed(tBoard.isClosed());
 			board.setDateLastActivity(tBoard.getDateLastActivity());
@@ -213,8 +213,8 @@ public class TrelloService implements ConnectedService {
 		return "https://trello.com/1/OAuthGetAccessToken";
 	}
 
-	public nz.co.trineo.trello.model.Board updateBoard(final nz.co.trineo.trello.model.Board b) {
-		final nz.co.trineo.trello.model.Board board = boardDAO.get(b.getId());
+	public nz.co.trineo.model.Board updateBoard(final nz.co.trineo.model.Board b) {
+		final nz.co.trineo.model.Board board = boardDAO.get(b.getId());
 		if (b.getClient() != null) {
 			final Client client = clientService.read(b.getClient().getId());
 			board.setClient(client);

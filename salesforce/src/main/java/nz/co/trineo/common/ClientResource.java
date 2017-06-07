@@ -21,12 +21,12 @@ import javax.ws.rs.core.UriInfo;
 import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
+import nz.co.trineo.model.Board;
 import nz.co.trineo.model.Client;
 import nz.co.trineo.model.Organization;
 import nz.co.trineo.model.Repository;
 import nz.co.trineo.repo.view.OrganizationView;
 import nz.co.trineo.repo.view.RepositoryView;
-import nz.co.trineo.trello.model.Board;
 
 @Path("/clients")
 @Produces(MediaType.APPLICATION_JSON)

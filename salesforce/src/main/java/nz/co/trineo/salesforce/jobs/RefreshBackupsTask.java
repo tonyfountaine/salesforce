@@ -7,10 +7,13 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.inject.Inject;
+
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.jvnet.hk2.annotations.Service;
 
 import com.google.common.collect.ImmutableMultimap;
 
@@ -22,6 +25,7 @@ import nz.co.trineo.model.Backup;
 import nz.co.trineo.model.BackupStatus;
 import nz.co.trineo.salesforce.OrganizationDAO;
 
+@Service
 public class RefreshBackupsTask extends Task {
 	private static final Pattern DATE_PATTERN = Pattern.compile(".*\\s+(\\d+-\\d+-\\d+-\\d+-\\d+-\\d+).*");
 	private final OrganizationDAO orgDAO;
@@ -30,6 +34,7 @@ public class RefreshBackupsTask extends Task {
 
 	private final SessionFactory sessionFactory;
 
+	@Inject
 	public RefreshBackupsTask(final OrganizationDAO orgDAO, final GitService gitService,
 			final AppConfiguration configuration, final SessionFactory sessionFactory) {
 		super("refreshBackups");

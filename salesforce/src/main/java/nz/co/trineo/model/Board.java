@@ -1,4 +1,4 @@
-package nz.co.trineo.trello.model;
+package nz.co.trineo.model;
 
 import java.util.Date;
 
@@ -14,10 +14,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import nz.co.trineo.model.Client;
-import nz.co.trineo.model.ConnectedAccount;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
