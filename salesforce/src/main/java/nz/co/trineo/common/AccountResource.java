@@ -29,7 +29,6 @@ import org.apache.commons.logging.LogFactory;
 import com.codahale.metrics.annotation.Timed;
 
 import io.dropwizard.hibernate.UnitOfWork;
-import nz.co.trineo.common.views.SuccessView;
 import nz.co.trineo.model.ConnectedAccount;
 import nz.co.trineo.model.Environment;
 
@@ -65,12 +64,12 @@ public class AccountResource {
 		accountService.delete(id);
 	}
 
-	private SuccessView extracted(final String serviceName, final String code, final String state) throws IOException {
+	private Response extracted(final String serviceName, final String code, final String state) throws IOException {
 		final URI uri = getRedirectUri(serviceName);
 
 		accountService.getAccessToken(code, state, uri);
 
-		return new SuccessView();
+		return new StaticResource().getHTML("/ui/success.html");
 	}
 
 	@POST
@@ -78,8 +77,8 @@ public class AccountResource {
 	@UnitOfWork
 	@Path("/oauth/{service}/callback")
 	@Produces(MediaType.TEXT_HTML)
-	public SuccessView finishConnect(final @PathParam("service") String serviceName,
-			final @QueryParam("code") String code, final @QueryParam("state") String state) throws IOException {
+	public Response finishConnect(final @PathParam("service") String serviceName, final @QueryParam("code") String code,
+			final @QueryParam("state") String state) throws IOException {
 		log.info("processing post");
 		return extracted(serviceName, code, state);
 	}
@@ -89,7 +88,7 @@ public class AccountResource {
 	@UnitOfWork
 	@Path("/oauth/{service}/callback/{state}")
 	@Produces(MediaType.TEXT_HTML)
-	public SuccessView finishConnectState(final @PathParam("service") String serviceName,
+	public Response finishConnectState(final @PathParam("service") String serviceName,
 			final @PathParam("state") String state, final @QueryParam("oauth_verifier") String verifier)
 			throws IOException {
 		log.info("processing state post");
@@ -101,7 +100,7 @@ public class AccountResource {
 	@UnitOfWork
 	@Path("/oauth/{service}/callback")
 	@Produces(MediaType.TEXT_HTML)
-	public SuccessView getFinishConnect(final @PathParam("service") String serviceName,
+	public Response getFinishConnect(final @PathParam("service") String serviceName,
 			final @QueryParam("code") String code, final @QueryParam("state") String state) throws IOException {
 		log.info("processing get");
 		log.info(uriInfo.getAbsolutePath() + ", " + uriInfo.getQueryParameters());
@@ -113,7 +112,7 @@ public class AccountResource {
 	@UnitOfWork
 	@Path("/oauth/{service}/callback/{state}")
 	@Produces(MediaType.TEXT_HTML)
-	public SuccessView getFinishConnectState(final @PathParam("service") String serviceName,
+	public Response getFinishConnectState(final @PathParam("service") String serviceName,
 			final @PathParam("state") String state, final @QueryParam("oauth_verifier") String verifier)
 			throws IOException {
 		log.info("processing state get");
