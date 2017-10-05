@@ -16,6 +16,7 @@ import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.PullResult;
@@ -102,7 +103,7 @@ public class GitService implements Service {
 	public void checkout(final File repoDir, final String name) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
-			git.checkout().setName(name).call();
+			git.checkout().setStartPoint(name).setName(name).call();
 		} catch (IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}
@@ -111,6 +112,19 @@ public class GitService implements Service {
 	public void checkout(final String name, final String branch) throws GitServiceException {
 		final File repoDir = new File(configuration.getGitDirectory(), name);
 		checkout(repoDir, branch);
+	}
+
+	public void checkoutOrCreate(final String name, final String branch) throws GitServiceException {
+		final File repoDir = new File(configuration.getGitDirectory(), name);
+		checkoutOrCreate(repoDir, branch);
+	}
+
+	public void checkoutOrCreate(final File repoDir, final String name) throws GitServiceException {
+		try {
+			checkout(repoDir, name);
+		} catch (GitServiceException e) {
+			createBranch(repoDir, name);
+		}
 	}
 
 	public GitProcess clone(final File repoDir, final String cloneURL) throws GitServiceException {
@@ -507,7 +521,8 @@ public class GitService implements Service {
 	public void createBranch(final File repoDir, final String name) throws GitServiceException {
 		final File gitDir = new File(repoDir, ".git");
 		try (Repository repository = FileRepositoryBuilder.create(gitDir); Git git = new Git(repository);) {
-			git.branchCreate().setName(name).call();
+			git.branchCreate().setName(name).setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
+					.setStartPoint("origin/" + name).setForce(true).call();
 		} catch (IOException | GitAPIException e) {
 			throw new GitServiceException(e);
 		}

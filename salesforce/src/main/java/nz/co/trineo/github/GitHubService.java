@@ -109,6 +109,17 @@ public class GitHubService implements ConnectedService, RepoService {
 		}
 	}
 
+	private void checkoutOrCreate(final long id) throws GitHubServiceException {
+		final Branch branch = repoDAO.getBranch(id);
+		final Repository repository = branch.getRepo();
+		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
+		try {
+			gitService.checkoutOrCreate(repoDir, branch.getName());
+		} catch (final GitServiceException e) {
+			throw new GitHubServiceException(e);
+		}
+	}
+
 	public void clone(final int id) throws GitHubServiceException {
 		final Repository repository = repoDAO.get(id);
 		final File repoDir = new File(configuration.getGithubDirectory(), repository.getName());
@@ -159,8 +170,8 @@ public class GitHubService implements ConnectedService, RepoService {
 			clone(repo.getId());
 		}
 		try {
-			checkout(id);
-			checkout(compareId);
+			checkoutOrCreate(id);
+			checkoutOrCreate(compareId);
 			return gitService.diff(repoDir, "refs/heads/" + branch.getName(), "refs/heads/" + branch2.getName(), null);
 		} catch (final GitServiceException e) {
 			throw new GitHubServiceException(e);
