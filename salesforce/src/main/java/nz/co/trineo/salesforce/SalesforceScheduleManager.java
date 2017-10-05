@@ -1,11 +1,14 @@
 package nz.co.trineo.salesforce;
 
+import javax.inject.Inject;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.jvnet.hk2.annotations.Service;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -22,12 +25,14 @@ import nz.co.anzac.dropwizard.quartz.annotation.Schedule;
 import nz.co.trineo.salesforce.jobs.BackupJob;
 import nz.co.trineo.salesforce.jobs.TestsJob;
 
+@Service
 public class SalesforceScheduleManager implements Managed {
 	private static final Log log = LogFactory.getLog(QuartzManager.class);
 	private Scheduler scheduler;
 	private final SessionFactory sessionFactory;
 	private final SalesforceService salesforceService;
 
+	@Inject
 	public SalesforceScheduleManager(final SessionFactory sessionFactory, final SalesforceService salesforceService) {
 		super();
 		this.sessionFactory = sessionFactory;
