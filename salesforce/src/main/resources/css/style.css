@@ -56,7 +56,7 @@ a.edit {
 	white-space: pre;
 }
 
-#compareTabs, #compareData .tab-content, #metadataTree, #code, #coverageTable, #testTree, #backupsTable, #orgsTable,
+#compareTabs, #compareData .tab-content, #metadataTree, #code, #coverageTable, #testTree, #backupsTable, #orgsTable, #schemaTable,
 	#diffTree, #diffContent, #clients, #reposTable, #branchesTable, #tagsTable, #commitsTable, #accountsTable, #boardsTable, #cardsTable {
 	max-height: 100vh;
 	overflow: auto;
@@ -66,12 +66,12 @@ a.edit {
 	overflow-x: hidden;
 }
 
-#code table, #compareData table, #metadataTree ul, #testTree ul, #coverageTable .table, #backupsTable .table, #orgsTable .table,
+#code table, #compareData table, #metadataTree ul, #testTree ul, #coverageTable .table, #backupsTable .table, #orgsTable .table, #schemaTable .table,
 	#diffTree ul, #diffContent .panel, #reposTable table, #branchesTable table, #tagsTable table, #commitsTable table, #accountsTable table, #boardsTable table, #cardsTable ul {
 	margin-bottom: 0;
 }
 
-#coverageTable, #backupsTable, #orgsTable, #reposTable, #branchesTable, #tagsTable, #commitsTable, #accountsTable, #boardsTable, #cardsTable {
+#coverageTable, #backupsTable, #orgsTable, #reposTable, #branchesTable, #tagsTable, #commitsTable, #accountsTable, #boardsTable, #cardsTable, #schemaTable {
 	margin: -15px;
 }
 

@@ -4,15 +4,7 @@ import static com.sforce.soap.metadata.RetrieveStatus.Failed;
 import static com.sforce.soap.metadata.RetrieveStatus.Succeeded;
 import static org.apache.commons.io.FileUtils.forceMkdir;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.*;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,10 +13,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -43,6 +39,7 @@ import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.hibernate.SessionFactory;
 import org.jvnet.hk2.annotations.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BulkConnection;
 import com.sforce.soap.apex.RunTestsRequest;
@@ -58,6 +55,8 @@ import com.sforce.soap.metadata.PackageTypeMembers;
 import com.sforce.soap.metadata.RetrieveRequest;
 import com.sforce.soap.metadata.RetrieveResult;
 import com.sforce.soap.partner.Connector;
+import com.sforce.soap.partner.DescribeGlobalResult;
+import com.sforce.soap.partner.DescribeSObjectResult;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.fault.ExceptionCode;
@@ -669,6 +668,51 @@ public class SalesforceService implements ConnectedService {
 		return organization;
 	}
 
+	public DescribeGlobalResult describeGlobal(final String orgId) throws SalesforceException {
+		final Organization org = orgDAO.get(orgId);
+		final ConnectedAccount account = org.getAccount();
+
+		PartnerConnection connection = getPartnerConnection(account);
+		DescribeGlobalResult describeGlobalResult = null;
+		try {
+			describeGlobalResult = connection.describeGlobal();
+		} catch (final ConnectionException e) {
+			if (isInvalidSessionException(e)) {
+				refreshToken(account);
+				connection = getPartnerConnection(account);
+				try {
+					describeGlobalResult = connection.describeGlobal();
+				} catch (final ConnectionException e1) {
+					throw new SalesforceException(e1);
+				}
+			}
+		}
+		return describeGlobalResult;
+	}
+
+	public DescribeSObjectResult describeSObject(final String orgId, final String sObjectType)
+			throws SalesforceException {
+		final Organization org = orgDAO.get(orgId);
+		final ConnectedAccount account = org.getAccount();
+
+		PartnerConnection connection = getPartnerConnection(account);
+		DescribeSObjectResult describeGlobalResult = null;
+		try {
+			describeGlobalResult = connection.describeSObject(sObjectType);
+		} catch (final ConnectionException e) {
+			if (isInvalidSessionException(e)) {
+				refreshToken(account);
+				connection = getPartnerConnection(account);
+				try {
+					describeGlobalResult = connection.describeSObject(sObjectType);
+				} catch (final ConnectionException e1) {
+					throw new SalesforceException(e1);
+				}
+			}
+		}
+		return describeGlobalResult;
+	}
+
 	private Organization getOrganization(final ConnectedAccount account, final String organizationId)
 			throws SalesforceException {
 		final QueryResult queryResult = runQuery(account,
@@ -928,6 +972,112 @@ public class SalesforceService implements ConnectedService {
 		account.getToken().setAccessToken(tokenResponse.getAccessToken());
 		credDAO.persist(account);
 		return tokenResponse;
+	}
+
+	public List<nz.co.trineo.model.SObject> runQuery(final String orgId, final String query)
+			throws SalesforceException {
+		final Organization organization = orgDAO.get(orgId);
+		final ConnectedAccount account = organization.getAccount();
+		final QueryResult queryResult = runQuery(account, query);
+		final List<nz.co.trineo.model.SObject> records = Stream.of(queryResult.getRecords())
+				.map(ConvertUtils::toSObject).collect(Collectors.toList());
+		return records;
+	}
+
+	public InputStream sfdxDataExport(final List<nz.co.trineo.model.SObject> objects) throws SalesforceException {
+		final Map<String, Set<String>> idsByType = new HashMap<>();
+		final Map<String, String> idToRef = new HashMap<>();
+		final Map<String, Set<nz.co.trineo.model.SObject>> objectsByType = new HashMap<>();
+		final Map<String, SFDXPlan> planByType = new HashMap<>();
+
+		objects.forEach(o -> {
+			// create references
+			final String id = o.getField("Id");
+			final Map<String, Object> attributes = o.getField("attributes");
+			final String type = (String) attributes.get("type");
+
+			if (!objectsByType.containsKey(type)) {
+				objectsByType.put(type, new HashSet<>());
+				final SFDXPlan plan = new SFDXPlan();
+				plan.setSobject(type);
+				plan.addFile(exportFilename(type));
+				planByType.put(type, plan);
+			}
+			objectsByType.get(type).add(o);
+
+			if (!idsByType.containsKey(type)) {
+				idsByType.put(type, new HashSet<>());
+			}
+
+			final Set<String> ids = idsByType.get(type);
+			if (!ids.contains(id)) {
+				final int size = ids.size();
+				final String ref = type + (size + 1);
+				ids.add(id);
+				idToRef.put(id, ref);
+			}
+		});
+
+		objects.forEach(o -> {
+			final String id = o.getField("Id");
+			final Map<String, Object> attributes = o.getField("attributes");
+			final String type = (String) attributes.get("type");
+			final SFDXPlan plan = planByType.get(type);
+			if (idToRef.containsKey(id)) {
+				// id was found in the map so set the reference id and then remove the id
+				attributes.put("referenceId", idToRef.get(id));
+				o.remove("Id");
+				plan.setSaveRefs(true);
+			}
+			o.replaceAll((key, val) -> {
+				if (val instanceof String) {
+					final String strVal = (String) val;
+					if (idToRef.containsKey(strVal)) {
+						return "@" + idToRef.get(strVal);
+					}
+				}
+				return val;
+			});
+		});
+
+		ObjectMapper mapper = new ObjectMapper();
+		final ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try (ZipOutputStream zis = new ZipOutputStream(out);) {
+			final ZipEntry planEntry = new ZipEntry("plan.json");
+			zis.putNextEntry(planEntry);
+
+			final String planStr = mapper.writeValueAsString(planByType.values());
+			System.out.println(planStr);
+			zis.write(planStr.getBytes());
+
+			zis.closeEntry();
+
+			objectsByType.forEach((key, val) -> {
+				try {
+					final String filename = exportFilename(key);
+					final ZipEntry objEntry = new ZipEntry(filename);
+					zis.putNextEntry(objEntry);
+
+					final String objStr = mapper.writeValueAsString(val);
+					System.out.println(objStr);
+					zis.write(objStr.getBytes());
+
+					zis.closeEntry();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			});
+		} catch (IOException e) {
+			throw new SalesforceException(e);
+		}
+
+		final byte[] buf = out.toByteArray();
+		final ByteArrayInputStream inputStream = new ByteArrayInputStream(buf);
+		return inputStream;
+	}
+
+	private String exportFilename(final String type) {
+		return type + "s.json";
 	}
 
 	private QueryResult runQuery(final ConnectedAccount account, final String query) throws SalesforceException {

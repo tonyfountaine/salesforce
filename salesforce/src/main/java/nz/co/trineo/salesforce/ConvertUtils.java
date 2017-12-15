@@ -1,9 +1,14 @@
 package nz.co.trineo.salesforce;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.sforce.soap.partner.sobject.SObject;
+import com.sforce.ws.bind.XmlObject;
 
 import nz.co.trineo.model.CodeCoverageResult;
 import nz.co.trineo.model.CodeCoverageWarning;
@@ -49,13 +54,35 @@ public class ConvertUtils {
 	}
 
 	public static Organization toOrganization(final SObject sObject) {
-		log.info(sObject);
+		nz.co.trineo.model.SObject object = toSObject(sObject);
+		log.info(object);
 		final Organization organization = new Organization();
 		organization.setId(sObject.getId());
-		organization.setName((String) sObject.getField("Name"));
-		organization.setOrganizationType((String) sObject.getField("OrganizationType"));
-		organization.setSandbox(Boolean.valueOf((String) sObject.getField("IsSandbox")));
+		organization.setName(object.getField("Name"));
+		organization.setOrganizationType(object.getField("OrganizationType"));
+		organization.setSandbox(object.getField("IsSandbox"));
 		return organization;
+	}
+
+	public static nz.co.trineo.model.SObject toSObject(final SObject sObject) {
+		final nz.co.trineo.model.SObject object = new nz.co.trineo.model.SObject();
+		final Iterator<XmlObject> children = sObject.getChildren();
+		while (children.hasNext()) {
+			final XmlObject next = children.next();
+			final String name = next.getName().getLocalPart();
+			final Object value = sObject.getSObjectField(name);
+			if ("type".equals(name)) {
+				final Map<String, Object> attributes = new HashMap<>();
+				attributes.put(name, value);
+				object.put("attributes", attributes);
+			} else if (value instanceof SObject) {
+				nz.co.trineo.model.SObject sObjectValue = toSObject((SObject) value);
+				object.setField(name, sObjectValue);
+			} else {
+				object.setField(name, value);
+			}
+		}
+		return object;
 	}
 
 	public static RunTestFailure toRunTestFailure(final com.sforce.soap.apex.RunTestFailure failure) {

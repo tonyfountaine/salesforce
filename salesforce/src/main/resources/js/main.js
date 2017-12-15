@@ -148,6 +148,26 @@ function OrgModel(org) {
 	};
 };
 
+function BackupModel(backup) {
+	var self = this;
+	self.id = backup.id;
+	self.name = backup.name;
+	self.retrieveId = backup.retrieveId;
+	self.status = backup.status;
+	self.downloadBackup = function(org) {
+		alert('download backup: ' + org.id);
+		window.location.href = "/sf/orgs/" + org.id + "/backups/" + self.id;
+	};
+	self.deleteBackup = function(org) {
+		$.ajax({
+			method: "DELETE",
+			url: "/sf/orgs/" + org.id + "/backups/" + self.id 
+		}).done(function() {
+        	mainModel.getBackups(org.id);
+        });
+	};
+};
+
 function RepoModel(repo) {
 	var self = this;
 	self.name = repo.name;
@@ -262,7 +282,7 @@ function BoardModel(board) {
 			method: "DELETE",
 			url: "/trello/boards/" + board.id
 		}).done(function() {
-        	mainModel.getBoards();
+			mainModel.getBoards();
         });
 	};
 	self.updateClientName = function() {
@@ -302,7 +322,7 @@ function CardModel(org) {
     if (m = pointsEx.exec(org.name)) {
         self.points = m[1];
     } else {
-    	self.points = null;
+    		self.points = null;
     }
 	self.name = org.name.replace(labelEx, '').replace(pointsEx, '');
 	if (org.branch != null) {
@@ -363,6 +383,9 @@ function TrineoViewModel() {
 	});
 	self.codeCoverage = ko.observableArray([]);
 	self.content = ko.observableArray([]);
+	self.schema = ko.observableArray([]);
+	self.sobjectFields = ko.observableArray([]);
+	self.sobjectData = ko.observableArray([]);
 
 	self.repos = ko.observableArray([]);
 	self.repo = ko.observable();
@@ -408,7 +431,7 @@ function TrineoViewModel() {
             method: "POST",
             url: "accounts/" + account.id + '/verify'
         }).done(function() {
-        	self.getAccounts();
+        		self.getAccounts();
         });
 	};
 	self.renameAccount = function(account, event) {
@@ -419,7 +442,7 @@ function TrineoViewModel() {
             method: "DELETE",
             url: "accounts/" + account.id
         }).done(function() {
-        	self.getAccounts();
+        		self.getAccounts();
         });
 	};
 	self.addAccount = function() {
@@ -481,7 +504,7 @@ function TrineoViewModel() {
             method: "DELETE",
             url: "/clients/" + client.id
         }).done(function() {
-        	self.getClients();
+        		self.getClients();
         });
 	};
 
@@ -497,7 +520,7 @@ function TrineoViewModel() {
 		self.hideNewOrgModal();
         alert(self.newOrgAccount());
         $.post("/sf/orgs/?acc=" + self.newOrgAccount(), function() {
-        	self.getOrgs();
+        		self.getOrgs();
         });
 	};
 	self.showNewOrgModal = function() {
@@ -512,7 +535,7 @@ function TrineoViewModel() {
             method: "DELETE",
             url: "/sf/orgs/" + org.id
         }).done(function() {
-        	self.getOrgs();
+        		self.getOrgs();
         });
 	};
 	self.getServiceAccounts = function(service) {
@@ -552,7 +575,10 @@ function TrineoViewModel() {
 	};
 	self.getBackups = function(id) {
 		$.getJSON("/sf/orgs/" + id + "/backups", function(data) {
-			self.backups(data);
+			var mapped = $.map(data, function(item) {
+				return new BackupModel(item)
+			});
+			self.backups(mapped);
 		});
 	};
 	self.getMetadataTree = function(id) {
@@ -582,6 +608,38 @@ function TrineoViewModel() {
 			self.codeCoverage(data);
 		});
 	};
+	self.getSchema = function(id) {
+		$.getJSON("/sf/orgs/" + id + "/describeGlobal", function (data) {
+			self.schema(data.sobjects);
+		});
+	};
+	self.describeSObject = function(data) {
+		var type = data.name;
+		$.getJSON("/sf/orgs/" + self.org().id + "/" + type + "/describe", function (data) {
+			self.sobjectFields(data.fields);
+			self.getData(type, data.fields);
+		});
+	};
+	self.getData = function(type, fields) {
+		var query = "SELECT ";
+		var first = true;
+		fields.forEach(function(f) {
+			if (!first) {
+				query += ", ";
+			} else {
+				first = false;
+			}
+			query += f.name;
+		});
+		query += " FROM " + type;
+		query += " LIMIT 10000";
+        $.ajax({
+            method: "POST",
+            url: "/sf/orgs/" + self.org().id + "/query?query=" + query
+        }).done(function(data) {
+        		self.sobjectData(data);
+        });
+	}
 
 	self.getRepos = function() {
 		$.getJSON("/github/repos/", function (data) {
@@ -601,7 +659,7 @@ function TrineoViewModel() {
 		self.hideNewRepoModal();
         alert(self.newRepoAccount());
         $.post("/github/repos/?acc=" + self.newRepoAccount() + "&url=" + self.cloneURL(), function() {
-        	self.getRepos();
+        		self.getRepos();
         });
 	};
 	self.getRepo = function(id) {
@@ -726,7 +784,7 @@ function TrineoViewModel() {
 			self.boards([]);
 			if (section == "Salesforce") {
 				self.getOrg(id);
-				self.subSections(["Overview", "Backups", "Metadata", "Tests", "Compare", "Compare Branch", "Compare Orgs"])
+				self.subSections(["Overview", "Backups", "Metadata", "Tests", "Compare", "Compare Branch", "Compare Orgs", "Data"])
 				self.chosenSubsection(subsection);
 				if (subsection == "Overview") {
 					self.getClients();
@@ -743,6 +801,8 @@ function TrineoViewModel() {
 				} else if (subsection == "Compare Branch") {
 					self.getBackups(id);
 				} else if (subsection == "Compare Orgs") {
+				} else if (subsection == "Data") {
+					self.getSchema(id);
 				}
 			} else if (section == "GitHub") {
 				self.getRepo(id);

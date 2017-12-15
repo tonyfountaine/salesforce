@@ -15,6 +15,8 @@ import javax.ws.rs.core.UriBuilder;
 import org.apache.commons.io.IOUtils;
 
 import com.codahale.metrics.annotation.Timed;
+import com.sforce.soap.partner.DescribeGlobalResult;
+import com.sforce.soap.partner.DescribeSObjectResult;
 
 import io.dropwizard.hibernate.UnitOfWork;
 import nz.co.trineo.model.Backup;
@@ -23,6 +25,7 @@ import nz.co.trineo.model.Environment;
 import nz.co.trineo.model.GitDiff;
 import nz.co.trineo.model.Organization;
 import nz.co.trineo.model.RunTestsResult;
+import nz.co.trineo.model.SObject;
 import nz.co.trineo.model.TreeNode;
 import nz.co.trineo.repo.view.BranchView;
 import nz.co.trineo.salesforce.views.BackupView;
@@ -58,6 +61,53 @@ public class SalesforceResource {
 		final Backup backup = salesforceService.createBackup(id);
 		final BackupView view = new BackupView(backup);
 		return Response.ok(view).build();
+	}
+
+	@GET
+	@Path("/orgs/{id}/describeGlobal")
+	@Timed
+	@UnitOfWork
+	public DescribeGlobalResult describeGlobal(final @PathParam("id") String id) throws SalesforceException {
+		final DescribeGlobalResult backup = salesforceService.describeGlobal(id);
+		return backup;
+	}
+
+	@GET
+	@Path("/orgs/{id}/{sObjectType}/describe")
+	@Timed
+	@UnitOfWork
+	public DescribeSObjectResult describeSObject(final @PathParam("id") String id,
+			final @PathParam("sObjectType") String sObjectType) throws SalesforceException {
+		final DescribeSObjectResult backup = salesforceService.describeSObject(id, sObjectType);
+		return backup;
+	}
+
+	@POST
+	@Path("/orgs/{id}/query")
+	@Timed
+	@UnitOfWork
+	public List<SObject> runQuery(final @PathParam("id") String id, final @QueryParam("query") String queryString)
+			throws SalesforceException {
+		final List<SObject> result = salesforceService.runQuery(id, queryString);
+		return result;
+	}
+
+	@POST
+	@Path("/data/sfdxexport")
+	@Timed
+	@UnitOfWork
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public Response sfdxExport(final List<SObject> objects) throws SalesforceException {
+		final InputStream in = salesforceService.sfdxDataExport(objects);
+		final StreamingOutput stream = output -> {
+			try {
+				IOUtils.copy(in, output);
+			} catch (final Exception e) {
+				throw new WebApplicationException(e);
+			}
+		};
+
+		return Response.ok(stream).header("content-disposition", "attachment; filename = sfdxexport.zip").build();
 	}
 
 	@DELETE
